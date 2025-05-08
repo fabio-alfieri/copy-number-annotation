@@ -1,10 +1,7 @@
 # useful notes/data for shiny app
 
-setwd('Desktop/Data shiny/') # set this folder as directory
-
-# SHAP values of the models are
-load('Avg_shap_values_InteractomeINSIDER.RData')
-shap.df <- models.shap.df$`Mid-length::Amplification model`
+setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # set this folder as directory
+load('dev/Data/shap.RData')
 
 # remove features that are always 0 across columns
 shap.df <- shap.df[,apply(shap.df, 2, function(x){all(x!=0)})]
@@ -43,7 +40,7 @@ ggplot(shap.abs.sum, aes(x = reorder(feature, value), y = value)) +
 
 
 # per il plot grande, assumento che questa sia la tabella finale 
-toplot.plot <- readRDS('tabella_finale?.rds')
+toplot.plot <- readRDS('dev/Data/landscape_plot.rds')
 
 # Compute chromosome ranges for background shading
 chr_bounds <- toplot.plot %>%
