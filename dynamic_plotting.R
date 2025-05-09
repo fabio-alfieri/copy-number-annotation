@@ -325,8 +325,8 @@ landscape_plot <- function(filtered_landscape_ampl, filtered_landscape_del, geno
     geom_hline(yintercept = 0, colour = 'grey', linetype = 'dashed') +
     labs(title = title, 
          subtitle = subtitle, 
-         x = "Genomic Position", 
-         y = "Amplification Score (Mid-length)") +
+         x = "Genomic Position",
+         y = "SCNA frequency (Mid-length)") +
     theme_classic() +
     theme(legend.position = 'none')
   
