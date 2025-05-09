@@ -4,6 +4,9 @@ setwd('/Users/gabry/OneDrive/Desktop/copy-number-annotation-main/') # set this f
 ##############################################
 
 # useful notes/data for shiny app
+library(tidyverse)
+library(ggplot2)
+library(IRanges)
 
 load('dev/Data/shap.RData')
 
