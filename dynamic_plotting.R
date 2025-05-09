@@ -25,7 +25,7 @@ shap.df <- shap.df %>% select("labels", "type", "chr", "bin",
                               "genes.bin", "Length_Counts.E17", "Length_Counts.E19", "Ess.distance_pancancer",
                               "Length_Counts.E25", "Length_Counts.E1")
 
-View(shap.df) # this is the table you should use for plotting sum(abs(SHAP)) for each point
+# View(shap.df) # this is the table you should use for plotting sum(abs(SHAP)) for each point
 
 saveRDS(object = shap.df, file = "dev/Data/shap_df_clean_NOT_DEF.rds")
 
@@ -291,7 +291,7 @@ landscape_plot <- function(filtered_landscape_ampl, filtered_landscape_del, geno
   
   }
   
-  title <- "SHAP Value Contribution per Feature"
+  title <- "Segment Annotation (based on SHAP values)"
   subtitle <- paste0(paste0(" [", genome_mask, "] "), 
                      paste0(" [", type_mask, "] "), 
                      paste0(" [", model_mask, "] "))
