@@ -63,6 +63,7 @@ parse_input_data <- function(shap.list,
   toplot.plot <- toplot.plot[order(toplot.plot$order), ]; toplot.plot$order <- NULL
   
   toplot.plot[which(is.na(toplot.plot$reason)),]$reason <- "Unknown"
+  toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20 <- max(toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20)
   
   backbone.100kb <- chr_backbone_namesfixed$`0.1Mbp`; backbone.100kb <- dplyr::bind_rows(backbone.100kb)
   backbone.100kb$binID <- paste0(backbone.100kb$chr, "_", backbone.100kb$bin)
@@ -346,19 +347,22 @@ landscape_plot <- function(filtered_landscape_ampl,
     theme(legend.position = 'none')
   
   color_palette_ticks <- c(
-    "Unknown" = "gray",
-    "Essential" = "red",
-    "Accessible / Low Expression / High Mu" = "blue",
-    "High Expression" = "green",
-    "OG / Centromere / Low Mu" = "purple",
-    "Enhancer / Promoters / Transcribed = ACTIVE" = "orange",
-    "TSG / Centromere / Telomere / Low Mu" = "yellow",
-    "FGS" = "cyan",
-    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" = "pink",
-    "TSG / FGS / Telomere" = "brown",
-    "OG" = "magenta",
-    "Repressed" = "lightblue"
+    "Unknown" = "#666666",
+    "Essential" = "#cc0000",
+    "Accessible / Low Expression / High Mu" = "#0000cc",
+    "High Expression" = "#007700",
+    "OG / Centromere / Low Mu" = "#800080",
+    "Enhancer / Promoters / Transcribed = ACTIVE" = "#ff8000",
+    "TSG / Centromere / Telomere / Low Mu" = "#999900",
+    "FGS" = "#00aaaa",
+    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" = "#ff66cc",
+    "TSG / FGS / Telomere" = "#8b4513",
+    "OG" = "#cc00cc",
+    "Repressed" = "#3399cc"
   )
+  
+  
+  ticksize <- 0.3
   
   if (plot_unknown) {
     
@@ -373,7 +377,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_essential) {
     
@@ -388,7 +392,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_accessible) {
     
@@ -403,7 +407,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_hiexpr) {
     
@@ -418,7 +422,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_og_centr_lowmu) {
     
@@ -433,7 +437,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_active) {
     
@@ -448,7 +452,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_tsg_centr_tel_lowmu) {
     
@@ -463,7 +467,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_fgs) {
     
@@ -478,7 +482,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_acc_enh_prom_trx_rep_lowexp_himu) {
     
@@ -493,7 +497,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_tsg_fgs_tel) {
     
@@ -508,7 +512,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_og) {
     
@@ -523,7 +527,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   if (plot_rep) {
     
@@ -538,7 +542,7 @@ landscape_plot <- function(filtered_landscape_ampl,
                        y = cluster_ymin, 
                        yend = cluster_ymax,
                        color = reason),
-                   linewidth = 1.2)
+                   linewidth = ticksize)
   }
   
   base_plot + scale_color_manual(values = color_palette_ticks)
@@ -554,7 +558,7 @@ shap.list <- processed_data$shap.list; toplot.plot <- processed_data$toplot.plot
 
 type_input <- "BRCA"; 
 model_input_ampl <- "ampl"; model_input_del <- "del"
-coord_input <- NULL; chr_input <- NULL
+coord_input <- NULL; chr_input <- "chr1"
 
 filtered_shap_output_ampl <- filter_df(input_obj = shap.list, backbone_granges = backbone.100kb, 
                                        type_input = type_input, model_input = model_input_ampl, 
@@ -612,5 +616,18 @@ landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl,
                genome_mask = genome_mask_ampl, 
                type_mask = type_mask_ampl, 
                model_mask = c("ampl","del"),
-               plot_unknown = FALSE)
+               plot_ampl = TRUE,
+               plot_del = TRUE,
+               plot_unknown = TRUE, 
+               plot_essential = TRUE, 
+               plot_accessible = TRUE, 
+               plot_hiexpr = TRUE, 
+               plot_og_centr_lowmu = TRUE, 
+               plot_active = TRUE, 
+               plot_tsg_centr_tel_lowmu = TRUE ,
+               plot_fgs = TRUE, 
+               plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE, 
+               plot_tsg_fgs_tel = TRUE, 
+               plot_og = TRUE, 
+               plot_rep = TRUE )
 
