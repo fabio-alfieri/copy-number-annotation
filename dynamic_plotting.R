@@ -1,51 +1,68 @@
-setwd('/Users/gabry/OneDrive/Desktop/copy-number-annotation-main/') # set this folder as directory
+setwd('/Users/gabry/OneDrive/Desktop/shiny_app/')
 
-# DO NOT TOUCH
-##############################################
-
-# useful notes/data for shiny app
 library(tidyverse)
 library(ggplot2)
 library(IRanges) 
+library(stringr)
+library(dplyr)
+library(BSgenome.Hsapiens.UCSC.hg19)
 
-load('dev/Data/shap.RData')
-
-# remove features that are always 0 across columns
-shap.df <- shap.df[,apply(shap.df, 2, function(x){all(x!=0)})]
-
-shap.df$type <- do.call(rbind, str_split(shap.df$labels, pattern = '-'))[,2]
-shap.df$chr <- do.call(rbind, str_split(shap.df$labels, '_'))[,1]
-shap.df$bin <- do.call(rbind, str_split(do.call(rbind, str_split(shap.df$labels, '_'))[,2], '-'))[,1]
-
-# remove all non-segment features and useless columns
-shap.df <- shap.df %>% select(-c("Chromosome_Length", "Centromere_Length", "Centromere_Type", 'BIAS'))
-shap.df <- shap.df %>% select("labels", "type", "chr", "bin",
-                              "dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
-                              "distance.to.centromere", "distance.to.telomere", "mutations_norm",
-                              "genes.bin", "Length_Counts.E17", "Length_Counts.E19", "Ess.distance_pancancer",
-                              "Length_Counts.E25", "Length_Counts.E1")
-
-# View(shap.df) # this is the table you should use for plotting sum(abs(SHAP)) for each point
-
-saveRDS(object = shap.df, file = "dev/Data/shap_df_clean_NOT_DEF.rds")
-
-##############################################
-
-shap.df <- readRDS("dev/Data/shap_df_clean_NOT_DEF.rds")
-toplot.plot <- readRDS('dev/Data/landscape_plot.rds')
+shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
+toplot.plot <- readRDS("dev/Data/landscape_plot.rds")
+clusters_explained <- readRDS("dev/Data/clusters_explained.rds")
 load("dev/Data/All_levels_backbonetables.RData")
 
-parse_input_data <- function(shap.df, toplot.plot, chr_backbone_namesfixed){
+parse_input_data <- function(shap.list, 
+                             toplot.plot,
+                             clusters_explained,
+                             chr_backbone_namesfixed){
   
-  shap.df$binID <- paste0(shap.df$chr, "_", shap.df$bin)
-  shap.df$chr <- paste0("chr", shap.df$chr); shap.df$bin <- NULL
+  shap_clean_list <- list()
+  
+  shap_cols_to_discard <- c("Chromosome_Length", "Centromere_Length", "Centromere_Type", 'BIAS')
+  shap_cols_to_keep <- c("labels", "type", "chr", "bin",
+                         "dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
+                         "distance.to.centromere", "distance.to.telomere", "mutations_norm",
+                         "genes.bin", "Length_Counts.E17", "Length_Counts.E19", "Ess.distance_pancancer",
+                         "Length_Counts.E25", "Length_Counts.E1")
+  
+  for (idx in seq_along(along.with = shap.list)) {
+   
+    name <- names(shap.list)[idx]
+    shap.df <- shap.list[[idx]]
+    
+    shap.df <- shap.df[,apply(shap.df, 2, function(x){all(x!=0)})]
+    
+    shap.df$type <- do.call(rbind, str_split(shap.df$labels, pattern = '-'))[,2]
+    shap.df$chr <- do.call(rbind, str_split(shap.df$labels, '_'))[,1]
+    shap.df$bin <- do.call(rbind, str_split(do.call(rbind, str_split(shap.df$labels, '_'))[,2], '-'))[,1]
+    
+    shap.df <- shap.df %>% select(-all_of(shap_cols_to_discard))
+    shap.df <- shap.df %>% select(all_of(shap_cols_to_keep))
+    
+    
+    shap.df$binID <- paste0(shap.df$chr, "_", shap.df$bin)
+    shap.df$chr <- paste0("chr", shap.df$chr); shap.df$bin <- NULL
+    
+    shap_clean_list[[name]] <- shap.df
 
-  shap.list <- list(ampl = shap.df, del = shap.df) # CHANGE THIS
-
+  }
+  
   toplot.plot$binID <- paste0(toplot.plot$chr, "_", toplot.plot$bin)
   toplot.plot$chr <- paste0("chr", toplot.plot$chr); toplot.plot$bin <- NULL
   colnames(toplot.plot)[c(3,4)] <- c("ampl", "del")
+  toplot.plot$clusters10 <- NULL; toplot.plot$clusters15 <- NULL
   
+  toplot.plot$order <- seq_along(1:nrow(toplot.plot))
+  
+  toplot.plot <- merge(x = toplot.plot, 
+                       y = clusters_explained, 
+                       by = "clusters20", 
+                       all.x = TRUE)
+  
+  toplot.plot <- toplot.plot[order(toplot.plot$order), ]; toplot.plot$order <- NULL
+  
+  toplot.plot[which(is.na(toplot.plot$reason)),]$reason <- "Unknown"
   
   backbone.100kb <- chr_backbone_namesfixed$`0.1Mbp`; backbone.100kb <- dplyr::bind_rows(backbone.100kb)
   backbone.100kb$binID <- paste0(backbone.100kb$chr, "_", backbone.100kb$bin)
@@ -55,7 +72,7 @@ parse_input_data <- function(shap.df, toplot.plot, chr_backbone_namesfixed){
                                            ranges = IRanges(start = backbone.100kb$start_bin, end = backbone.100kb$end_bin),
                                            binID = backbone.100kb$binID)
   
-  outlist <- list(shap.list = shap.list,
+  outlist <- list(shap.list = shap_clean_list,
                   toplot.plot = toplot.plot,
                   backbone.100kb = backbone.100kb)
   
@@ -149,7 +166,10 @@ parse_input_model <- function(input){
     }
 }
 
-filter_df <- function(input_obj, backbone_granges, type_input = NULL, model_input = NULL, chr_input = NULL, coord_input = NULL){
+filter_df <- function(input_obj, 
+                      backbone_granges, 
+                      type_input = NULL, model_input = NULL, 
+                      chr_input = NULL, coord_input = NULL){
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
@@ -249,7 +269,16 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
     theme(legend.position = "none")
   
 }
-landscape_plot <- function(filtered_landscape_ampl, filtered_landscape_del, genome_mask, type_mask, model_mask){ 
+
+landscape_plot <- function(filtered_landscape_ampl, 
+                           filtered_landscape_del, 
+                           genome_mask, type_mask, model_mask,
+                           plot_ampl = TRUE, plot_del = TRUE,
+                           plot_unknown = TRUE, plot_essential = TRUE, plot_accessible = TRUE,
+                           plot_hiexpr = TRUE, plot_og_centr_lowmu = TRUE, plot_active = TRUE,
+                           plot_tsg_centr_tel_lowmu = TRUE, plot_fgs = TRUE,
+                           plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE,
+                           plot_tsg_fgs_tel = TRUE, plot_og = TRUE, plot_rep = TRUE){ 
   
   valid_input <- c("ampl","del")
   is_valid <- all(model_mask %in% valid_input)
@@ -267,24 +296,8 @@ landscape_plot <- function(filtered_landscape_ampl, filtered_landscape_del, geno
     if (length(model_mask) > 1) {
       
       model_mask <- paste(model_mask, collapse = ", ")
-      plot_ampl <- TRUE
-      plot_del <- TRUE
       
-    } else if (length(model_mask) == 1) {
-      
-      if (model_mask == "ampl") {
-        
-        plot_ampl <- TRUE
-        plot_del <- FALSE
-        
-      } else {
-        
-        plot_ampl <- FALSE
-        plot_del <- TRUE
-        
-      }
     }
-    
   } else {
     
     stop("Invalid model selected. \n Models are either \"ampl\" or \"del\"")
@@ -307,11 +320,13 @@ landscape_plot <- function(filtered_landscape_ampl, filtered_landscape_del, geno
     mutate(fill = rep(c("lightgrey", "darkgrey"), length.out = n())) %>%
     select(-chr_num)
   
+  color_palette_background <- c("#eeeeee", "#cccccc")
+  
   base_plot <- ggplot() +
     geom_rect(data = chr_bounds,
               aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = fill),
               alpha = 0.3) +
-    scale_fill_manual(values = c("#eeeeee", "#cccccc"))
+    scale_fill_manual(values = color_palette_background)
   
   if (plot_ampl) {
     base_plot <- base_plot + geom_line(data = filtered_landscape_ampl, aes(x = pos, y = ampl), color = "red")
@@ -322,7 +337,7 @@ landscape_plot <- function(filtered_landscape_ampl, filtered_landscape_del, geno
   }
   
   base_plot <- base_plot +
-    geom_hline(yintercept = 0, colour = 'grey', linetype = 'dashed') +
+    geom_hline(yintercept = 0, colour = 'grey', linetype = 'dashed', linewidth = 0.2) +
     labs(title = title, 
          subtitle = subtitle, 
          x = "Genomic Position",
@@ -330,18 +345,210 @@ landscape_plot <- function(filtered_landscape_ampl, filtered_landscape_del, geno
     theme_classic() +
     theme(legend.position = 'none')
   
-  cluster_ticks <- filtered_landscape_ampl %>%
-    mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters15 * 0.015,
-           cluster_ymax = cluster_ymin + 0.01)
+  color_palette_ticks <- c(
+    "Unknown" = "gray",
+    "Essential" = "red",
+    "Accessible / Low Expression / High Mu" = "blue",
+    "High Expression" = "green",
+    "OG / Centromere / Low Mu" = "purple",
+    "Enhancer / Promoters / Transcribed = ACTIVE" = "orange",
+    "TSG / Centromere / Telomere / Low Mu" = "yellow",
+    "FGS" = "cyan",
+    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" = "pink",
+    "TSG / FGS / Telomere" = "brown",
+    "OG" = "magenta",
+    "Repressed" = "lightblue"
+  )
   
-  base_plot +
-    geom_segment(data = cluster_ticks,
-                 aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax),
-                 color = "black", size = 0.3)
+  if (plot_unknown) {
+    
+    cluster_ticks_unknown <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[1]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_unknown,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_essential) {
+    
+    cluster_ticks_essential <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[2]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_essential,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_accessible) {
+    
+    cluster_ticks_accessible <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[3]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_accessible,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_hiexpr) {
+    
+    cluster_ticks_hiexpr <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[4]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_hiexpr,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_og_centr_lowmu) {
+    
+    cluster_ticks_og_centr_lowmu <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[5]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_og_centr_lowmu,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_active) {
+    
+    cluster_ticks_active <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[6]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_active,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_tsg_centr_tel_lowmu) {
+    
+    cluster_ticks_tsg_centr_tel_lowmu <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks[7])) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_tsg_centr_tel_lowmu,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_fgs) {
+    
+    cluster_ticks_fgs <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[8]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_fgs,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_acc_enh_prom_trx_rep_lowexp_himu) {
+    
+    cluster_ticks_acc_enh_prom_trx_rep_lowexp_himu <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks[9])) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_acc_enh_prom_trx_rep_lowexp_himu,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_tsg_fgs_tel) {
+    
+    cluster_ticks_tsg_fgs_tel <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[10]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_tsg_fgs_tel,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_og) {
+    
+    cluster_ticks_og <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[11]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_og,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  if (plot_rep) {
+    
+    cluster_ticks_rep <- filtered_landscape_ampl %>%
+      filter(reason == names(color_palette_ticks)[12]) %>%
+      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.01)
+    
+    base_plot <- base_plot +
+      geom_segment(data = cluster_ticks_rep,
+                   aes(x = pos, xend = pos, 
+                       y = cluster_ymin, 
+                       yend = cluster_ymax,
+                       color = reason),
+                   linewidth = 1.2)
+  }
+  
+  base_plot + scale_color_manual(values = color_palette_ticks)
   
 }
 
-processed_data <- parse_input_data(shap.df = shap.df, toplot.plot = toplot.plot, chr_backbone_namesfixed = chr_backbone_namesfixed)
+processed_data <- parse_input_data(shap.list = shap.list, 
+                                   toplot.plot = toplot.plot,
+                                   clusters_explained = clusters_explained,
+                                   chr_backbone_namesfixed = chr_backbone_namesfixed)
 
 shap.list <- processed_data$shap.list; toplot.plot <- processed_data$toplot.plot; backbone.100kb <- processed_data$backbone.100kb
 
@@ -404,25 +611,6 @@ landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl,
                filtered_landscape_del = filtered_landscape_del, 
                genome_mask = genome_mask_ampl, 
                type_mask = type_mask_ampl, 
-               model_mask = c("ampl","del"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+               model_mask = c("ampl","del"),
+               plot_unknown = FALSE)
 
