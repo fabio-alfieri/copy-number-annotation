@@ -244,6 +244,27 @@ filter_df <- function(input_obj,
   
 }
 
+
+generate_tick_df <- function(input_df, name_annot, mode){
+  
+  
+  if (mode == "ampl") {
+    output_df <- input_df %>%
+      filter(reason == name_annot) %>%
+      mutate(cluster_ymin = max(input_df$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.025)
+  } else {
+    
+    output_df <- input_df %>%
+      filter(reason == name_annot) %>%
+      mutate(cluster_ymax = min(-input_df$del) * 1.07 + clusters20 * 0.015,
+             cluster_ymin = cluster_ymax - 0.025)
+    
+  }
+  
+  return(output_df)
+}
+
 barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
   
   if (length(genome_mask) == 22) {
@@ -318,10 +339,10 @@ landscape_plot <- function(filtered_landscape_ampl,
     summarize(start = min(pos), end = max(pos), .groups = "drop") %>%
     mutate(chr_num = readr::parse_number(chr)) %>%
     arrange(chr_num) %>%
-    mutate(fill = rep(c("lightgrey", "darkgrey"), length.out = n())) %>%
+    mutate(fill = rep(c("white", "#f2edf5"), length.out = n())) %>%
     select(-chr_num)
   
-  color_palette_background <- c("#eeeeee", "#cccccc")
+  color_palette_background <- c("white", "#f2edf5")
   
   base_plot <- ggplot() +
     geom_rect(data = chr_bounds,
@@ -362,14 +383,13 @@ landscape_plot <- function(filtered_landscape_ampl,
   )
   
   
-  ticksize <- 0.3
+  ticksize <- 0.1
   
   if (plot_unknown) {
     
-    cluster_ticks_unknown <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[1]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_unknown <- generate_tick_df(filtered_landscape_ampl, 
+                                              name_annot = names(color_palette_ticks)[1], 
+                                              mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_unknown,
@@ -381,10 +401,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_essential) {
     
-    cluster_ticks_essential <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[2]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_essential <- generate_tick_df(filtered_landscape_ampl, 
+                                                name_annot = names(color_palette_ticks)[2], 
+                                                mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_essential,
@@ -396,10 +415,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_accessible) {
     
-    cluster_ticks_accessible <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[3]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_accessible <- generate_tick_df(filtered_landscape_ampl, 
+                                                 name_annot = names(color_palette_ticks)[3], 
+                                                 mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_accessible,
@@ -411,10 +429,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_hiexpr) {
     
-    cluster_ticks_hiexpr <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[4]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_hiexpr <- generate_tick_df(filtered_landscape_ampl, 
+                                             name_annot = names(color_palette_ticks)[4], 
+                                             mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_hiexpr,
@@ -426,11 +443,11 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_og_centr_lowmu) {
     
-    cluster_ticks_og_centr_lowmu <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[5]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_og_centr_lowmu <- generate_tick_df(filtered_landscape_del, 
+                                                     name_annot = names(color_palette_ticks)[5], 
+                                                     mode = "del")
     
+
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_og_centr_lowmu,
                    aes(x = pos, xend = pos, 
@@ -441,10 +458,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_active) {
     
-    cluster_ticks_active <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[6]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_active <- generate_tick_df(filtered_landscape_ampl, 
+                                             name_annot = names(color_palette_ticks)[6], 
+                                             mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_active,
@@ -456,10 +472,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_tsg_centr_tel_lowmu) {
     
-    cluster_ticks_tsg_centr_tel_lowmu <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks[7])) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_tsg_centr_tel_lowmu <- generate_tick_df(filtered_landscape_del, 
+                                                          name_annot = names(color_palette_ticks)[7], 
+                                                          mode = "del")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_tsg_centr_tel_lowmu,
@@ -471,10 +486,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_fgs) {
     
-    cluster_ticks_fgs <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[8]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_fgs <- generate_tick_df(filtered_landscape_del, 
+                                          name_annot = names(color_palette_ticks)[8], 
+                                          mode = "del")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_fgs,
@@ -486,10 +500,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_acc_enh_prom_trx_rep_lowexp_himu) {
     
-    cluster_ticks_acc_enh_prom_trx_rep_lowexp_himu <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks[9])) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_acc_enh_prom_trx_rep_lowexp_himu <- generate_tick_df(filtered_landscape_ampl, 
+                                                                       name_annot = names(color_palette_ticks)[9], 
+                                                                       mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_acc_enh_prom_trx_rep_lowexp_himu,
@@ -501,10 +514,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_tsg_fgs_tel) {
     
-    cluster_ticks_tsg_fgs_tel <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[10]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_tsg_fgs_tel <- generate_tick_df(filtered_landscape_del, 
+                                                  name_annot = names(color_palette_ticks)[10], 
+                                                  mode = "del")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_tsg_fgs_tel,
@@ -516,10 +528,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_og) {
     
-    cluster_ticks_og <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[11]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_og <- generate_tick_df(filtered_landscape_ampl, 
+                                         name_annot = names(color_palette_ticks)[11], 
+                                         mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_og,
@@ -531,10 +542,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   }
   if (plot_rep) {
     
-    cluster_ticks_rep <- filtered_landscape_ampl %>%
-      filter(reason == names(color_palette_ticks)[12]) %>%
-      mutate(cluster_ymin = max(filtered_landscape_ampl$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.01)
+    cluster_ticks_rep <- generate_tick_df(filtered_landscape_ampl, 
+                                          name_annot = names(color_palette_ticks)[12], 
+                                          mode = "ampl")
     
     base_plot <- base_plot +
       geom_segment(data = cluster_ticks_rep,
@@ -545,8 +555,40 @@ landscape_plot <- function(filtered_landscape_ampl,
                    linewidth = ticksize)
   }
   
-  base_plot + scale_color_manual(values = color_palette_ticks)
+  upper_limit <- ceiling(max(filtered_landscape_ampl$ampl) * 10) / 10
+  lower_limit <- floor(min(-filtered_landscape_del$del) * 10) / 10
   
+  sym_limit <- min(abs(upper_limit), abs(lower_limit))
+  
+  y_breaks <- pretty(c(-sym_limit, sym_limit))
+  
+  base_plot <- base_plot +
+    geom_segment(
+      aes(x = -Inf, xend = -Inf,
+          y = (min(y_breaks)-0.003),
+          yend = (max(y_breaks)+0.001)),
+      inherit.aes = FALSE,
+      color = "black",
+      linewidth = 1
+    ) +
+    scale_x_continuous(
+      breaks = chr_bounds %>% mutate(center = (start + end)/2) %>% pull(center),
+      labels = chr_bounds$chr,
+      expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+      breaks = y_breaks,
+      labels = function(x){abs(x)},
+      expand = c(0, 0)
+    ) +
+    coord_cartesian(ylim = c(-1.2, 1.2)) +
+    theme(
+      axis.line.y = element_blank(),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+    scale_color_manual(values = color_palette_ticks)
+  
+  base_plot
 }
 
 processed_data <- parse_input_data(shap.list = shap.list, 
@@ -554,11 +596,19 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    clusters_explained = clusters_explained,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed)
 
-shap.list <- processed_data$shap.list; toplot.plot <- processed_data$toplot.plot; backbone.100kb <- processed_data$backbone.100kb
+shap.list <- processed_data$shap.list; 
+toplot.plot <- processed_data$toplot.plot; 
+backbone.100kb <- processed_data$backbone.100kb
+
+to_flip <- c(1,7,9,10)
+clusters_to_flip <- unique(toplot.plot$clusters20)[to_flip]
+toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <- 
+  -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
+
 
 type_input <- "BRCA"; 
 model_input_ampl <- "ampl"; model_input_del <- "del"
-coord_input <- NULL; chr_input <- "chr1"
+coord_input <- NULL; chr_input <- NULL
 
 filtered_shap_output_ampl <- filter_df(input_obj = shap.list, backbone_granges = backbone.100kb, 
                                        type_input = type_input, model_input = model_input_ampl, 
@@ -629,5 +679,5 @@ landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl,
                plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE, 
                plot_tsg_fgs_tel = TRUE, 
                plot_og = TRUE, 
-               plot_rep = TRUE )
+               plot_rep = TRUE)
 
