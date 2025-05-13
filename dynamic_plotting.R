@@ -10,12 +10,14 @@ library(BSgenome.Hsapiens.UCSC.hg19)
 shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
 toplot.plot <- readRDS("dev/Data/landscape_plot.rds")
 clusters_explained <- readRDS("dev/Data/clusters_explained.rds")
+centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
 load("dev/Data/All_levels_backbonetables.RData")
 
 parse_input_data <- function(shap.list, 
                              toplot.plot,
                              clusters_explained,
-                             chr_backbone_namesfixed){
+                             chr_backbone_namesfixed,
+                             centromere_table){
   
   shap_clean_list <- list()
   
@@ -65,6 +67,11 @@ parse_input_data <- function(shap.list,
   toplot.plot[which(is.na(toplot.plot$reason)),]$reason <- "Unknown"
   toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20 <- max(toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20)
   
+  to_flip <- c(1,7,9,10)
+  clusters_to_flip <- unique(toplot.plot$clusters20)[to_flip]
+  toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <- 
+    -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
+  
   backbone.100kb <- chr_backbone_namesfixed$`0.1Mbp`; backbone.100kb <- dplyr::bind_rows(backbone.100kb)
   backbone.100kb$binID <- paste0(backbone.100kb$chr, "_", backbone.100kb$bin)
   backbone.100kb$chr <- paste0("chr", backbone.100kb$chr); backbone.100kb$bin <- NULL
@@ -73,9 +80,28 @@ parse_input_data <- function(shap.list,
                                            ranges = IRanges(start = backbone.100kb$start_bin, end = backbone.100kb$end_bin),
                                            binID = backbone.100kb$binID)
   
+  centromere_table$Centromere_Length <- NULL
+  centromere_table$Centromere_Type <- NULL
+  centromere_table$Centromere <- NULL
+  centromere_table$chr <- paste0("chr", centromere_table$chr)
+  centromere_table$midpoint <- (centromere_table$end - centromere_table$start) / 2
+  centromere_table$midpoint_start <- centromere_table$midpoint
+  centromere_table$midpoint_end <- centromere_table$midpoint
+  
+  centromere_gr <- GRanges(seqnames = centromere_table$chr, 
+                           ranges = IRanges(start = centromere_table$midpoint_start, 
+                                            end = centromere_table$midpoint_end))
+  
+  hits <- findOverlaps(query = centromere_gr, subject = backbone.100kb)
+  centromere_table_out <- data.frame(backbone.100kb[subjectHits(hits)])
+  centromere_table_out$width <- NULL; centromere_table_out$strand <- NULL
+  colnames(centromere_table_out) <- c("chr", "start", "end", "binID")
+  
+  
   outlist <- list(shap.list = shap_clean_list,
                   toplot.plot = toplot.plot,
-                  backbone.100kb = backbone.100kb)
+                  backbone.100kb = backbone.100kb, 
+                  centromere_table = centromere_table_out)
   
   return(outlist)
 }
@@ -169,8 +195,10 @@ parse_input_model <- function(input){
 
 filter_df <- function(input_obj, 
                       backbone_granges, 
-                      type_input = NULL, model_input = NULL, 
-                      chr_input = NULL, coord_input = NULL){
+                      type_input = NULL, 
+                      model_input = NULL, 
+                      chr_input = NULL,
+                      coord_input = NULL){
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
@@ -244,25 +272,21 @@ filter_df <- function(input_obj,
   
 }
 
-
-generate_tick_df <- function(input_df, name_annot, mode){
+prepare_shap_to_plot <- function(filtered_shap_ampl, filtered_shap_del){
   
+  to_clean <- c("labels", "type", "chr", "binID")
+  mask <- !(colnames(filtered_shap_ampl) %in% to_clean)
   
-  if (mode == "ampl") {
-    output_df <- input_df %>%
-      filter(reason == name_annot) %>%
-      mutate(cluster_ymin = max(input_df$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.025)
-  } else {
-    
-    output_df <- input_df %>%
-      filter(reason == name_annot) %>%
-      mutate(cluster_ymax = min(-input_df$del) * 1.07 + clusters20 * 0.015,
-             cluster_ymin = cluster_ymax - 0.025)
-    
-  }
+  filtered_shap_abs_sum_ampl <- data.frame(value = apply(X = filtered_shap_ampl[,mask], MARGIN = 2, FUN = function(x){sum(abs(x))}))
+  filtered_shap_abs_sum_del <- data.frame(value = apply(X = filtered_shap_del[,mask], MARGIN = 2, FUN = function(x){sum(abs(x))}))
   
-  return(output_df)
+  filtered_shap_abs_sum_ampl$feature <- rownames(filtered_shap_abs_sum_ampl); filtered_shap_abs_sum_ampl$color <- rainbow(nrow(filtered_shap_abs_sum_ampl))
+  filtered_shap_abs_sum_del$feature <- rownames(filtered_shap_abs_sum_del); filtered_shap_abs_sum_del$color <- rainbow(nrow(filtered_shap_abs_sum_del))
+  
+  outlist <- list(filtered_shap_abs_sum_ampl = filtered_shap_abs_sum_ampl,
+                  filtered_shap_abs_sum_del = filtered_shap_abs_sum_del)
+  
+  return(outlist)
 }
 
 barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
@@ -292,15 +316,45 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
   
 }
 
+generate_tick_df <- function(input_df, name_annot, mode){
+  
+  
+  if (mode == "ampl") {
+    output_df <- input_df %>%
+      filter(reason == name_annot) %>%
+      mutate(cluster_ymin = max(input_df$ampl) * 1.07 + clusters20 * 0.015,
+             cluster_ymax = cluster_ymin + 0.03)
+  } else {
+    
+    output_df <- input_df %>%
+      filter(reason == name_annot) %>%
+      mutate(cluster_ymax = min(-input_df$del) * 1.07 + clusters20 * 0.015,
+             cluster_ymin = cluster_ymax - 0.03)
+    
+  }
+  
+  return(output_df)
+}
+
 landscape_plot <- function(filtered_landscape_ampl, 
                            filtered_landscape_del, 
-                           genome_mask, type_mask, model_mask,
-                           plot_ampl = TRUE, plot_del = TRUE,
-                           plot_unknown = TRUE, plot_essential = TRUE, plot_accessible = TRUE,
-                           plot_hiexpr = TRUE, plot_og_centr_lowmu = TRUE, plot_active = TRUE,
-                           plot_tsg_centr_tel_lowmu = TRUE, plot_fgs = TRUE,
+                           genome_mask, 
+                           type_mask, 
+                           model_mask,
+                           plot_ampl = TRUE, 
+                           plot_del = TRUE,
+                           plot_unknown = TRUE, 
+                           plot_essential = TRUE, 
+                           plot_accessible = TRUE,
+                           plot_hiexpr = TRUE, 
+                           plot_og_centr_lowmu = TRUE, 
+                           plot_active = TRUE,
+                           plot_tsg_centr_tel_lowmu = TRUE, 
+                           plot_fgs = TRUE,
                            plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE,
-                           plot_tsg_fgs_tel = TRUE, plot_og = TRUE, plot_rep = TRUE){ 
+                           plot_tsg_fgs_tel = TRUE, 
+                           plot_og = TRUE, 
+                           plot_rep = TRUE){ 
   
   valid_input <- c("ampl","del")
   is_valid <- all(model_mask %in% valid_input)
@@ -339,10 +393,10 @@ landscape_plot <- function(filtered_landscape_ampl,
     summarize(start = min(pos), end = max(pos), .groups = "drop") %>%
     mutate(chr_num = readr::parse_number(chr)) %>%
     arrange(chr_num) %>%
-    mutate(fill = rep(c("white", "#f2edf5"), length.out = n())) %>%
+    mutate(fill = rep(c("white", "#e7deed"), length.out = n())) %>%
     select(-chr_num)
   
-  color_palette_background <- c("white", "#f2edf5")
+  color_palette_background <- c("white", "#e7deed")
   
   base_plot <- ggplot() +
     geom_rect(data = chr_bounds,
@@ -351,11 +405,25 @@ landscape_plot <- function(filtered_landscape_ampl,
     scale_fill_manual(values = color_palette_background)
   
   if (plot_ampl) {
-    base_plot <- base_plot + geom_line(data = filtered_landscape_ampl, aes(x = pos, y = ampl), color = "red")
+    
+    chr_to_plot <- unique(filtered_landscape_ampl$chr) 
+    
+    for (chr in chr_to_plot) {
+      base_plot <- base_plot + geom_line(data = filtered_landscape_ampl[filtered_landscape_ampl$chr == chr,], 
+                                         aes(x = pos, y = ampl), 
+                                         color = "red")
+    }
   }
   
   if (plot_del) {
-    base_plot <- base_plot + geom_line(data = filtered_landscape_del, aes(x = pos, y = -del), color = "blue")
+    
+    chr_to_plot <- unique(filtered_landscape_ampl$chr) 
+    
+    for (chr in chr_to_plot) {
+      base_plot <- base_plot + geom_line(data = filtered_landscape_del[filtered_landscape_del$chr == chr,], 
+                                         aes(x = pos, y = -del), 
+                                         color = "blue")
+    }
   }
   
   base_plot <- base_plot +
@@ -574,7 +642,7 @@ landscape_plot <- function(filtered_landscape_ampl,
     scale_x_continuous(
       breaks = chr_bounds %>% mutate(center = (start + end)/2) %>% pull(center),
       labels = chr_bounds$chr,
-      expand = c(0, 0)
+      expand = c(0.005, 0)
     ) +
     scale_y_continuous(
       breaks = y_breaks,
@@ -594,17 +662,13 @@ landscape_plot <- function(filtered_landscape_ampl,
 processed_data <- parse_input_data(shap.list = shap.list, 
                                    toplot.plot = toplot.plot,
                                    clusters_explained = clusters_explained,
-                                   chr_backbone_namesfixed = chr_backbone_namesfixed)
+                                   chr_backbone_namesfixed = chr_backbone_namesfixed, 
+                                   centromere_table = centromere_table)
 
 shap.list <- processed_data$shap.list; 
 toplot.plot <- processed_data$toplot.plot; 
 backbone.100kb <- processed_data$backbone.100kb
-
-to_flip <- c(1,7,9,10)
-clusters_to_flip <- unique(toplot.plot$clusters20)[to_flip]
-toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <- 
-  -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
-
+centromere_table <- processed_data$centromere_table
 
 type_input <- "BRCA"; 
 model_input_ampl <- "ampl"; model_input_del <- "del"
@@ -631,44 +695,27 @@ filtered_landscape_output_del <- filter_df(input_obj = toplot.plot, backbone_gra
 filtered_shap_ampl <- filtered_shap_output_ampl$final_df; filtered_shap_del <- filtered_shap_output_del$final_df
 filtered_landscape_ampl <- filtered_landscape_output_ampl$final_df; filtered_landscape_del <- filtered_landscape_output_del$final_df
 
-to_clean <- c("labels", "type", "chr", "binID"); mask <- !(colnames(filtered_shap_ampl) %in% to_clean)
-
-filtered_shap_abs_sum_ampl <- data.frame(value = apply(X = filtered_shap_ampl[,mask], 
-                                                       MARGIN = 2,
-                                                       FUN = function(x){sum(abs(x))}))
-
-filtered_shap_abs_sum_del <- data.frame(value = apply(X = filtered_shap_del[,mask], 
-                                                       MARGIN = 2,
-                                                       FUN = function(x){sum(abs(x))}))
-
-filtered_shap_abs_sum_ampl$feature <- rownames(filtered_shap_abs_sum_ampl)
-filtered_shap_abs_sum_ampl$color <- rainbow(nrow(filtered_shap_abs_sum_ampl))
-
-filtered_shap_abs_sum_del$feature <- rownames(filtered_shap_abs_sum_del)
-filtered_shap_abs_sum_del$color <- rainbow(nrow(filtered_shap_abs_sum_del))
-
 genome_mask_ampl <- filtered_shap_output_ampl$genome_mask; genome_mask_del <- filtered_shap_output_del$genome_mask
 model_mask_ampl <- filtered_shap_output_ampl$model_mask; model_mask_del <- filtered_shap_output_del$model_mask
 type_mask_ampl <- filtered_shap_output_ampl$type_mask; type_mask_del <- filtered_shap_output_del$type_mask
 
-barplot_shap(shap.abs.sum = filtered_shap_abs_sum_ampl, 
-             genome_mask = genome_mask_ampl, 
-             type_mask = type_mask_ampl, 
-             model_mask = model_mask_ampl)
+shap_plotting_list <- prepare_shap_to_plot(filtered_shap_ampl = filtered_shap_ampl, 
+                                           filtered_shap_del = filtered_shap_del)
 
-barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del, 
-             genome_mask = genome_mask_del, 
-             type_mask = type_mask_del, 
-             model_mask = model_mask_del)
+filtered_shap_abs_sum_ampl <- shap_plotting_list$filtered_shap_abs_sum_ampl
+filtered_shap_abs_sum_del <- shap_plotting_list$filtered_shap_abs_sum_del
+
+barplot_shap(shap.abs.sum = filtered_shap_abs_sum_ampl, genome_mask = genome_mask_ampl, type_mask = type_mask_ampl, model_mask = model_mask_ampl)
+barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del, genome_mask = genome_mask_del, type_mask = type_mask_del, model_mask = model_mask_del)
 
 landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl, 
                filtered_landscape_del = filtered_landscape_del, 
                genome_mask = genome_mask_ampl, 
                type_mask = type_mask_ampl, 
                model_mask = c("ampl","del"),
-               plot_ampl = TRUE,
+               plot_ampl = TRUE, 
                plot_del = TRUE,
-               plot_unknown = TRUE, 
+               plot_unknown = FALSE, 
                plot_essential = TRUE, 
                plot_accessible = TRUE, 
                plot_hiexpr = TRUE, 
