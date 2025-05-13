@@ -13,11 +13,7 @@ clusters_explained <- readRDS("dev/Data/clusters_explained.rds")
 centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
 load("dev/Data/All_levels_backbonetables.RData")
 
-parse_input_data <- function(shap.list, 
-                             toplot.plot,
-                             clusters_explained,
-                             chr_backbone_namesfixed,
-                             centromere_table){
+parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_backbone_namesfixed, centromere_table){
   
   shap_clean_list <- list()
   
@@ -72,6 +68,20 @@ parse_input_data <- function(shap.list,
   toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <- 
     -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
   
+  positive_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == 1, ]$clusters20))
+  negative_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == -1, ]$clusters20))
+  
+  lapply(X = seq_along(positive_clusters), FUN = function(idx){
+    curr_cluster <- positive_clusters[idx]
+    toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- idx
+  })
+  
+  lapply(X = seq_along(negative_clusters), FUN = function(idx){
+    curr_cluster <- negative_clusters[idx]
+    toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- -idx
+  })
+  
+  
   backbone.100kb <- chr_backbone_namesfixed$`0.1Mbp`; backbone.100kb <- dplyr::bind_rows(backbone.100kb)
   backbone.100kb$binID <- paste0(backbone.100kb$chr, "_", backbone.100kb$bin)
   backbone.100kb$chr <- paste0("chr", backbone.100kb$chr); backbone.100kb$bin <- NULL
@@ -105,7 +115,6 @@ parse_input_data <- function(shap.list,
   
   return(outlist)
 }
-
 parse_input_coord <- function(input){
   
   chrom_sizes <- seqlengths(BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19)[1:22]
@@ -193,12 +202,7 @@ parse_input_model <- function(input){
     }
 }
 
-filter_df <- function(input_obj, 
-                      backbone_granges, 
-                      type_input = NULL, 
-                      model_input = NULL, 
-                      chr_input = NULL,
-                      coord_input = NULL){
+filter_df <- function(input_obj, backbone_granges, type_input = NULL, model_input = NULL, chr_input = NULL, coord_input = NULL){
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
@@ -288,7 +292,6 @@ prepare_shap_to_plot <- function(filtered_shap_ampl, filtered_shap_del){
   
   return(outlist)
 }
-
 barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
   
   if (length(genome_mask) == 22) {
@@ -318,24 +321,31 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
 
 generate_tick_df <- function(input_df, name_annot, mode){
   
+  height <- 0.015
   
   if (mode == "ampl") {
-    output_df <- input_df %>%
-      filter(reason == name_annot) %>%
-      mutate(cluster_ymin = max(input_df$ampl) * 1.07 + clusters20 * 0.015,
-             cluster_ymax = cluster_ymin + 0.03)
-  } else {
+    
+    start <- max(input_df$ampl)
     
     output_df <- input_df %>%
       filter(reason == name_annot) %>%
-      mutate(cluster_ymax = min(-input_df$del) * 1.07 + clusters20 * 0.015,
-             cluster_ymin = cluster_ymax - 0.03)
+      mutate(cluster_ymid = round(start,1) + (clusters20 * 0.07),
+             cluster_ymin =  cluster_ymid - height,
+             cluster_ymax = cluster_ymid + height)
+  } else {
+    
+    start <- min(-input_df$del) - 0.05
+    
+    output_df <- input_df %>%
+      filter(reason == name_annot) %>%
+      mutate(cluster_ymid = round(start,1) + (clusters20 * 0.07),
+             cluster_ymax =  cluster_ymid + height,
+             cluster_ymin = cluster_ymid - height)
     
   }
   
   return(output_df)
 }
-
 landscape_plot <- function(filtered_landscape_ampl, 
                            filtered_landscape_del, 
                            genome_mask, 
@@ -665,10 +675,14 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed, 
                                    centromere_table = centromere_table)
 
+# these files will be saved after
+
 shap.list <- processed_data$shap.list; 
 toplot.plot <- processed_data$toplot.plot; 
 backbone.100kb <- processed_data$backbone.100kb
 centromere_table <- processed_data$centromere_table
+
+# this will be replaced by used input
 
 type_input <- "BRCA"; 
 model_input_ampl <- "ampl"; model_input_del <- "del"
@@ -683,13 +697,19 @@ filtered_shap_output_del <- filter_df(input_obj = shap.list, backbone_granges = 
                                       chr_input = chr_input, coord_input = coord_input)
 
 
-filtered_landscape_output_ampl <- filter_df(input_obj = toplot.plot, backbone_granges = backbone.100kb,
-                                            type_input = type_input, model_input = model_input_ampl, 
-                                            chr_input = chr_input, coord_input = coord_input)
+filtered_landscape_output_ampl <- filter_df(input_obj = toplot.plot, 
+                                            backbone_granges = backbone.100kb,
+                                            type_input = type_input, 
+                                            model_input = model_input_ampl, 
+                                            chr_input = chr_input, 
+                                            coord_input = coord_input)
 
-filtered_landscape_output_del <- filter_df(input_obj = toplot.plot, backbone_granges = backbone.100kb,
-                                           type_input = type_input, model_input = model_input_del,  
-                                           chr_input = chr_input, coord_input = coord_input)
+filtered_landscape_output_del <- filter_df(input_obj = toplot.plot, 
+                                           backbone_granges = backbone.100kb,
+                                           type_input = type_input, 
+                                           model_input = model_input_del,  
+                                           chr_input = chr_input, 
+                                           coord_input = coord_input)
 
 
 filtered_shap_ampl <- filtered_shap_output_ampl$final_df; filtered_shap_del <- filtered_shap_output_del$final_df
@@ -699,14 +719,20 @@ genome_mask_ampl <- filtered_shap_output_ampl$genome_mask; genome_mask_del <- fi
 model_mask_ampl <- filtered_shap_output_ampl$model_mask; model_mask_del <- filtered_shap_output_del$model_mask
 type_mask_ampl <- filtered_shap_output_ampl$type_mask; type_mask_del <- filtered_shap_output_del$type_mask
 
-shap_plotting_list <- prepare_shap_to_plot(filtered_shap_ampl = filtered_shap_ampl, 
-                                           filtered_shap_del = filtered_shap_del)
+shap_plotting_list <- prepare_shap_to_plot(filtered_shap_ampl = filtered_shap_ampl, filtered_shap_del = filtered_shap_del)
 
 filtered_shap_abs_sum_ampl <- shap_plotting_list$filtered_shap_abs_sum_ampl
 filtered_shap_abs_sum_del <- shap_plotting_list$filtered_shap_abs_sum_del
 
-barplot_shap(shap.abs.sum = filtered_shap_abs_sum_ampl, genome_mask = genome_mask_ampl, type_mask = type_mask_ampl, model_mask = model_mask_ampl)
-barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del, genome_mask = genome_mask_del, type_mask = type_mask_del, model_mask = model_mask_del)
+barplot_shap(shap.abs.sum = filtered_shap_abs_sum_ampl, 
+             genome_mask = genome_mask_ampl, 
+             type_mask = type_mask_ampl, 
+             model_mask = model_mask_ampl)
+
+barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del, 
+             genome_mask = genome_mask_del, 
+             type_mask = type_mask_del, 
+             model_mask = model_mask_del)
 
 landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl, 
                filtered_landscape_del = filtered_landscape_del, 
@@ -715,7 +741,7 @@ landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl,
                model_mask = c("ampl","del"),
                plot_ampl = TRUE, 
                plot_del = TRUE,
-               plot_unknown = FALSE, 
+               plot_unknown = TRUE, 
                plot_essential = TRUE, 
                plot_accessible = TRUE, 
                plot_hiexpr = TRUE, 
