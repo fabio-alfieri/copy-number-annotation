@@ -90,6 +90,8 @@ for(i in c('ampl','del')){
                           by = 'labels')
   
   values_agg[,-c(1:2)] <- apply(values_agg[,-c(1:2)], 2, scale)
+  pivot_longer(values_agg, cols = -c('labels','cluster')) %>% 
+    ggplot() + geom_histogram(aes(x = value)) + facet_wrap(~name)
   
   # Summarize value contributions per cluster
   library(dplyr)
@@ -105,12 +107,19 @@ for(i in c('ampl','del')){
   
   # Plot feature contribution by cluster
   library(scico)
-  ggplot(summary_df, aes(x = factor(cluster), y = mean_value, fill = feature)) +
+  region_clustering <- ggplot(summary_df, aes(x = factor(cluster), y = mean_value, fill = feature)) +
     geom_bar(stat = "identity", position = "dodge") +
     labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
     theme_minimal() +
     scale_fill_viridis_d(option = "H")
   # scale_fill_scico_d(palette = "vik")
+  
+  ggplot(summary_df, aes(x = feature, y = mean_value, fill = as.factor(cluster))) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
+    theme_minimal() +
+    scale_fill_viridis_d(option = "H")
+  save(summary_df, file = '/Users/ieo5099/Desktop/summary_df.RData')
   
   top_features <- summary_df %>%
     group_by(cluster) %>%
@@ -186,25 +195,48 @@ for(i in c('ampl','del')){
     mutate(cluster_ymin = max(toplot.plot$ampl_score) * 1.07 + cluster * 0.015,
            cluster_ymax = cluster_ymin + 0.01)
   
-  p.final <- base_plot +
+  (p.final <- base_plot +
     geom_segment(data = cluster_ticks,
                  aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax, col = as.character(cluster)),
                  size = 0.3) +
-    scale_colour_viridis_d(option = "H")
+    scale_colour_viridis_d(option = "H"))
   
   output[[i]]$p.final <- p.final
   output[[i]]$toplot <- toplot.plot
+  output[[i]]$regional_clustering <- regional_clustering
   output[[i]]$aggregated <- aggregated
   output[[i]]$top_features <- top_features
 }
 
-# Visualize plots with annotatiion for ampl or del
+# Visualize plots with annotation for ampl or del
 output$ampl$p.final
 output$del$p.final
 
-# Visualize aggregated fatures
-output$ampl$aggregated
-output$del$aggregated
+# Visualize aggregated features
+View(output$ampl$aggregated)
+View(output$del$aggregated)
+
+
+# explore the data
+ggplot(output$ampl$toplot) +
+  geom_boxplot(aes(x = as.factor(cluster), y = ampl_score))
+
+output$ampl$toplot %>% group_by(cluster) %>% 
+  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+  ggplot(aes(x = factor(cluster), y = value, fill = factor(name))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  ggtitle('Amplification Model Clusters')
+  
+output$del$toplot %>% group_by(cluster) %>% 
+  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+  ggplot(aes(x = factor(cluster), y = value, fill = factor(name))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  ggtitle('Deletion Model Clusters')
+
 
 
 
