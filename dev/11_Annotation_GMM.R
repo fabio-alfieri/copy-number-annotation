@@ -15,7 +15,7 @@ library(tidyverse)
 #                                 `Mid-length::Deletion model` = models.shap.df$`Mid-length::Deletion model`))
 # write_rds(df, file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
-df <- readRDS(file = 'Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
+df <- readRDS(file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
 output <- list()
 for(i in c('ampl','del')){
@@ -106,6 +106,11 @@ for(i in c('ampl','del')){
     summarize(mean_value = median(value, na.rm = TRUE)) %>%
     ungroup()
   
+  summary_df <- summary_df %>%
+    group_by(feature) %>%
+    mutate(mean_value = ifelse(is.na(mean_value), min(mean_value, na.rm = TRUE), mean_value)) %>%
+    ungroup()
+  
   clusters <- unique(summary_df$cluster)
   features <- unique(summary_df$feature)
   
@@ -132,37 +137,119 @@ for(i in c('ampl','del')){
       values_to = "value"
     )
   
+  # OLD don't consider here
+  if(F){
+    library(ComplexHeatmap)
+    set.seed(123)
+    # ComplexHeatmap::Heatmap(mat, cluster_columns = F)
+    ht <- Heatmap(mat_scaled, cluster_columns = F)
+    # ht
+    draw_ht <- draw(ht)
+    library(dendextend)
+    row_hclust <- as.hclust(row_dend(draw_ht))
+    
+    k <- 2
+    feature_clusters <- cutree(row_hclust, k = k)
+    
+    cluster_df <- tibble(
+      feature = names(feature_clusters),
+      cluster = factor(feature_clusters)
+    )
+    
+    # Add matrix values
+    mat_df <- as.data.frame(mat_scaled) %>%
+      rownames_to_column("feature")
+    
+    # Combine and compute per-cluster means
+    cluster_annotation <- cluster_df %>%
+      left_join(mat_df, by = "feature") %>%
+      group_by(cluster) %>%
+      summarise(across(-feature, mean, .names = "mean_{.col}"))  # mean abundance per cluster
+    
+    # Convert to long format and scale within each feature
+    annot_long <- cluster_annotation %>%
+      pivot_longer(-cluster, names_to = "feature", values_to = "value") %>%
+      group_by(feature) %>%
+      mutate(scaled_value = scale(value)[,1])  # Z-score per feature
+    
+    # Test 1
+    (top_features_per_cluster <- annot_long %>%
+        group_by(cluster) %>%
+        arrange(desc(value)) %>%
+        slice_head(n = 3) %>%
+        summarise(top_features = paste(feature, collapse = ", ")))
+    # Test 2
+    (top_differential_features <- annot_long %>%
+        group_by(feature) %>%
+        mutate(
+          mean_others = (sum(value) - value) / (n() - 1),
+          delta = abs(value - mean_others),
+          direction = ifelse(value > mean_others, "HIGH", "LOW")
+        ) %>%
+        ungroup() %>%
+        group_by(cluster) %>%
+        arrange(desc(delta)) %>%
+        slice_head(n = 3) %>%
+        mutate(annotated_feature = paste0(feature, " [", direction, "]")) %>%
+        summarise(top_features = paste(annotated_feature, collapse = ", ")))
+    
+    # Add annotation to the Heatmap
+    row_ha <- rowAnnotation(
+      cluster = cluster_df$cluster,
+      annotation_name_side = "top"
+    )
+    
+    Heatmap(mat_scaled, cluster_rows = row_hclust, right_annotation = row_ha,
+            cluster_columns = F)
+    
+  }
+  source('dev/12_hclust_nested.R')
+  
+  # build the heatmap with all the side annotations
+  clusters <- as.data.frame(cbind(k2 = cluster_assignments$k2,
+                                  k4 = cluster_assignments$k4,
+                                  k8 = cluster_assignments$k8,
+                                  k16 = cluster_assignments$k16))
+  clusters$cluster <- as.integer(rownames(clusters))
+  
+  # values_agg <- full_join(clusters, values_agg, by = 'cluster') %>% filter(Type == 'BRCA')
+  
+  toplot.plot <- full_join(values_agg %>% select(labels,cluster),values %>% 
+              select(bin,,Type,labels,ampl_score,del_score)) %>% 
+    select(-labels) %>% full_join(clusters, by = 'cluster') %>%
+    filter(Type == 'BRCA') %>% separate(bin, sep = '_', into = c('chr','bin'))
+  
+  
   # Plot feature contribution by cluster
-  
-  library(scico)
-  region_clustering <- ggplot(mat_scaled_long, aes(x = factor(cluster), y = value, fill = feature)) +
-     geom_bar(stat = "identity", position = "dodge") +
-     labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
-     theme_minimal() +
-     scale_fill_viridis_d(option = "H")
-   scale_fill_scico_d(palette = "vik")
-  
-  ggplot(mat_scaled_long, aes(x = feature, y = value, fill = as.factor(cluster))) +
-    geom_bar(stat = "identity", position = "dodge") +
-    labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
-    theme_minimal() +
-    scale_fill_viridis_d(option = "H")
-  save(summary_df, file = 'summary_df.RData')
-  
-  top_features <- mat_scaled_long %>%
-    group_by(cluster) %>%
-    top_n(2, wt = value) %>%
-    arrange(cluster, desc(value)) %>%
-    summarise(label = paste(feature, collapse = ", "))
-  # View(top_features)
-  
-  aggregated <- top_features %>%
-    group_by(label) %>%
-    summarise(
-      n_clusters = n(),
-      clusters = paste(sort(unique(cluster)), collapse = ", ")
-    ) %>%
-    arrange(desc(n_clusters))
+  # library(scico)
+  # region_clustering <- ggplot(mat_scaled_long, aes(x = factor(cluster), y = value, fill = feature)) +
+  #    geom_bar(stat = "identity", position = "dodge") +
+  #    labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
+  #    theme_minimal() +
+  #    scale_fill_viridis_d(option = "H")
+  #  scale_fill_scico_d(palette = "vik")
+  # 
+  # ggplot(mat_scaled_long, aes(x = feature, y = value, fill = as.factor(cluster))) +
+  #   geom_bar(stat = "identity", position = "dodge") +
+  #   labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
+  #   theme_minimal() +
+  #   scale_fill_viridis_d(option = "H")
+  # save(summary_df, file = 'summary_df.RData')
+  # 
+  # top_features <- mat_scaled_long %>%
+  #   group_by(cluster) %>%
+  #   top_n(2, wt = value) %>%
+  #   arrange(cluster, desc(value)) %>%
+  #   summarise(label = paste(feature, collapse = ", "))
+  # # View(top_features)
+  # 
+  # aggregated <- top_features %>%
+  #   group_by(label) %>%
+  #   summarise(
+  #     n_clusters = n(),
+  #     clusters = paste(sort(unique(cluster)), collapse = ", ")
+  #   ) %>%
+  #   arrange(desc(n_clusters))
   # View(aggregated)
   
   if(F){
@@ -182,22 +269,22 @@ for(i in c('ampl','del')){
       theme_minimal()
   }
   
-  # try to plot regions
-  toplot.plot <- full_join(values_agg %>% select(labels,cluster),values %>% select(bin,,Type,labels,ampl_score,del_score)) %>% select(-labels) %>%
-    filter(Type == 'BRCA') %>% separate(bin, sep = '_', into = c('chr','bin'))
+  # LANDSCAPE PLOT 
+  # toplot.plot <- full_join(values_agg %>% select(labels,cluster),values %>% select(bin,,Type,labels,ampl_score,del_score)) %>% select(-labels) %>%
+  #   filter(Type == 'BRCA') %>% separate(bin, sep = '_', into = c('chr','bin'))
   toplot.plot <- toplot.plot %>%
     arrange(as.numeric(as.character(chr)), as.numeric(bin)) %>%
     mutate(pos = row_number())
   
-  aggregated$clusters.aggregated <- rownames(aggregated)
-  cluster_mapping <- aggregated %>%
-    separate_rows(clusters, sep = ",\\s*") %>%  # splits by comma and optional space
-    mutate(clusters = as.integer(clusters)) %>%
-    select(original_cluster = clusters, clusters.aggregated)
-  toplot.plot <- toplot.plot %>%
-    left_join(cluster_mapping, by = c("cluster" = "original_cluster")) %>%
-    mutate(cluster = clusters.aggregated) %>%
-    select(-clusters.aggregated)
+  # aggregated$clusters.aggregated <- rownames(aggregated)
+  # cluster_mapping <- aggregated %>%
+  #   separate_rows(clusters, sep = ",\\s*") %>%  # splits by comma and optional space
+  #   mutate(clusters = as.integer(clusters)) %>%
+  #   select(original_cluster = clusters, clusters.aggregated)
+  # toplot.plot <- toplot.plot %>%
+  #   left_join(cluster_mapping, by = c("cluster" = "original_cluster")) %>%
+  #   mutate(cluster = clusters.aggregated) %>%
+  #   select(-clusters.aggregated)
   toplot.plot$cluster <- as.numeric(toplot.plot$cluster)
   
   # Compute chromosome ranges for background shading
@@ -219,29 +306,41 @@ for(i in c('ampl','del')){
   
   # Add cluster lines above plot
   cluster_ticks <- toplot.plot %>%
-    mutate(cluster_ymin = max(toplot.plot$ampl_score) * 1.07 + cluster * 0.015,
-           cluster_ymax = cluster_ymin + 0.01)
+    mutate(cluster_ymin2 = max(toplot.plot$ampl_score) * 1.07 + k2 * 0.015, 
+           cluster_ymax2 = cluster_ymin2 + 0.01) %>%
+    mutate(cluster_ymin4 = max(toplot.plot$ampl_score) * 1.07 + (k4+4) * 0.015,
+           cluster_ymax4 = cluster_ymin4 + 0.01 ) %>%
+    mutate(cluster_ymin8 = max(toplot.plot$ampl_score) * 1.07 + (k8+10) * 0.015,
+           cluster_ymax8 = cluster_ymin8 + 0.01) %>%
+    mutate(cluster_ymin16 = max(toplot.plot$ampl_score) * 1.07 + (k16+20) * 0.015,
+           cluster_ymax16 = cluster_ymin16 + 0.01)
   
   (p.final <- base_plot +
     geom_segment(data = cluster_ticks,
-                 aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax, col = as.character(cluster)),
-                 size = 0.3) +
+                 aes(x = pos, xend = pos, y = cluster_ymin2, yend = cluster_ymax2, col = as.character(k2)),
+                 size = 0.3)+
+      geom_segment(data = cluster_ticks,
+                   aes(x = pos, xend = pos, y = cluster_ymin4, yend = cluster_ymax4, col = as.character(k4)),
+                   size = 0.3)+
+      geom_segment(data = cluster_ticks,
+                   aes(x = pos, xend = pos, y = cluster_ymin8, yend = cluster_ymax8, col = as.character(k8)),
+                   size = 0.3)+
+      geom_segment(data = cluster_ticks,
+                   aes(x = pos, xend = pos, y = cluster_ymin16, yend = cluster_ymax16, col = as.character(k16)),
+                   size = 0.3) +
     scale_colour_viridis_d(option = "H"))
   
   output[[i]]$p.final <- p.final
   output[[i]]$toplot <- toplot.plot
-  output[[i]]$regional_clustering <- regional_clustering
-  output[[i]]$aggregated <- aggregated
-  output[[i]]$top_features <- top_features
+  output[[i]]$aggregated <- annotations_list
 }
 
 # Visualize plots with annotation for ampl or del
 output$ampl$p.final
-output$del$p.final
+output$ampl$aggregated
 
-# Visualize aggregated features
-View(output$ampl$aggregated)
-View(output$del$aggregated)
+output$del$p.final
+output$del$aggregated
 
 
 # explore the data
@@ -264,6 +363,14 @@ output$del$toplot %>% group_by(cluster) %>%
   theme_minimal() +
   ggtitle('Deletion Model Clusters')
 
+
+# Data
+# 1.  shap values
+# 2.  feature matrix (toplot.plot)
+# 3.  clustering + annotation
+        # list(cluster_explained = aggregated,
+        #      landscape = toplot.plot)
+# 4.  hclust
 
 
 
