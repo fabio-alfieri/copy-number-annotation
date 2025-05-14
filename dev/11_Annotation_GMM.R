@@ -14,7 +14,8 @@ library(tidyverse)
 #           models.shap.df = list(`Mid-length::Amplification model`= models.shap.df$`Mid-length::Amplification model`,
 #                                 `Mid-length::Deletion model` = models.shap.df$`Mid-length::Deletion model`))
 # write_rds(df, file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
-df <- readRDS(file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
+
+df <- readRDS(file = 'Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
 output <- list()
 for(i in c('ampl','del')){
@@ -105,26 +106,53 @@ for(i in c('ampl','del')){
     summarize(mean_value = median(value, na.rm = TRUE)) %>%
     ungroup()
   
+  clusters <- unique(summary_df$cluster)
+  features <- unique(summary_df$feature)
+  
+  mat <- matrix(data = NA, nrow = 25, ncol = 13)
+  rownames(mat) <- clusters; colnames(mat) <- features
+  
+  for (j in seq_along(1:nrow(summary_df))) {
+    clus <- as.integer(summary_df[j, "cluster"])
+    feat <- as.character(summary_df[j, "feature"])
+    val <- as.numeric(summary_df[j, "mean_value"])
+    mat[as.character(clus), feat] <- val
+  }
+  
+  mat_scaled <- apply(mat, 2, scale)
+  rownames(mat_scaled) <- rownames(mat)
+  colnames(mat_scaled) <- colnames(mat)
+  
+  mat_scaled_long <- mat_scaled %>%
+    as.data.frame() %>%
+    mutate(cluster = rownames(mat_scaled)) %>%
+    pivot_longer(
+      cols = -cluster,                  # All columns except "cluster"
+      names_to = "feature",
+      values_to = "value"
+    )
+  
   # Plot feature contribution by cluster
+  
   library(scico)
-  region_clustering <- ggplot(summary_df, aes(x = factor(cluster), y = mean_value, fill = feature)) +
+  region_clustering <- ggplot(mat_scaled_long, aes(x = factor(cluster), y = value, fill = feature)) +
+     geom_bar(stat = "identity", position = "dodge") +
+     labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
+     theme_minimal() +
+     scale_fill_viridis_d(option = "H")
+   scale_fill_scico_d(palette = "vik")
+  
+  ggplot(mat_scaled_long, aes(x = feature, y = value, fill = as.factor(cluster))) +
     geom_bar(stat = "identity", position = "dodge") +
     labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
     theme_minimal() +
     scale_fill_viridis_d(option = "H")
-  # scale_fill_scico_d(palette = "vik")
+  save(summary_df, file = 'summary_df.RData')
   
-  ggplot(summary_df, aes(x = feature, y = mean_value, fill = as.factor(cluster))) +
-    geom_bar(stat = "identity", position = "dodge") +
-    labs(x = "Cluster", y = "Mean Feature Value", title = "Region Clustering by SHAP: Feature Contributions") +
-    theme_minimal() +
-    scale_fill_viridis_d(option = "H")
-  save(summary_df, file = '/Users/ieo5099/Desktop/summary_df.RData')
-  
-  top_features <- summary_df %>%
+  top_features <- mat_scaled_long %>%
     group_by(cluster) %>%
-    top_n(2, wt = mean_value) %>%
-    arrange(cluster, desc(mean_value)) %>%
+    top_n(2, wt = value) %>%
+    arrange(cluster, desc(value)) %>%
     summarise(label = paste(feature, collapse = ", "))
   # View(top_features)
   
@@ -160,7 +188,6 @@ for(i in c('ampl','del')){
   toplot.plot <- toplot.plot %>%
     arrange(as.numeric(as.character(chr)), as.numeric(bin)) %>%
     mutate(pos = row_number())
-  
   
   aggregated$clusters.aggregated <- rownames(aggregated)
   cluster_mapping <- aggregated %>%

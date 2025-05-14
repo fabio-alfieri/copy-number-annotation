@@ -6,6 +6,9 @@ library(IRanges)
 library(stringr)
 library(dplyr)
 library(BSgenome.Hsapiens.UCSC.hg19)
+library(plotly)
+library(plotly)
+library(readr)
 
 shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
 toplot.plot <- readRDS("dev/Data/landscape_plot.rds")
@@ -667,7 +670,221 @@ landscape_plot <- function(filtered_landscape_ampl,
     scale_color_manual(values = color_palette_ticks)
   
   base_plot
+  
 }
+
+
+landscape_plotly <- function(filtered_landscape_ampl,
+                             filtered_landscape_del,
+                             genome_mask, 
+                             type_mask, 
+                             model_mask,
+                             plot_ampl = TRUE,
+                             plot_del  = TRUE,
+                             # which annotation‐tiers to include
+                             plot_unknown = TRUE,
+                             plot_essential = TRUE,
+                             plot_accessible = TRUE,
+                             plot_hiexpr = TRUE,
+                             plot_og_centr_lowmu = TRUE,
+                             plot_active = TRUE,
+                             plot_tsg_centr_tel_lowmu = TRUE,
+                             plot_fgs = TRUE,
+                             plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE,
+                             plot_tsg_fgs_tel = TRUE,
+                             plot_og = TRUE,
+                             plot_rep = TRUE) {
+  
+  # ————————————————————————————————————————————————————
+  # 1. Prepare masks & titles
+  valid_input <- c("ampl", "del")
+  if (!all(model_mask %in% valid_input)) {
+    stop('Invalid model_mask; must be "ampl" and/or "del"')
+  }
+  if (length(genome_mask) == 22) {
+    genome_mask <- "WHOLE GENOME"
+  } else {
+    genome_mask <- paste(genome_mask, collapse = ", ")
+  }
+  model_mask_string <- paste(model_mask, collapse = ", ")
+  subtitle_text <- paste0("[", genome_mask, "] [", type_mask, "] [", model_mask_string, "]")
+  
+  # Add a running position index
+  filtered_landscape_ampl <- filtered_landscape_ampl %>% mutate(pos = row_number())
+  filtered_landscape_del  <- filtered_landscape_del  %>% mutate(pos = row_number())
+  
+  # Chromosome background rectangles
+  chr_bounds <- filtered_landscape_ampl %>%
+    group_by(chr) %>%
+    summarize(start = min(pos), end = max(pos), .groups="drop") %>%
+    mutate(chr_num = parse_number(chr)) %>%
+    arrange(chr_num) %>%
+    mutate(fill = rep(c("white", "#e7deed"), length.out = n())) %>%
+    select(-chr_num)
+  
+  # Color palette for segment ticks
+  color_palette_ticks <- c(
+    "Unknown"                                                        = "#666666",
+    "Essential"                                                      = "#cc0000",
+    "Accessible / Low Expression / High Mu"                          = "#0000cc",
+    "High Expression"                                                = "#007700",
+    "OG / Centromere / Low Mu"                                       = "#800080",
+    "Enhancer / Promoters / Transcribed = ACTIVE"                    = "#ff8000",
+    "TSG / Centromere / Telomere / Low Mu"                           = "#999900",
+    "FGS"                                                            = "#00aaaa",
+    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" = "#ff66cc",
+    "TSG / FGS / Telomere"                                           = "#8b4513",
+    "OG"                                                             = "#cc00cc",
+    "Repressed"                                                      = "#3399cc"
+  )
+  
+  # Helper to add an annotation‐tick trace
+  add_tick_trace <- function(p, df, name, mode, ticksize=0.5) {
+    if (nrow(df) == 0) return(p)
+    p %>% add_segments(
+      x    = df$pos,
+      xend = df$pos,
+      y    = df$cluster_ymin,
+      yend = df$cluster_ymax,
+      name = name,
+      inherit = FALSE,
+      line = list(color = color_palette_ticks[[name]], width = ticksize),
+      showlegend = TRUE
+    )
+  }
+  
+  # ————————————————————————————————————————————————————
+  # 2. Build the base Plotly object
+  p <- plot_ly()
+  
+  # 2a) add background chromosomal bands as layout shapes
+  bg_shapes <- purrr::pmap(chr_bounds, function(chr, start, end, fill) {
+    list(type = "rect",
+         x0 = start, x1 = end,
+         y0 = -1.2, y1 = 1.2,
+         fillcolor = fill, line = list(width=0),
+         layer = "below")
+  })
+  p <- layout(p, shapes = bg_shapes)
+  
+  # 2b) add SCNA frequency lines
+  if (plot_ampl) {
+    # red positive
+    p <- p %>% add_lines(
+      x   = filtered_landscape_ampl$pos,
+      y   = filtered_landscape_ampl$ampl,
+      name = "Amplifications",
+      line = list(color = "red"),
+      inherit = FALSE,
+      showlegend = TRUE
+    )
+  }
+  if (plot_del) {
+    # blue negative
+    p <- p %>% add_lines(
+      x   = filtered_landscape_del$pos,
+      y   = -filtered_landscape_del$del,
+      name = "Deletions",
+      line = list(color = "blue"),
+      inherit = FALSE,
+      showlegend = TRUE
+    )
+  }
+  
+  # 2c) add the horizontal zero line
+  p <- p %>% add_lines(
+    x = c(min(filtered_landscape_ampl$pos), max(filtered_landscape_ampl$pos)),
+    y = c(0,0),
+    line = list(dash="dash", color="grey"),
+    inherit = FALSE,
+    showlegend = FALSE
+  )
+  
+  # ————————————————————————————————————————————————————
+  # 3. Add each annotation‐tick layer, if requested
+  #    (calls your existing generate_tick_df())
+  if (plot_unknown) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[1], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[1], "ampl", ticksize=1)
+  }
+  if (plot_essential) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[2], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[2], "ampl", ticksize=1)
+  }
+  if (plot_accessible) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[3], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[3], "ampl", ticksize=1)
+  }
+  if (plot_hiexpr) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[4], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[4], "ampl", ticksize=1)
+  }
+  if (plot_og_centr_lowmu) {
+    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[5], "del")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[5], "del", ticksize=1)
+  }
+  if (plot_active) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[6], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[6], "ampl", ticksize=1)
+  }
+  if (plot_tsg_centr_tel_lowmu) {
+    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[7], "del")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[7], "del", ticksize=1)
+  }
+  if (plot_fgs) {
+    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[8], "del")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[8], "del", ticksize=1)
+  }
+  if (plot_acc_enh_prom_trx_rep_lowexp_himu) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[9], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[9], "ampl", ticksize=1)
+  }
+  if (plot_tsg_fgs_tel) {
+    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[10], "del")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[10], "del", ticksize=1)
+  }
+  if (plot_og) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[11], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[11], "ampl", ticksize=1)
+  }
+  if (plot_rep) {
+    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[12], "ampl")
+    p  <- add_tick_trace(p, df, names(color_palette_ticks)[12], "ampl", ticksize=1)
+  }
+  
+  # ————————————————————————————————————————————————————
+  # 4. Final layout tweaks
+  # Compute symmetric y‐limits and chromosome tick positions
+  upper_lim <- ceiling(max(filtered_landscape_ampl$ampl)*10)/10
+  lower_lim <- floor(min(-filtered_landscape_del$del)*10)/10
+  sym_lim   <- min(abs(upper_lim), abs(lower_lim))
+  y_breaks  <- pretty(c(-sym_lim, sym_lim))
+  chr_centers <- chr_bounds %>% transmute(center = (start+end)/2, label = chr)
+  
+  p <- p %>% layout(
+    title = list(text = paste0("Segment Annotation (based on SHAP values)<br><sub>", subtitle_text, "</sub>")),
+    xaxis = list(
+      tickmode = "array",
+      tickvals = chr_centers$center,
+      ticktext = chr_centers$label,
+      tickangle = 45,
+      title = "Genomic Position"
+    ),
+    yaxis = list(
+      tickmode = "array",
+      tickvals = y_breaks,
+      ticktext = abs(y_breaks),
+      title = "SCNA frequency (Mid-length)",
+      range = c(-1.2,1.2)
+    ),
+    showlegend = TRUE,
+    legend = list(orientation = "h", x = 0, y = -0.1)
+  )
+  
+  return(p)
+}
+
+
 
 processed_data <- parse_input_data(shap.list = shap.list, 
                                    toplot.plot = toplot.plot,
@@ -682,7 +899,7 @@ toplot.plot <- processed_data$toplot.plot;
 backbone.100kb <- processed_data$backbone.100kb
 centromere_table <- processed_data$centromere_table
 
-# this will be replaced by used input
+# this will be replaced by user input
 
 type_input <- "BRCA"; 
 model_input_ampl <- "ampl"; model_input_del <- "del"
@@ -753,4 +970,29 @@ landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl,
                plot_tsg_fgs_tel = TRUE, 
                plot_og = TRUE, 
                plot_rep = TRUE)
+
+
+landscape_plotly(filtered_landscape_ampl = filtered_landscape_ampl, 
+               filtered_landscape_del = filtered_landscape_del, 
+               genome_mask = genome_mask_ampl, 
+               type_mask = type_mask_ampl, 
+               model_mask = c("ampl","del"),
+               plot_ampl = TRUE, 
+               plot_del = TRUE,
+               plot_unknown = TRUE, 
+               plot_essential = TRUE, 
+               plot_accessible = TRUE, 
+               plot_hiexpr = TRUE, 
+               plot_og_centr_lowmu = TRUE, 
+               plot_active = TRUE, 
+               plot_tsg_centr_tel_lowmu = TRUE ,
+               plot_fgs = TRUE, 
+               plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE, 
+               plot_tsg_fgs_tel = TRUE, 
+               plot_og = TRUE, 
+               plot_rep = TRUE)
+
+
+
+
 
