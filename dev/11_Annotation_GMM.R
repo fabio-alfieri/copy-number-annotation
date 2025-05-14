@@ -343,25 +343,56 @@ output$del$p.final
 output$del$aggregated
 
 
-# explore the data
+# Explore Clusters
 ggplot(output$ampl$toplot) +
-  geom_boxplot(aes(x = as.factor(cluster), y = ampl_score))
+  geom_boxplot(aes(x = as.factor(k4), y = ampl_score))
+ggplot(output$ampl$toplot) +
+  geom_boxplot(aes(x = as.factor(k8), y = ampl_score))
+ggplot(output$ampl$toplot) +
+  geom_boxplot(aes(x = as.factor(k16), y = ampl_score))
 
-output$ampl$toplot %>% group_by(cluster) %>% 
+output$ampl$toplot %>% ggplot(aes(x = ampl_score, color = as.factor(k8), fill = as.factor(k8))) +
+  geom_density(alpha = 0.4) +
+  labs(
+    x    = "Amplification score",
+    y    = "Density",
+    color = "Cluster (k = 8)",
+    fill  = "Cluster (k = 8)"
+  ) +
+  theme_minimal() +
+  xlim(-0.2,0.75)
+
+
+output$ampl$toplot %>% group_by(k8) %>% 
   summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
   pivot_longer(cols = c(mean.ampl, mean.del)) %>%
-  ggplot(aes(x = factor(cluster), y = value, fill = factor(name))) +
+  ggplot(aes(x = factor(k8), y = value, fill = factor(name))) +
   geom_bar(stat = "identity", position = "dodge") +
   theme_minimal() +
   ggtitle('Amplification Model Clusters')
-  
-output$del$toplot %>% group_by(cluster) %>% 
+output$ampl$toplot %>% group_by(k16) %>% 
   summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
   pivot_longer(cols = c(mean.ampl, mean.del)) %>%
-  ggplot(aes(x = factor(cluster), y = value, fill = factor(name))) +
+  ggplot(aes(x = factor(k16), y = value, fill = factor(name))) +
   geom_bar(stat = "identity", position = "dodge") +
   theme_minimal() +
-  ggtitle('Deletion Model Clusters')
+  ggtitle('Amplification Model Clusters')
+
+output$del$toplot %>% group_by(k8) %>% 
+  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+  ggplot(aes(x = factor(k8), y = value, fill = factor(name))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  ggtitle('Amplification Model Clusters')
+output$del$toplot %>% group_by(k16) %>% 
+  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+  ggplot(aes(x = factor(k16), y = value, fill = factor(name))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  ggtitle('Amplification Model Clusters')
+
 
 
 # Data

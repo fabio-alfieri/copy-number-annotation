@@ -49,3 +49,5 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
+shinylive::export(appdir = "../annotation-demo/", destdir = "../docs/")
