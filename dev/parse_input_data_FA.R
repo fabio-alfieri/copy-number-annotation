@@ -2,8 +2,9 @@ rm(list=ls())
 gc(full=T)
 
 shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
-toplot.plot <- readRDS("dev/Data/landscape_plot_update240515_AMPL.rds") # updated
-clusters_explained <- readRDS("dev/Data/clusters_explained.rds") # updated
+output.annotation <- readRDS("dev/Data/output_annotation.rds") # NEW
+toplot.plot <- output.annotation$ampl$toplot # updated
+clusters_explained <- output.annotation$ampl$aggregated # updated
 centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
 load("dev/Data/All_levels_backbonetables.RData")
 
@@ -78,10 +79,25 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
   
   toplot.plot$order <- seq_along(1:nrow(toplot.plot))
   
-  toplot.plot <- merge(x = toplot.plot, 
-                       y = clusters_explained, 
-                       by = "clusters20", 
-                       all.x = TRUE)
+  # Qui bisogna capire come fare per 
+  
+  colnames(clusters_explained$k2) <- c('k2','top_k2')
+  colnames(clusters_explained$k4) <- c('k4','top_k4')
+  colnames(clusters_explained$k8) <- c('k8','top_k8')
+  colnames(clusters_explained$k16)<- c('k16','top_k16')
+  
+  toplot.plot <- left_join(
+    left_join(
+      left_join(left_join(toplot.plot, 
+                          clusters_explained$k2, by = 'k2'),
+                clusters_explained$k4, by = 'k4'), 
+      clusters_explained$k8, by = 'k8'),
+    clusters_explained$k16, by = 'k16')
+  
+  # toplot.plot <- merge(x = toplot.plot, 
+  #                      y = clusters_explained, 
+  #                      by = "clusters20", 
+  #                      all.x = TRUE)
   
   toplot.plot <- toplot.plot[order(toplot.plot$order), ]; toplot.plot$order <- NULL
   

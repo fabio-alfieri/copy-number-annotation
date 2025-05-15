@@ -335,7 +335,7 @@ for(i in c('ampl','del')){
   output[[i]]$aggregated <- annotations_list
 }
 
-write_rds(output[['ampl']]$toplot, file = 'dev/Data/landscape_plot_update240515_AMPL.rds')
+write_rds(output, file = 'dev/Data/output_annotation.rds')
 
 # Visualize plots with annotation for ampl or del
 output$ampl$p.final
