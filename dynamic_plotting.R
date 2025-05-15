@@ -649,7 +649,14 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
         filter(reason == name_annot) %>%
         mutate(
           tooltip = sprintf(
-            "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>%s</div>",
+            "<div style='background:%s; 
+                  color:%s; 
+                  padding:4px; 
+                  border-radius:0px; 
+                  border:none; 
+                  outline:none; 
+                  box-shadow:none;'>
+                  BinID: %s<br>%s</div>",
             bg, fg, binID, name_annot
           ),
           cluster_ymid = round(start, 1) + (clusters20 * 0.07),
@@ -662,7 +669,14 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
         filter(reason == name_annot) %>%
         mutate(
           tooltip = sprintf(
-            "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>%s</div>",
+            "<div style='background:%s; 
+                  color:%s; 
+                  padding:4px; 
+                  border-radius:0px; 
+                  border:none; 
+                  outline:none; 
+                  box-shadow:none;'>
+              BinID: %s<br>%s</div>",
             bg, fg, binID, name_annot
           ),
           cluster_ymid = round(start, 1) + (clusters20 * 0.07),
@@ -742,7 +756,15 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
           data = chr_data,
           aes(x = pos, y = ampl, 
               tooltip = sprintf(
-                "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>Ampl</div>",
+                "<div style='background:%s; 
+                  color:%s; 
+                  padding:4px; 
+                  border-radius:0px; 
+                  border:none; 
+                  outline:none; 
+                  box-shadow:none;'>
+                  BinID: %s<br>
+                  Ampl</div>",
                 bg_ampl, fg_ampl, binID
               ), 
               data_id = data_id),
@@ -764,7 +786,15 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
           data = chr_data,
           aes(x = pos, y = -del, 
               tooltip = sprintf(
-            "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>Del</div>",
+            "<div style='background:%s; 
+                  color:%s; 
+                  padding:4px; 
+                  border-radius:0px; 
+                  border:none; 
+                  outline:none; 
+                  box-shadow:none;'>
+                  BinID: %s<br>
+                  Del</div>",
             bg_del, fg_del, binID
           ), data_id = data_id),
           size = 3, color = "transparent"
@@ -773,7 +803,7 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   }
   
   base_plot <- base_plot +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey", size = 0.2) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 0.2) +
     labs(title = title, subtitle = subtitle, x = "Genomic Position", y = "SCNA frequency (Mid-length)") +
     theme_classic() + theme(legend.position = "none")
   
@@ -846,6 +876,7 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   
   girafe(
     ggobj    = base_plot,
+    fonts = list(sans = "Roboto"),
     width_svg  = 10,
     height_svg = 6,
     options  = list(
@@ -926,9 +957,8 @@ barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del,
              model_mask = model_mask_del)
 
 if (T) {
-  
 
-landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl, 
+p <- landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_ampl, 
                filtered_landscape_del = filtered_landscape_del, 
                genome_mask = genome_mask_ampl, 
                type_mask = type_mask_ampl, 
@@ -948,25 +978,19 @@ landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl,
                plot_og = TRUE, 
                plot_rep = TRUE)
 
-landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_ampl, 
-               filtered_landscape_del = filtered_landscape_del, 
-               genome_mask = genome_mask_ampl, 
-               type_mask = type_mask_ampl, 
-               model_mask = c("ampl","del"),
-               plot_ampl = TRUE, 
-               plot_del = TRUE,
-               plot_unknown = TRUE, 
-               plot_essential = TRUE, 
-               plot_accessible = TRUE, 
-               plot_hiexpr = TRUE, 
-               plot_og_centr_lowmu = TRUE, 
-               plot_active = TRUE, 
-               plot_tsg_centr_tel_lowmu = TRUE ,
-               plot_fgs = TRUE, 
-               plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE, 
-               plot_tsg_fgs_tel = TRUE, 
-               plot_og = TRUE, 
-               plot_rep = TRUE)
+css_style <- tags$style(HTML('
+  [class^="tooltip_svg_"] {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: inherit !important;
+    padding: 5px;
+    border-radius: 0px;
+  }
+'))
+
+p2 <- htmlwidgets::prependContent(p, css_style)
+print(p2)
 
 }
 
