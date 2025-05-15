@@ -16,6 +16,7 @@ library(tidyverse)
 # write_rds(df, file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
 df <- readRDS(file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
+tt <- 'LUSC'
 
 output <- list()
 for(i in c('ampl','del')){
@@ -217,7 +218,7 @@ for(i in c('ampl','del')){
   toplot.plot <- full_join(values_agg %>% select(labels,cluster),values %>% 
               select(bin,,Type,labels,ampl_score,del_score)) %>% 
     select(-labels) %>% full_join(clusters, by = 'cluster') %>%
-    filter(Type == 'BRCA') %>% separate(bin, sep = '_', into = c('chr','bin'))
+    filter(Type == tt) %>% separate(bin, sep = '_', into = c('chr','bin'))
   
   
   # Plot feature contribution by cluster
