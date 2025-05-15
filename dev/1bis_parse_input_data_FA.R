@@ -1,4 +1,15 @@
-parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_backbone_namesfixed, centromere_table){
+parse_input_data <- function(shap.list, 
+                             toplot.plot, 
+                             clusters_explained, 
+                             chr_backbone_namesfixed, 
+                             centromere_table, 
+                             clustering_depth){
+  
+  
+  clustering_depth <- parse_clustering_depth(clustering_depth)
+  
+  selected_depth <- clustering_depth$selected
+  not_selected_depth <- clustering_depth$not_selected
   
   # SHAP DF
   shap_clean_list <- list()
@@ -17,6 +28,7 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
     df$accessible <- df$Length_Counts.E21
     return(df)
   }
+  
   # Each "distance" feature is multiplied by -1
   change_distance <- function(df) {
     distances <- c("dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
@@ -65,55 +77,23 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
   toplot.plot$binID <- paste0(toplot.plot$chr, "_", toplot.plot$bin)
   toplot.plot$chr <- paste0("chr", toplot.plot$chr); toplot.plot$bin <- NULL
   colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'ampl|del')] <- c("ampl", "del")
-  # toplot.plot$clusters10 <- NULL; toplot.plot$clusters15 <- NULL
-  
+
   toplot.plot$order <- seq_along(1:nrow(toplot.plot))
   
-  # Qui bisogna capire come fare per 
+  selected_depth_code <- paste0("k",2**selected_depth)
+  not_selected_depth_code <- paste0("k",2**not_selected_depth)
   
-  colnames(clusters_explained$k2) <- c('k2','top_k2')
-  colnames(clusters_explained$k4) <- c('k4','top_k4')
-  colnames(clusters_explained$k8) <- c('k8','top_k8')
-  colnames(clusters_explained$k16)<- c('k16','top_k16')
+  top_selected_depth_code <- paste0("top_", selected_depth_code)
+
+  colnames(clusters_explained[[selected_depth_code]]) <- c(selected_depth_code, top_selected_depth_code) 
   
-  toplot.plot <- left_join(
-    left_join(
-      left_join(left_join(toplot.plot, 
-                          clusters_explained$k2, by = 'k2'),
-                clusters_explained$k4, by = 'k4'), 
-      clusters_explained$k8, by = 'k8'),
-    clusters_explained$k16, by = 'k16')
+  toplot.plot <- left_join(toplot.plot, clusters_explained[[selected_depth_code]], by = selected_depth_code)
+  toplot.plot[,not_selected_depth_code] <- NULL
   
   colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'Type')] <- 'type'
   
-  # toplot.plot <- merge(x = toplot.plot, 
-  #                      y = clusters_explained, 
-  #                      by = "clusters20", 
-  #                      all.x = TRUE)
-  
   toplot.plot <- toplot.plot[order(toplot.plot$order), ]; toplot.plot$order <- NULL
-  
-  # toplot.plot[which(is.na(toplot.plot$reason)),]$reason <- "Unknown"
-  # toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20 <- max(toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20)
-  
-  # to_flip <- c(1,7,9,10)
-  # clusters_to_flip <- unique(toplot.plot$clusters20)[to_flip]
-  # toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <-
-  #   -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
-  # 
-  # positive_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == 1, ]$clusters20))
-  # negative_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == -1, ]$clusters20))
-  # 
-  # lapply(X = seq_along(positive_clusters), FUN = function(idx){
-  #   curr_cluster <- positive_clusters[idx]
-  #   toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- idx
-  # })
-  # 
-  # lapply(X = seq_along(negative_clusters), FUN = function(idx){
-  #   curr_cluster <- negative_clusters[idx]
-  #   toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- -idx
-  # })
-  
+
   # BACKBONE DF
   backbone.100kb <- chr_backbone_namesfixed$`0.1Mbp`; backbone.100kb <- dplyr::bind_rows(backbone.100kb)
   backbone.100kb$binID <- paste0(backbone.100kb$chr, "_", backbone.100kb$bin)
