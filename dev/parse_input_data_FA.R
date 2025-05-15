@@ -101,12 +101,12 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
   
   toplot.plot <- toplot.plot[order(toplot.plot$order), ]; toplot.plot$order <- NULL
   
-  toplot.plot[which(is.na(toplot.plot$reason)),]$reason <- "Unknown"
-  toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20 <- max(toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20)
+  # toplot.plot[which(is.na(toplot.plot$reason)),]$reason <- "Unknown"
+  # toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20 <- max(toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20)
   
   to_flip <- c(1,7,9,10)
   clusters_to_flip <- unique(toplot.plot$clusters20)[to_flip]
-  toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <- 
+  toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <-
     -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
   
   positive_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == 1, ]$clusters20))
