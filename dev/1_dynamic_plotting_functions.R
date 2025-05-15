@@ -442,6 +442,8 @@ landscape_plot <- function(filtered_landscape_ampl,
     theme_classic() +
     theme(legend.position = 'none')
   
+  
+  # FUNZIONA FINO A QUI
   color_palette_ticks <- c(
     "Unknown" =                                                                                                       "#666666",
     "Essential" =                                                                                                     "#cc0000",

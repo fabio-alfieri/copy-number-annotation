@@ -75,7 +75,6 @@ barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del,
 
 if (T) {
   
-  
   landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl, 
                  filtered_landscape_del = filtered_landscape_del, 
                  genome_mask = genome_mask_ampl, 
