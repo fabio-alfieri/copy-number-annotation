@@ -1,21 +1,3 @@
-# setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
-setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
-
-library(tidyverse)
-library(ggplot2)
-library(IRanges) 
-library(stringr)
-library(dplyr)
-library(BSgenome.Hsapiens.UCSC.hg19)
-library(ggiraph)
-library(readr)
-
-shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
-toplot.plot <- readRDS("dev/Data/landscape_plot.rds")
-clusters_explained <- readRDS("dev/Data/clusters_explained.rds")
-centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
-load("dev/Data/All_levels_backbonetables.RData")
-
 parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_backbone_namesfixed, centromere_table){
   
   shap_clean_list <- list()

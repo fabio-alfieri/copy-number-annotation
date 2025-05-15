@@ -1,13 +1,3 @@
-rm(list=ls())
-gc(full=T)
-
-shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
-output.annotation <- readRDS("dev/Data/output_annotation.rds") # NEW
-toplot.plot <- output.annotation$ampl$toplot # updated
-clusters_explained <- output.annotation$ampl$aggregated # updated
-centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
-load("dev/Data/All_levels_backbonetables.RData")
-
 parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_backbone_namesfixed, centromere_table){
   
   # SHAP DF
@@ -94,6 +84,8 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
       clusters_explained$k8, by = 'k8'),
     clusters_explained$k16, by = 'k16')
   
+  colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'Type')] <- 'type'
+  
   # toplot.plot <- merge(x = toplot.plot, 
   #                      y = clusters_explained, 
   #                      by = "clusters20", 
@@ -104,23 +96,23 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
   # toplot.plot[which(is.na(toplot.plot$reason)),]$reason <- "Unknown"
   # toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20 <- max(toplot.plot[which(toplot.plot$reason == "Unknown"),]$clusters20)
   
-  to_flip <- c(1,7,9,10)
-  clusters_to_flip <- unique(toplot.plot$clusters20)[to_flip]
-  toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <-
-    -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
-  
-  positive_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == 1, ]$clusters20))
-  negative_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == -1, ]$clusters20))
-  
-  lapply(X = seq_along(positive_clusters), FUN = function(idx){
-    curr_cluster <- positive_clusters[idx]
-    toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- idx
-  })
-  
-  lapply(X = seq_along(negative_clusters), FUN = function(idx){
-    curr_cluster <- negative_clusters[idx]
-    toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- -idx
-  })
+  # to_flip <- c(1,7,9,10)
+  # clusters_to_flip <- unique(toplot.plot$clusters20)[to_flip]
+  # toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20 <-
+  #   -toplot.plot[toplot.plot$clusters20 %in% clusters_to_flip, ]$clusters20
+  # 
+  # positive_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == 1, ]$clusters20))
+  # negative_clusters <- sort(unique(toplot.plot[sign(toplot.plot$clusters20) == -1, ]$clusters20))
+  # 
+  # lapply(X = seq_along(positive_clusters), FUN = function(idx){
+  #   curr_cluster <- positive_clusters[idx]
+  #   toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- idx
+  # })
+  # 
+  # lapply(X = seq_along(negative_clusters), FUN = function(idx){
+  #   curr_cluster <- negative_clusters[idx]
+  #   toplot.plot[toplot.plot$clusters20 == curr_cluster, ]$clusters20 <<- -idx
+  # })
   
   # BACKBONE DF
   backbone.100kb <- chr_backbone_namesfixed$`0.1Mbp`; backbone.100kb <- dplyr::bind_rows(backbone.100kb)

@@ -1,8 +1,12 @@
 rm(list=ls())
 gc(full=T)
-source('dev/dynamic_plotting_functions.R')
 
-# 
+# setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
+setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
+
+source('dev/0_LoadData.R')
+source('dev/1_dynamic_plotting_functions.R')
+source('dev/1bis_parse_input_data_FA.R') # overwrite parse_input_data()
 
 processed_data <- parse_input_data(shap.list = shap.list, 
                                    toplot.plot = toplot.plot,
