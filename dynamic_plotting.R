@@ -6,8 +6,7 @@ library(IRanges)
 library(stringr)
 library(dplyr)
 library(BSgenome.Hsapiens.UCSC.hg19)
-library(plotly)
-library(plotly)
+library(ggiraph)
 library(readr)
 
 shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
@@ -349,6 +348,22 @@ generate_tick_df <- function(input_df, name_annot, mode){
   
   return(output_df)
 }
+add_segment_layer <- function(base_plot, input_df, name_annot, ticksize, mode){
+
+cluster_ticks <- generate_tick_df(input_df = input_df, 
+                                      name_annot = name_annot, 
+                                      mode = mode)
+
+base_plot <- base_plot +
+  geom_segment(data = cluster_ticks,
+               aes(x = pos, xend = pos, 
+                   y = cluster_ymin, 
+                   yend = cluster_ymax,
+                   color = reason),
+               linewidth = ticksize)
+return(base_plot)
+}
+
 landscape_plot <- function(filtered_landscape_ampl, 
                            filtered_landscape_del, 
                            genome_mask, 
@@ -375,11 +390,9 @@ landscape_plot <- function(filtered_landscape_ampl,
   if (length(genome_mask) == 22) {
     genome_mask <- "WHOLE GENOME"
   }
-  
   if (length(genome_mask) > 1) {
     genome_mask <- paste(genome_mask, collapse = ", ")
   } 
-  
   if (is_valid) {
     
     if (length(model_mask) > 1) {
@@ -418,29 +431,27 @@ landscape_plot <- function(filtered_landscape_ampl,
     scale_fill_manual(values = color_palette_background)
   
   if (plot_ampl) {
-    
-    chr_to_plot <- unique(filtered_landscape_ampl$chr) 
-    
+    chr_to_plot <- unique(filtered_landscape_ampl$chr)
     for (chr in chr_to_plot) {
-      base_plot <- base_plot + geom_line(data = filtered_landscape_ampl[filtered_landscape_ampl$chr == chr,], 
-                                         aes(x = pos, y = ampl), 
-                                         color = "red")
+      chr_data <- filtered_landscape_ampl[filtered_landscape_ampl$chr == chr, ]
+      base_plot <- base_plot +
+        geom_line(data = chr_data, aes(x = pos, y = ampl), color = "red")
     }
   }
-  
   if (plot_del) {
-    
-    chr_to_plot <- unique(filtered_landscape_ampl$chr) 
-    
+    chr_to_plot <- unique(filtered_landscape_del$chr)
     for (chr in chr_to_plot) {
-      base_plot <- base_plot + geom_line(data = filtered_landscape_del[filtered_landscape_del$chr == chr,], 
-                                         aes(x = pos, y = -del), 
-                                         color = "blue")
+      chr_data <- filtered_landscape_del[filtered_landscape_del$chr == chr, ]
+      base_plot <- base_plot +
+        geom_line(data = chr_data, aes(x = pos, y = -del), color = "blue")
     }
   }
   
   base_plot <- base_plot +
-    geom_hline(yintercept = 0, colour = 'grey', linetype = 'dashed', linewidth = 0.2) +
+    geom_hline(yintercept = 0, 
+               colour = 'grey', 
+               linetype = 'dashed', 
+               linewidth = 0.2) +
     labs(title = title, 
          subtitle = subtitle, 
          x = "Genomic Position",
@@ -449,198 +460,132 @@ landscape_plot <- function(filtered_landscape_ampl,
     theme(legend.position = 'none')
   
   color_palette_ticks <- c(
-    "Unknown" = "#666666",
-    "Essential" = "#cc0000",
-    "Accessible / Low Expression / High Mu" = "#0000cc",
-    "High Expression" = "#007700",
-    "OG / Centromere / Low Mu" = "#800080",
-    "Enhancer / Promoters / Transcribed = ACTIVE" = "#ff8000",
-    "TSG / Centromere / Telomere / Low Mu" = "#999900",
-    "FGS" = "#00aaaa",
-    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" = "#ff66cc",
-    "TSG / FGS / Telomere" = "#8b4513",
-    "OG" = "#cc00cc",
-    "Repressed" = "#3399cc"
+    "Unknown" =                                                                                                       "#666666",
+    "Essential" =                                                                                                     "#cc0000",
+    "Accessible / Low Expression / High Mu" =                                                                         "#0000cc",
+    "High Expression" =                                                                                               "#007700",
+    "OG / Centromere / Low Mu" =                                                                                      "#800080",
+    "Enhancer / Promoters / Transcribed = ACTIVE" =                                                                   "#ff8000",
+    "TSG / Centromere / Telomere / Low Mu" =                                                                          "#999900",
+    "FGS" =                                                                                                           "#00aaaa",
+    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" =                   "#ff66cc",
+    "TSG / FGS / Telomere" =                                                                                          "#8b4513",
+    "OG" =                                                                                                            "#cc00cc",
+    "Repressed" =                                                                                                     "#3399cc"
   )
-  
   
   ticksize <- 0.1
   
   if (plot_unknown) {
     
-    cluster_ticks_unknown <- generate_tick_df(filtered_landscape_ampl, 
-                                              name_annot = names(color_palette_ticks)[1], 
-                                              mode = "ampl")
-    
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_unknown,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                      input_df = filtered_landscape_ampl, 
+                      name_annot = names(color_palette_ticks)[1], 
+                      ticksize = ticksize,
+                      mode = "ampl")
+
   }
   if (plot_essential) {
     
-    cluster_ticks_essential <- generate_tick_df(filtered_landscape_ampl, 
-                                                name_annot = names(color_palette_ticks)[2], 
-                                                mode = "ampl")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_ampl, 
+                                   name_annot = names(color_palette_ticks)[2], 
+                                   ticksize = ticksize,
+                                   mode = "ampl")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_essential,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_accessible) {
     
-    cluster_ticks_accessible <- generate_tick_df(filtered_landscape_ampl, 
-                                                 name_annot = names(color_palette_ticks)[3], 
-                                                 mode = "ampl")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_ampl, 
+                                   name_annot = names(color_palette_ticks)[3], 
+                                   ticksize = ticksize,
+                                   mode = "ampl")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_accessible,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_hiexpr) {
     
-    cluster_ticks_hiexpr <- generate_tick_df(filtered_landscape_ampl, 
-                                             name_annot = names(color_palette_ticks)[4], 
-                                             mode = "ampl")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_ampl, 
+                                   name_annot = names(color_palette_ticks)[4], 
+                                   ticksize = ticksize,
+                                   mode = "ampl")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_hiexpr,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_og_centr_lowmu) {
     
-    cluster_ticks_og_centr_lowmu <- generate_tick_df(filtered_landscape_del, 
-                                                     name_annot = names(color_palette_ticks)[5], 
-                                                     mode = "del")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_del, 
+                                   name_annot = names(color_palette_ticks)[5], 
+                                   ticksize = ticksize,
+                                   mode = "del")
     
-
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_og_centr_lowmu,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_active) {
     
-    cluster_ticks_active <- generate_tick_df(filtered_landscape_ampl, 
-                                             name_annot = names(color_palette_ticks)[6], 
-                                             mode = "ampl")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_ampl, 
+                                   name_annot = names(color_palette_ticks)[6], 
+                                   ticksize = ticksize,
+                                   mode = "ampl")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_active,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_tsg_centr_tel_lowmu) {
     
-    cluster_ticks_tsg_centr_tel_lowmu <- generate_tick_df(filtered_landscape_del, 
-                                                          name_annot = names(color_palette_ticks)[7], 
-                                                          mode = "del")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_del, 
+                                   name_annot = names(color_palette_ticks)[7], 
+                                   ticksize = ticksize,
+                                   mode = "del")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_tsg_centr_tel_lowmu,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_fgs) {
     
-    cluster_ticks_fgs <- generate_tick_df(filtered_landscape_del, 
-                                          name_annot = names(color_palette_ticks)[8], 
-                                          mode = "del")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_del, 
+                                   name_annot = names(color_palette_ticks)[8], 
+                                   ticksize = ticksize,
+                                   mode = "del")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_fgs,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_acc_enh_prom_trx_rep_lowexp_himu) {
     
-    cluster_ticks_acc_enh_prom_trx_rep_lowexp_himu <- generate_tick_df(filtered_landscape_ampl, 
-                                                                       name_annot = names(color_palette_ticks)[9], 
-                                                                       mode = "ampl")
-    
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_acc_enh_prom_trx_rep_lowexp_himu,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_ampl, 
+                                   name_annot = names(color_palette_ticks)[9], 
+                                   ticksize = ticksize,
+                                   mode = "ampl")
   }
   if (plot_tsg_fgs_tel) {
     
-    cluster_ticks_tsg_fgs_tel <- generate_tick_df(filtered_landscape_del, 
-                                                  name_annot = names(color_palette_ticks)[10], 
-                                                  mode = "del")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_del, 
+                                   name_annot = names(color_palette_ticks)[10], 
+                                   ticksize = ticksize,
+                                   mode = "del")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_tsg_fgs_tel,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_og) {
     
-    cluster_ticks_og <- generate_tick_df(filtered_landscape_ampl, 
-                                         name_annot = names(color_palette_ticks)[11], 
-                                         mode = "ampl")
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_ampl, 
+                                   name_annot = names(color_palette_ticks)[11], 
+                                   ticksize = ticksize,
+                                   mode = "ampl")
     
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_og,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
   }
   if (plot_rep) {
     
-    cluster_ticks_rep <- generate_tick_df(filtered_landscape_ampl, 
-                                          name_annot = names(color_palette_ticks)[12], 
-                                          mode = "ampl")
-    
-    base_plot <- base_plot +
-      geom_segment(data = cluster_ticks_rep,
-                   aes(x = pos, xend = pos, 
-                       y = cluster_ymin, 
-                       yend = cluster_ymax,
-                       color = reason),
-                   linewidth = ticksize)
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape_ampl, 
+                                   name_annot = names(color_palette_ticks)[12], 
+                                   ticksize = ticksize,
+                                   mode = "ampl")
   }
   
   upper_limit <- ceiling(max(filtered_landscape_ampl$ampl) * 10) / 10
   lower_limit <- floor(min(-filtered_landscape_del$del) * 10) / 10
-  
   sym_limit <- min(abs(upper_limit), abs(lower_limit))
-  
   y_breaks <- pretty(c(-sym_limit, sym_limit))
   
   base_plot <- base_plot +
@@ -671,219 +616,248 @@ landscape_plot <- function(filtered_landscape_ampl,
   
   base_plot
   
+  
 }
 
+landscape_plot_interactive <- function(filtered_landscape_ampl,
+                                       filtered_landscape_del,
+                                       genome_mask,
+                                       type_mask,
+                                       model_mask,
+                                       plot_ampl = TRUE,
+                                       plot_del = TRUE,
+                                       plot_unknown = TRUE,
+                                       plot_essential = TRUE,
+                                       plot_accessible = TRUE,
+                                       plot_hiexpr = TRUE,
+                                       plot_og_centr_lowmu = TRUE,
+                                       plot_active = TRUE,
+                                       plot_tsg_centr_tel_lowmu = TRUE,
+                                       plot_fgs = TRUE,
+                                       plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE,
+                                       plot_tsg_fgs_tel = TRUE,
+                                       plot_og = TRUE,
+                                       plot_rep = TRUE) {
 
-landscape_plotly <- function(filtered_landscape_ampl,
-                             filtered_landscape_del,
-                             genome_mask, 
-                             type_mask, 
-                             model_mask,
-                             plot_ampl = TRUE,
-                             plot_del  = TRUE,
-                             # which annotation‐tiers to include
-                             plot_unknown = TRUE,
-                             plot_essential = TRUE,
-                             plot_accessible = TRUE,
-                             plot_hiexpr = TRUE,
-                             plot_og_centr_lowmu = TRUE,
-                             plot_active = TRUE,
-                             plot_tsg_centr_tel_lowmu = TRUE,
-                             plot_fgs = TRUE,
-                             plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE,
-                             plot_tsg_fgs_tel = TRUE,
-                             plot_og = TRUE,
-                             plot_rep = TRUE) {
+  generate_tick_df <- function(input_df, name_annot, mode) {
+    height <- 0.015
+    bg <- color_palette_ticks[name_annot]
+    fg <- get_contrast(bg)
+    df <- if (mode == "ampl") {
+      start <- max(input_df$ampl)
+      input_df %>%
+        filter(reason == name_annot) %>%
+        mutate(
+          tooltip = sprintf(
+            "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>%s</div>",
+            bg, fg, binID, name_annot
+          ),
+          cluster_ymid = round(start, 1) + (clusters20 * 0.07),
+          cluster_ymin = cluster_ymid - height,
+          cluster_ymax = cluster_ymid + height
+        )
+    } else {
+      start <- min(-input_df$del) - 0.05
+      input_df %>%
+        filter(reason == name_annot) %>%
+        mutate(
+          tooltip = sprintf(
+            "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>%s</div>",
+            bg, fg, binID, name_annot
+          ),
+          cluster_ymid = round(start, 1) + (clusters20 * 0.07),
+          cluster_ymin = cluster_ymid - height,
+          cluster_ymax = cluster_ymid + height
+        )
+    }
+    df
+  }
+  add_segment_layer <- function(base_plot, input_df, name_annot, ticksize, mode) {
+    cluster_ticks <- generate_tick_df(input_df, name_annot, mode)
+    
+    base_plot +
+      geom_segment_interactive(
+        data = cluster_ticks,
+        aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax,
+            tooltip = tooltip, data_id = paste0(reason, "_", binID)),
+        color     = NA,
+        linewidth = ticksize * 10
+      ) +
+      geom_segment(
+        data = cluster_ticks,
+        aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax,
+            color = reason),
+        linewidth = ticksize
+      )
+  } 
+  get_contrast <- function(hexcol) {
+    rgb <- col2rgb(hexcol) / 255
+    lum <- 0.299 * rgb[1, ] + 0.587 * rgb[2, ] + 0.114 * rgb[3, ]
+    ifelse(lum > 0.5, "#000000", "#FFFFFF")
+  }
   
-  # ————————————————————————————————————————————————————
-  # 1. Prepare masks & titles
   valid_input <- c("ampl", "del")
   if (!all(model_mask %in% valid_input)) {
-    stop('Invalid model_mask; must be "ampl" and/or "del"')
+    stop("Invalid model selected. Use 'ampl' and/or 'del'.")
   }
-  if (length(genome_mask) == 22) {
-    genome_mask <- "WHOLE GENOME"
-  } else {
-    genome_mask <- paste(genome_mask, collapse = ", ")
-  }
-  model_mask_string <- paste(model_mask, collapse = ", ")
-  subtitle_text <- paste0("[", genome_mask, "] [", type_mask, "] [", model_mask_string, "]")
+  if (length(genome_mask) == 22) genome_mask <- "WHOLE GENOME"
+  if (length(genome_mask) > 1) genome_mask <- paste(genome_mask, collapse = ", ")
+  if (length(model_mask) > 1) model_mask <- paste(model_mask, collapse = ", ")
   
-  # Add a running position index
+  title    <- "Segment Annotation (based on SHAP values)"
+  subtitle <- paste0("[", genome_mask, "] [", type_mask, "] [", model_mask, "]")
+  
   filtered_landscape_ampl <- filtered_landscape_ampl %>% mutate(pos = row_number())
   filtered_landscape_del  <- filtered_landscape_del  %>% mutate(pos = row_number())
   
-  # Chromosome background rectangles
   chr_bounds <- filtered_landscape_ampl %>%
     group_by(chr) %>%
-    summarize(start = min(pos), end = max(pos), .groups="drop") %>%
-    mutate(chr_num = parse_number(chr)) %>%
+    summarize(start = min(pos), end = max(pos), .groups = "drop") %>%
+    mutate(chr_num = readr::parse_number(chr)) %>%
     arrange(chr_num) %>%
     mutate(fill = rep(c("white", "#e7deed"), length.out = n())) %>%
     select(-chr_num)
   
-  # Color palette for segment ticks
-  color_palette_ticks <- c(
-    "Unknown"                                                        = "#666666",
-    "Essential"                                                      = "#cc0000",
-    "Accessible / Low Expression / High Mu"                          = "#0000cc",
-    "High Expression"                                                = "#007700",
-    "OG / Centromere / Low Mu"                                       = "#800080",
-    "Enhancer / Promoters / Transcribed = ACTIVE"                    = "#ff8000",
-    "TSG / Centromere / Telomere / Low Mu"                           = "#999900",
-    "FGS"                                                            = "#00aaaa",
-    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" = "#ff66cc",
-    "TSG / FGS / Telomere"                                           = "#8b4513",
-    "OG"                                                             = "#cc00cc",
-    "Repressed"                                                      = "#3399cc"
-  )
+  base_plot <- ggplot() +
+    geom_rect(
+      data = chr_bounds,
+      aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = fill),
+      alpha = 0.3
+    ) +
+    scale_fill_identity()
   
-  # Helper to add an annotation‐tick trace
-  add_tick_trace <- function(p, df, name, mode, ticksize=0.5) {
-    if (nrow(df) == 0) return(p)
-    p %>% add_segments(
-      x    = df$pos,
-      xend = df$pos,
-      y    = df$cluster_ymin,
-      yend = df$cluster_ymax,
-      name = name,
-      inherit = FALSE,
-      line = list(color = color_palette_ticks[[name]], width = ticksize),
-      showlegend = TRUE
-    )
-  }
+  chr_to_plot <- unique(filtered_landscape_ampl$chr)
   
-  # ————————————————————————————————————————————————————
-  # 2. Build the base Plotly object
-  p <- plot_ly()
-  
-  # 2a) add background chromosomal bands as layout shapes
-  bg_shapes <- purrr::pmap(chr_bounds, function(chr, start, end, fill) {
-    list(type = "rect",
-         x0 = start, x1 = end,
-         y0 = -1.2, y1 = 1.2,
-         fillcolor = fill, line = list(width=0),
-         layer = "below")
-  })
-  p <- layout(p, shapes = bg_shapes)
-  
-  # 2b) add SCNA frequency lines
   if (plot_ampl) {
-    # red positive
-    p <- p %>% add_lines(
-      x   = filtered_landscape_ampl$pos,
-      y   = filtered_landscape_ampl$ampl,
-      name = "Amplifications",
-      line = list(color = "red"),
-      inherit = FALSE,
-      showlegend = TRUE
-    )
+    bg_ampl <- "#FF0000"; fg_ampl <- get_contrast(bg_ampl)
+    for (chr in chr_to_plot) {
+      chr_data <- filtered_landscape_ampl[filtered_landscape_ampl$chr == chr, ]
+      chr_data <- chr_data %>% mutate(
+        tooltip = paste0("BinID: ", binID, "\nAmpl: ", round(ampl,3)),
+        data_id = binID
+      )
+      base_plot <- base_plot +
+        geom_line(data = chr_data, aes(x = pos, y = ampl), color = "red") +
+        geom_point_interactive(
+          data = chr_data,
+          aes(x = pos, y = ampl, 
+              tooltip = sprintf(
+                "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>Ampl</div>",
+                bg_ampl, fg_ampl, binID
+              ), 
+              data_id = data_id),
+          size = 3, color = "transparent"
+        )
+    }
   }
   if (plot_del) {
-    # blue negative
-    p <- p %>% add_lines(
-      x   = filtered_landscape_del$pos,
-      y   = -filtered_landscape_del$del,
-      name = "Deletions",
-      line = list(color = "blue"),
-      inherit = FALSE,
-      showlegend = TRUE
-    )
+    bg_del <- "#0000FF"; fg_del <- get_contrast(bg_del)
+    for (chr in chr_to_plot) {
+      chr_data <- filtered_landscape_del[filtered_landscape_del$chr == chr, ]
+      chr_data <- chr_data %>% mutate(
+        tooltip = paste0("BinID: ", binID, "\nDel: ", round(del,3)),
+        data_id = binID
+      )
+      base_plot <- base_plot +
+        geom_line(data = chr_data, aes(x = pos, y = -del), color = "blue") +
+        geom_point_interactive(
+          data = chr_data,
+          aes(x = pos, y = -del, 
+              tooltip = sprintf(
+            "<div style='background:%s;color:%s;padding:4px;border-radius:4px;'>BinID: %s<br>Del</div>",
+            bg_del, fg_del, binID
+          ), data_id = data_id),
+          size = 3, color = "transparent"
+        )
+    }
   }
   
-  # 2c) add the horizontal zero line
-  p <- p %>% add_lines(
-    x = c(min(filtered_landscape_ampl$pos), max(filtered_landscape_ampl$pos)),
-    y = c(0,0),
-    line = list(dash="dash", color="grey"),
-    inherit = FALSE,
-    showlegend = FALSE
+  base_plot <- base_plot +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey", size = 0.2) +
+    labs(title = title, subtitle = subtitle, x = "Genomic Position", y = "SCNA frequency (Mid-length)") +
+    theme_classic() + theme(legend.position = "none")
+  
+  color_palette_ticks <- c(
+    "Unknown" =                                                                                                       "#666666",
+    "Essential" =                                                                                                     "#cc0000",
+    "Accessible / Low Expression / High Mu" =                                                                         "#0000cc",
+    "High Expression" =                                                                                               "#007700",
+    "OG / Centromere / Low Mu" =                                                                                      "#800080",
+    "Enhancer / Promoters / Transcribed = ACTIVE" =                                                                   "#ff8000",
+    "TSG / Centromere / Telomere / Low Mu" =                                                                          "#999900",
+    "FGS" =                                                                                                           "#00aaaa",
+    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" =                   "#ff66cc",
+    "TSG / FGS / Telomere" =                                                                                          "#8b4513",
+    "OG" =                                                                                                            "#cc00cc",
+    "Repressed" =                                                                                                     "#3399cc"
   )
-  
-  # ————————————————————————————————————————————————————
-  # 3. Add each annotation‐tick layer, if requested
-  #    (calls your existing generate_tick_df())
-  if (plot_unknown) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[1], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[1], "ampl", ticksize=1)
-  }
-  if (plot_essential) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[2], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[2], "ampl", ticksize=1)
-  }
-  if (plot_accessible) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[3], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[3], "ampl", ticksize=1)
-  }
-  if (plot_hiexpr) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[4], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[4], "ampl", ticksize=1)
-  }
-  if (plot_og_centr_lowmu) {
-    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[5], "del")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[5], "del", ticksize=1)
-  }
-  if (plot_active) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[6], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[6], "ampl", ticksize=1)
-  }
-  if (plot_tsg_centr_tel_lowmu) {
-    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[7], "del")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[7], "del", ticksize=1)
-  }
-  if (plot_fgs) {
-    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[8], "del")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[8], "del", ticksize=1)
-  }
-  if (plot_acc_enh_prom_trx_rep_lowexp_himu) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[9], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[9], "ampl", ticksize=1)
-  }
-  if (plot_tsg_fgs_tel) {
-    df <- generate_tick_df(filtered_landscape_del, names(color_palette_ticks)[10], "del")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[10], "del", ticksize=1)
-  }
-  if (plot_og) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[11], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[11], "ampl", ticksize=1)
-  }
-  if (plot_rep) {
-    df <- generate_tick_df(filtered_landscape_ampl, names(color_palette_ticks)[12], "ampl")
-    p  <- add_tick_trace(p, df, names(color_palette_ticks)[12], "ampl", ticksize=1)
-  }
-  
-  # ————————————————————————————————————————————————————
-  # 4. Final layout tweaks
-  # Compute symmetric y‐limits and chromosome tick positions
-  upper_lim <- ceiling(max(filtered_landscape_ampl$ampl)*10)/10
-  lower_lim <- floor(min(-filtered_landscape_del$del)*10)/10
-  sym_lim   <- min(abs(upper_lim), abs(lower_lim))
-  y_breaks  <- pretty(c(-sym_lim, sym_lim))
-  chr_centers <- chr_bounds %>% transmute(center = (start+end)/2, label = chr)
-  
-  p <- p %>% layout(
-    title = list(text = paste0("Segment Annotation (based on SHAP values)<br><sub>", subtitle_text, "</sub>")),
-    xaxis = list(
-      tickmode = "array",
-      tickvals = chr_centers$center,
-      ticktext = chr_centers$label,
-      tickangle = 45,
-      title = "Genomic Position"
-    ),
-    yaxis = list(
-      tickmode = "array",
-      tickvals = y_breaks,
-      ticktext = abs(y_breaks),
-      title = "SCNA frequency (Mid-length)",
-      range = c(-1.2,1.2)
-    ),
-    showlegend = TRUE,
-    legend = list(orientation = "h", x = 0, y = -0.1)
-  )
-  
-  return(p)
-}
 
+  ticksize <- 0.1
+  layers <- list(
+    list(flag = plot_unknown,                mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[1]),
+    list(flag = plot_essential,              mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[2]),
+    list(flag = plot_accessible,             mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[3]),
+    list(flag = plot_hiexpr,                 mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[4]),
+    list(flag = plot_og_centr_lowmu,         mode = "del",  input = filtered_landscape_del,  name = names(color_palette_ticks)[5]),
+    list(flag = plot_active,                 mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[6]),
+    list(flag = plot_tsg_centr_tel_lowmu,    mode = "del",  input = filtered_landscape_del,  name = names(color_palette_ticks)[7]),
+    list(flag = plot_fgs,                    mode = "del",  input = filtered_landscape_del,  name = names(color_palette_ticks)[8]),
+    list(flag = plot_acc_enh_prom_trx_rep_lowexp_himu, mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[9]),
+    list(flag = plot_tsg_fgs_tel,            mode = "del",  input = filtered_landscape_del,  name = names(color_palette_ticks)[10]),
+    list(flag = plot_og,                     mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[11]),
+    list(flag = plot_rep,                    mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[12])
+  )
+  for (lay in layers) {
+    if (lay$flag) {
+      base_plot <- add_segment_layer(base_plot, lay$input, lay$name, ticksize, lay$mode)
+    }
+  }
+  
+  upper_limit <- ceiling(max(filtered_landscape_ampl$ampl) * 10) / 10
+  lower_limit <- floor(min(-filtered_landscape_del$del) * 10) / 10
+  sym_limit   <- min(abs(upper_limit), abs(lower_limit))
+  y_breaks    <- pretty(c(-sym_limit, sym_limit))
+  
+  base_plot <- base_plot +
+    geom_segment(
+      aes(x = -Inf, xend = -Inf,
+          y = (min(y_breaks)-0.003),
+          yend = (max(y_breaks)+0.001)),
+      inherit.aes = FALSE,
+      color = "black",
+      linewidth = 1
+    ) +
+    scale_x_continuous(
+      breaks = chr_bounds %>% mutate(center = (start + end)/2) %>% pull(center),
+      labels = chr_bounds$chr,
+      expand = c(0.005, 0)
+    ) +
+    scale_y_continuous(
+      breaks = y_breaks,
+      labels = function(x){abs(x)},
+      expand = c(0, 0)
+    ) +
+    coord_cartesian(ylim = c(-1.2, 1.2)) +
+    theme(
+      axis.line.y = element_blank(),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+    scale_color_manual(values = color_palette_ticks)
+  
+  girafe(
+    ggobj    = base_plot,
+    width_svg  = 10,
+    height_svg = 6,
+    options  = list(
+      opts_tooltip(
+        delay_mouseover = 0,
+        delay_mouseout  = 0,
+        offx            = 10,
+        offy            = -10
+        )
+      )
+    )
+}
 
 
 processed_data <- parse_input_data(shap.list = shap.list, 
@@ -951,6 +925,9 @@ barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del,
              type_mask = type_mask_del, 
              model_mask = model_mask_del)
 
+if (T) {
+  
+
 landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl, 
                filtered_landscape_del = filtered_landscape_del, 
                genome_mask = genome_mask_ampl, 
@@ -971,8 +948,7 @@ landscape_plot(filtered_landscape_ampl = filtered_landscape_ampl,
                plot_og = TRUE, 
                plot_rep = TRUE)
 
-
-landscape_plotly(filtered_landscape_ampl = filtered_landscape_ampl, 
+landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_ampl, 
                filtered_landscape_del = filtered_landscape_del, 
                genome_mask = genome_mask_ampl, 
                type_mask = type_mask_ampl, 
@@ -992,7 +968,7 @@ landscape_plotly(filtered_landscape_ampl = filtered_landscape_ampl,
                plot_og = TRUE, 
                plot_rep = TRUE)
 
-
+}
 
 
 
