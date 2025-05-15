@@ -313,8 +313,8 @@ generate_tick_df <- function(input_df, name_annot, mode){
     start <- max(input_df$ampl)
     
     output_df <- input_df %>%
-      filter(reason == name_annot) %>%
-      mutate(cluster_ymid = round(start,1) + (clusters20 * 0.07),
+      filter(top_k16 == name_annot) %>%
+      mutate(cluster_ymid = round(start,1) + (k16 * 0.07),
              cluster_ymin =  cluster_ymid - height,
              cluster_ymax = cluster_ymid + height)
   } else {
@@ -322,8 +322,8 @@ generate_tick_df <- function(input_df, name_annot, mode){
     start <- min(-input_df$del) - 0.05
     
     output_df <- input_df %>%
-      filter(reason == name_annot) %>%
-      mutate(cluster_ymid = round(start,1) + (clusters20 * 0.07),
+      filter(top_k16 == name_annot) %>%
+      mutate(cluster_ymid = round(start,1) + (k16 * 0.07),
              cluster_ymax =  cluster_ymid + height,
              cluster_ymin = cluster_ymid - height)
     
@@ -342,7 +342,7 @@ base_plot <- base_plot +
                aes(x = pos, xend = pos, 
                    y = cluster_ymin, 
                    yend = cluster_ymax,
-                   color = reason),
+                   color = top_k16),
                linewidth = ticksize)
 return(base_plot)
 }
@@ -631,7 +631,7 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     df <- if (mode == "ampl") {
       start <- max(input_df$ampl)
       input_df %>%
-        filter(reason == name_annot) %>%
+        filter(top_k16 == name_annot) %>%
         mutate(
           tooltip = sprintf(
             "<div style='background:%s; 
@@ -644,14 +644,14 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
                   BinID: %s<br>%s</div>",
             bg, fg, binID, name_annot
           ),
-          cluster_ymid = round(start, 1) + (clusters20 * 0.07),
+          cluster_ymid = round(start, 1) + (k16 * 0.07),
           cluster_ymin = cluster_ymid - height,
           cluster_ymax = cluster_ymid + height
         )
     } else {
       start <- min(-input_df$del) - 0.05
       input_df %>%
-        filter(reason == name_annot) %>%
+        filter(top_k16 == name_annot) %>%
         mutate(
           tooltip = sprintf(
             "<div style='background:%s; 
@@ -664,7 +664,7 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
               BinID: %s<br>%s</div>",
             bg, fg, binID, name_annot
           ),
-          cluster_ymid = round(start, 1) + (clusters20 * 0.07),
+          cluster_ymid = round(start, 1) + (k16 * 0.07),
           cluster_ymin = cluster_ymid - height,
           cluster_ymax = cluster_ymid + height
         )
@@ -678,14 +678,14 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
       geom_segment_interactive(
         data = cluster_ticks,
         aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax,
-            tooltip = tooltip, data_id = paste0(reason, "_", binID)),
+            tooltip = tooltip, data_id = paste0(top_k16, "_", binID)),
         color     = NA,
         linewidth = ticksize * 10
       ) +
       geom_segment(
         data = cluster_ticks,
         aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax,
-            color = reason),
+            color = top_k16),
         linewidth = ticksize
       )
   } 
@@ -792,20 +792,26 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     labs(title = title, subtitle = subtitle, x = "Genomic Position", y = "SCNA frequency (Mid-length)") +
     theme_classic() + theme(legend.position = "none")
   
-  color_palette_ticks <- c(
-    "Unknown" =                                                                                                       "#666666",
-    "Essential" =                                                                                                     "#cc0000",
-    "Accessible / Low Expression / High Mu" =                                                                         "#0000cc",
-    "High Expression" =                                                                                               "#007700",
-    "OG / Centromere / Low Mu" =                                                                                      "#800080",
-    "Enhancer / Promoters / Transcribed = ACTIVE" =                                                                   "#ff8000",
-    "TSG / Centromere / Telomere / Low Mu" =                                                                          "#999900",
-    "FGS" =                                                                                                           "#00aaaa",
-    "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" =                   "#ff66cc",
-    "TSG / FGS / Telomere" =                                                                                          "#8b4513",
-    "OG" =                                                                                                            "#cc00cc",
-    "Repressed" =                                                                                                     "#3399cc"
-  )
+  
+  
+  color_palette_ticks <-c( "#666666", "#cc0000",  "#0000cc", "#007700","#800080", "#ff8000", 
+                     "#999900", "#00aaaa", "#ff66cc", "#8b4513", "#cc00cc", "#3399cc", 'pink', 'black', 'red', 'violet') # aggiunti per arrivare a 16
+  names(color_palette_ticks) <- levels(factor(filtered_landscape_ampl$top_k16))
+  
+  # color_palette_ticks <- c(
+  #   "Unknown" =                                                                                                       "#666666",
+  #   "Essential" =                                                                                                     "#cc0000",
+  #   "Accessible / Low Expression / High Mu" =                                                                         "#0000cc",
+  #   "High Expression" =                                                                                               "#007700",
+  #   "OG / Centromere / Low Mu" =                                                                                      "#800080",
+  #   "Enhancer / Promoters / Transcribed = ACTIVE" =                                                                   "#ff8000",
+  #   "TSG / Centromere / Telomere / Low Mu" =                                                                          "#999900",
+  #   "FGS" =                                                                                                           "#00aaaa",
+  #   "Accessible / Enhancers / Promoters / Transcribed / Repressed / Low Expression / High Mu (?)" =                   "#ff66cc",
+  #   "TSG / FGS / Telomere" =                                                                                          "#8b4513",
+  #   "OG" =                                                                                                            "#cc00cc",
+  #   "Repressed" =                                                                                                     "#3399cc"
+  # )
 
   ticksize <- 0.1
   layers <- list(
