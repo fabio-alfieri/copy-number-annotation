@@ -23,7 +23,7 @@ centromere_table <- processed_data$centromere_table
 
 # this will be replaced by user input
 
-type_input <- "BRCA"; 
+type_input <- "BRCA";
 model_input_ampl <- "ampl"; model_input_del <- "del"
 coord_input <- NULL; chr_input <- NULL
 
