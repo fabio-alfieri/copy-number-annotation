@@ -56,7 +56,7 @@ for(i in c('ampl','del')){
   
   shap <- aggregate_chromatin_states(shap)
   values <- aggregate_chromatin_states(values)
-  shap <- change_distance(shap)
+  # shap <- change_distance(shap)
   values <- change_distance(values)
   
   # Subset to relevant columns
@@ -334,6 +334,8 @@ for(i in c('ampl','del')){
   output[[i]]$toplot <- toplot.plot
   output[[i]]$aggregated <- annotations_list
 }
+
+write_rds(output[['ampl']]$toplot, file = 'dev/Data/landscape_plot_update240515_AMPL.rds')
 
 # Visualize plots with annotation for ampl or del
 output$ampl$p.final
