@@ -1,7 +1,7 @@
 rm(list=ls())
 gc(full=T)
 
-setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
+# setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
 # setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
 
 source('dev/0_LoadData.R')
