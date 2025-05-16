@@ -3,7 +3,7 @@ library(htmlwidgets)
 library(htmltools)
 library(ggnewscale)
 
-source('dev/MAIN_dynamic_plotting.R')
+# source('dev/MAIN_dynamic_plotting.R')
 
 ui <- fluidPage(
     # 1) CSS to make the plot container fill the window
