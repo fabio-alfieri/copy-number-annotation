@@ -5,7 +5,6 @@ parse_input_data <- function(shap.list,
                              centromere_table, 
                              clustering_depth){
   
-  
   clustering_depth <- parse_clustering_depth(clustering_depth)
   
   selected_depth <- clustering_depth$selected

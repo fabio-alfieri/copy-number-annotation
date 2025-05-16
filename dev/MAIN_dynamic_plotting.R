@@ -12,7 +12,8 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    toplot.plot = toplot.plot,
                                    clusters_explained = clusters_explained,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed, 
-                                   centromere_table = centromere_table, clustering_depth = 3)
+                                   centromere_table = centromere_table,
+                                   clustering_depth = 2)
 
 # these files will be saved after
 

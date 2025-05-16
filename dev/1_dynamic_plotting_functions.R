@@ -1,4 +1,5 @@
-parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_backbone_namesfixed, centromere_table){
+if(F){parse_input_data <- function(shap.list, toplot.plot, clusters_explained, 
+                                   chr_backbone_namesfixed, centromere_table){
   
   shap_clean_list <- list()
   
@@ -10,7 +11,7 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
                          "Length_Counts.E25", "Length_Counts.E1")
   
   for (idx in seq_along(along.with = shap.list)) {
-   
+    
     name <- names(shap.list)[idx]
     shap.df <- shap.list[[idx]]
     
@@ -28,7 +29,7 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
     shap.df$chr <- paste0("chr", shap.df$chr); shap.df$bin <- NULL
     
     shap_clean_list[[name]] <- shap.df
-
+    
   }
   
   toplot.plot$binID <- paste0(toplot.plot$chr, "_", toplot.plot$bin)
@@ -99,7 +100,7 @@ parse_input_data <- function(shap.list, toplot.plot, clusters_explained, chr_bac
                   centromere_table = centromere_table_out)
   
   return(outlist)
-}
+}} # old parse_input_data()
 parse_input_coord <- function(input){
   
   chrom_sizes <- seqlengths(BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19)[1:22]
@@ -186,7 +187,6 @@ parse_input_model <- function(input){
   
     }
 }
-
 parse_clustering_depth <- function(input){
   
   valid_input <- c(1,2,3,4)
@@ -208,7 +208,6 @@ parse_clustering_depth <- function(input){
   }
   
 }
-
 parse_annot_to_plot <- function(clustering_depth, input){
   
   valid_input <- seq_len(clustering_depth)
@@ -226,8 +225,8 @@ parse_annot_to_plot <- function(clustering_depth, input){
   }
 }
 
-
-filter_df <- function(input_obj, backbone_granges, type_input = NULL, model_input = NULL, chr_input = NULL, coord_input = NULL){
+filter_df <- function(input_obj, backbone_granges, type_input = NULL, 
+                      model_input = NULL, chr_input = NULL, coord_input = NULL){
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
