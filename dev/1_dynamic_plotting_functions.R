@@ -346,6 +346,7 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
 
 landscape_plot_interactive <- function(filtered_landscape_ampl,
                                        filtered_landscape_del,
+                                       backbone.100kb,
                                        genome_mask,
                                        type_mask,
                                        model_mask,
@@ -353,14 +354,14 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
                                        plot_del = TRUE,
                                        annot_to_plot = "all") {
 
-  
   get_contrast <- function(hexcol) {
     rgb <- col2rgb(hexcol) / 255
     lum <- 0.299 * rgb[1, ] + 0.587 * rgb[2, ] + 0.114 * rgb[3, ]
     ifelse(lum > 0.5, "#000000", "#FFFFFF")
   }
   
-  generate_tick_df <- function(input_df, name_annot, mode) {
+  generate_tick_df <- function(input_df, name_annot, mode, backbone.100kb) {
+    
     height <- 0.015
     bg <- color_palette_ticks[as.character(name_annot)]
     fg <- get_contrast(bg)
@@ -373,27 +374,34 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     if (mode == "ampl") {
       start <- max(input_df$ampl)
       df <- df %>%
+        rowwise() %>%
         mutate(
+          coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
           tooltip = sprintf(
-            "<div style='background:%s; color:%s; padding:4px;'>BinID: %s<br>%s</div>",
-            bg, fg, binID, name_annot
+            "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
+            bg, fg, coord, .data[[top_clustering_col]]
           ),
           cluster_ymid = (round(start, 1) + 0.05) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
           cluster_ymin = cluster_ymid - height,
           cluster_ymax = cluster_ymid + height
-        )
+        ) %>%
+        ungroup()
     } else {
       start <- min(-input_df$del) - 0.05
       df <- df %>%
+        rowwise() %>%
         mutate(
+          coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
           tooltip = sprintf(
-            "<div style='background:%s; color:%s; padding:4px;'>BinID: %s<br>%s</div>",
-            bg, fg, binID, name_annot
+            "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
+            bg, fg, coord, .data[[top_clustering_col]]
           ),
           cluster_ymid = (round(start, 1) - 0.05) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
           cluster_ymin = cluster_ymid - height,
           cluster_ymax = cluster_ymid + height
-        )
+        ) %>%
+        ungroup()
+      
     }
     
     df$cluster <- factor(name_annot, levels = names(color_palette_ticks))
@@ -401,9 +409,9 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     
   }
   
-  add_segment_layer <- function(base_plot, input_df, name_annot, ticksize, mode) {
+  add_segment_layer <- function(base_plot, input_df, name_annot, ticksize, mode, backbone.100kb) {
     
-    cluster_ticks <- generate_tick_df(input_df, name_annot, mode)
+    cluster_ticks <- generate_tick_df(input_df, name_annot, mode, backbone.100kb)
     
     if (is.null(cluster_ticks)) return(base_plot)  # SKIP layer if NULL
     
@@ -577,7 +585,8 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
                                      input_df = lay$input, 
                                      name_annot = lay$name, 
                                      ticksize = ticksize, 
-                                     mode = lay$mode)
+                                     mode = lay$mode, 
+                                     backbone.100kb = backbone.100kb)
     }
   
   upper_limit <- ceiling(max(filtered_landscape_ampl$ampl) * 10) / 10

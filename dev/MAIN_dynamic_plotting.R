@@ -87,7 +87,8 @@ p <- landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_amp
                            model_mask = c("ampl","del"),
                            plot_ampl = TRUE, 
                            plot_del = TRUE, 
-                           annot_to_plot = "all")
+                           annot_to_plot = "all", 
+                           backbone.100kb = backbone.100kb)
 
 
 tooltip_css <- "
