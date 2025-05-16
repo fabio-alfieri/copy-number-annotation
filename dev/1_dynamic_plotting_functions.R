@@ -234,11 +234,11 @@ filter_df <- function(input_obj, backbone_granges, type_input = NULL, model_inpu
   
   model_mask <- parse_input_model(model_input)
   
-  if (class(input_obj) == "list"){
+  if (any(class(input_obj) == "list")) {
     
     df_input <- input_obj[[model_mask$selected]]
 
-  } else if (class(input_obj) == "data.frame") {
+  } else if (any(class(input_obj) == "data.frame")) {
     
     df_input <- input_obj[,colnames(input_obj) != model_mask$not_selected]
       
