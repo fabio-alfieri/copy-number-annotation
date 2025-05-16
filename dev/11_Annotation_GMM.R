@@ -16,7 +16,7 @@ library(tidyverse)
 # write_rds(df, file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
 df <- readRDS(file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
-tt <- 'LUSC'
+tt <- 'BRCA'
 
 output <- list()
 for(i in c('ampl','del')){
@@ -218,7 +218,8 @@ for(i in c('ampl','del')){
   toplot.plot <- full_join(values_agg %>% select(labels,cluster),values %>% 
               select(bin,,Type,labels,ampl_score,del_score)) %>% 
     select(-labels) %>% full_join(clusters, by = 'cluster') %>%
-    filter(Type == tt) %>% separate(bin, sep = '_', into = c('chr','bin'))
+    # filter(Type == tt) %>% 
+    separate(bin, sep = '_', into = c('chr','bin'))
   
   
   # Plot feature contribution by cluster
@@ -274,7 +275,7 @@ for(i in c('ampl','del')){
   # toplot.plot <- full_join(values_agg %>% select(labels,cluster),values %>% select(bin,,Type,labels,ampl_score,del_score)) %>% select(-labels) %>%
   #   filter(Type == 'BRCA') %>% separate(bin, sep = '_', into = c('chr','bin'))
   toplot.plot <- toplot.plot %>%
-    arrange(as.numeric(as.character(chr)), as.numeric(bin)) %>%
+    arrange(as.numeric(as.character(chr)), as.numeric(bin)) %>% group_by(Type) %>%
     mutate(pos = row_number())
   
   # aggregated$clusters.aggregated <- rownames(aggregated)
@@ -288,8 +289,9 @@ for(i in c('ampl','del')){
   #   select(-clusters.aggregated)
   toplot.plot$cluster <- as.numeric(toplot.plot$cluster)
   
+  toplot.plot.tt <- toplot.plot %>% filter(Type == tt)
   # Compute chromosome ranges for background shading
-  chr_bounds <- toplot.plot %>%
+  chr_bounds <- toplot.plot.tt %>%
     group_by(chr) %>%
     summarize(start = min(pos), end = max(pos)) %>%
     mutate(fill = rep(c("lightgrey", "darkgrey"), length.out = n()))
@@ -299,21 +301,21 @@ for(i in c('ampl','del')){
               aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = fill),
               alpha = 0.3) +
     scale_fill_manual(values = c("#eeeeee", "#cccccc")) +
-    geom_line(data = toplot.plot, aes(x = pos, y = ampl_score), color = "red") +
-    geom_line(data = toplot.plot, aes(x = pos, y = -del_score), color = "blue") +
+    geom_line(data = toplot.plot.tt, aes(x = pos, y = ampl_score), color = "red") +
+    geom_line(data = toplot.plot.tt, aes(x = pos, y = -del_score), color = "blue") +
     geom_hline(yintercept = 0, colour = 'grey', linetype = 'dashed') +
     labs(x = "Genomic Position", y = "Amplification Score (Mid-length)") +
     theme_classic()
   
   # Add cluster lines above plot
-  cluster_ticks <- toplot.plot %>%
-    mutate(cluster_ymin2 = max(toplot.plot$ampl_score) * 1.07 + k2 * 0.015, 
+  cluster_ticks <- toplot.plot.tt %>%
+    mutate(cluster_ymin2 = max(toplot.plot.tt$ampl_score) * 1.07 + k2 * 0.015, 
            cluster_ymax2 = cluster_ymin2 + 0.01) %>%
-    mutate(cluster_ymin4 = max(toplot.plot$ampl_score) * 1.07 + (k4+4) * 0.015,
+    mutate(cluster_ymin4 = max(toplot.plot.tt$ampl_score) * 1.07 + (k4+4) * 0.015,
            cluster_ymax4 = cluster_ymin4 + 0.01 ) %>%
-    mutate(cluster_ymin8 = max(toplot.plot$ampl_score) * 1.07 + (k8+10) * 0.015,
+    mutate(cluster_ymin8 = max(toplot.plot.tt$ampl_score) * 1.07 + (k8+10) * 0.015,
            cluster_ymax8 = cluster_ymin8 + 0.01) %>%
-    mutate(cluster_ymin16 = max(toplot.plot$ampl_score) * 1.07 + (k16+20) * 0.015,
+    mutate(cluster_ymin16 = max(toplot.plot.tt$ampl_score) * 1.07 + (k16+20) * 0.015,
            cluster_ymax16 = cluster_ymin16 + 0.01)
   
   (p.final <- base_plot +

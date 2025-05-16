@@ -1,7 +1,7 @@
 rm(list=ls())
 gc(full=T)
 
-setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
+# setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
 # setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
 
 source('dev/0_LoadData.R')
@@ -23,7 +23,7 @@ centromere_table <- processed_data$centromere_table
 
 # this will be replaced by user input
 
-type_input <- "BRCA";
+type_input <- "LUSC";
 model_input_ampl <- "ampl"; model_input_del <- "del"
 coord_input <- NULL; chr_input <- NULL
 
