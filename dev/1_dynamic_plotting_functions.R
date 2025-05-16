@@ -378,7 +378,7 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
             "<div style='background:%s; color:%s; padding:4px;'>BinID: %s<br>%s</div>",
             bg, fg, binID, name_annot
           ),
-          cluster_ymid = round(start, 1) + (.data[[clustering_col]] * 0.07),
+          cluster_ymid = (round(start, 1) + 0.05) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
           cluster_ymin = cluster_ymid - height,
           cluster_ymax = cluster_ymid + height
         )
@@ -390,7 +390,7 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
             "<div style='background:%s; color:%s; padding:4px;'>BinID: %s<br>%s</div>",
             bg, fg, binID, name_annot
           ),
-          cluster_ymid = round(start, 1) + (.data[[clustering_col]] * 0.07),
+          cluster_ymid = (round(start, 1) - 0.05) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
           cluster_ymin = cluster_ymid - height,
           cluster_ymax = cluster_ymid + height
         )
@@ -408,31 +408,37 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     if (is.null(cluster_ticks)) return(base_plot)  # SKIP layer if NULL
     
     base_plot +
-      geom_segment_interactive(
+      geom_rect_interactive(
         data = cluster_ticks,
-        aes(x = pos, 
-            xend = pos, 
-            y = cluster_ymin, 
-            yend = cluster_ymax,
-            tooltip = tooltip, data_id = paste0(.data[[top_clustering_col]], "_", binID)),
-        color     = "transparent",
-        linewidth = ticksize * 10
+        aes(
+          xmin = pos - 1, 
+          xmax = pos + 1, 
+          ymin = cluster_ymin, 
+          ymax = cluster_ymax,
+          tooltip = tooltip, 
+          data_id = paste0(.data[[top_clustering_col]], "_", binID)
+        ),
+        color = NA,
+        linewidth = ticksize * 10,
+        fill = NA
       ) +
-      geom_segment(
+      geom_rect(
         data = cluster_ticks,
-        aes(x = pos, 
-            xend = pos, 
-            y = cluster_ymin, 
-            yend = cluster_ymax, 
-            color = cluster),
+        aes(
+          xmin = pos - 0.5, 
+          xmax = pos + 0.5, 
+          ymin = cluster_ymin, 
+          ymax = cluster_ymax, 
+          fill = cluster
+        ),
+        color = NA,
         linewidth = ticksize
       )
   }
   
   valid_input <- c("ampl", "del")
-  if (!all(model_mask %in% valid_input)) {
-    stop("Invalid model selected. Use 'ampl' and/or 'del'.")
-  }
+  
+  if (!all(model_mask %in% valid_input)) stop("Invalid model selected. Use 'ampl' and/or 'del'.")
   if (length(genome_mask) == 22) genome_mask <- "WHOLE GENOME"
   if (length(genome_mask) > 1) genome_mask <- paste(genome_mask, collapse = ", ")
   if (length(model_mask) > 1) model_mask <- paste(model_mask, collapse = ", ")
@@ -457,7 +463,8 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
       aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = fill),
       alpha = 0.3
     ) +
-    scale_fill_identity()
+    scale_fill_identity() +
+    new_scale_fill()
   
   chr_to_plot <- unique(filtered_landscape_ampl$chr)
   
@@ -483,8 +490,8 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
                   outline:none; 
                   box-shadow:none;'>
                   BinID: %s<br>
-                  Ampl</div>",
-                bg_ampl, fg_ampl, binID
+                  Ampl: %s</div>",
+                bg_ampl, fg_ampl, binID, round(ampl,3)
               ), 
               data_id = data_id),
           size = 3, color = "transparent"
@@ -513,8 +520,8 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
                   outline:none; 
                   box-shadow:none;'>
                   BinID: %s<br>
-                  Del</div>",
-            bg_del, fg_del, binID
+                  Del: %s</div>",
+            bg_del, fg_del, binID, round(del,3)
           ), data_id = data_id),
           size = 3, color = "transparent"
         )
@@ -522,17 +529,24 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   }
   
   base_plot <- base_plot +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 0.2) +
-    labs(title = title, subtitle = subtitle, x = "Genomic Position", y = "SCNA frequency (Mid-length)") +
-    theme_classic() + theme(legend.position = "none")
-  
-  
+    geom_hline(yintercept = 0, 
+               linetype = "dashed", 
+               color = "grey", 
+               linewidth = 0.2) +
+    labs(title = title, 
+         subtitle = subtitle, 
+         x = "Genomic Position", 
+         y = "SCNA frequency (Mid-length)") +
+    theme_classic() + 
+    theme(legend.position = "none")
   
   all_colors <-c( "#666666", "#cc0000", "#0000cc", "#007700", 
                   "#800080", "#ff8000", "#999900", "#00aaaa", 
                   "#ff66cc", "#8b4513", "#cc00cc", "#3399cc", 
                   "#FFC0CB", "#000000", "#FF0000", "#EE82EE") # madonna che bello così simmetrico
   
+  all_dfs <- list(filtered_landscape_ampl, filtered_landscape_del)
+  all_modes <- c("ampl", "del")
   
   clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape_ampl), value = T)
   top_clustering_col <- paste0("top_",clustering_col)
@@ -547,10 +561,11 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   ticksize <- 0.1
   
   layers <- lapply(X = annot_to_plot, 
-         FUN = function(x)
-           {return(
-             list(mode = "ampl", 
-                  input = filtered_landscape_ampl, 
+         FUN = function(x){
+           y <- (x %% 2) + 1
+           return(
+             list(mode = all_modes[y], 
+                  input = all_dfs[[y]], 
                   name = names(color_palette_ticks)[x]
                   )
                 )
@@ -580,7 +595,9 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
       linewidth = 1
     ) +
     scale_x_continuous(
-      breaks = chr_bounds %>% mutate(center = (start + end)/2) %>% pull(center),
+      breaks = chr_bounds %>% 
+        mutate(center = (start + end)/2) %>% 
+        pull(center),
       labels = chr_bounds$chr,
       expand = c(0.005, 0)
     ) +
@@ -594,10 +611,10 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
       axis.line.y = element_blank(),
       axis.text.x = element_text(angle = 45, hjust = 1)
     ) + 
-    scale_color_manual(values = color_palette_ticks)
+    scale_fill_manual(values = color_palette_ticks)
   
   girafe(
-    ggobj    = base_plot,
+    ggobj = base_plot,
     fonts = list(sans = "Roboto"),
     width_svg  = 10,
     height_svg = 6,
@@ -611,3 +628,4 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
       )
     )
 }
+

@@ -13,7 +13,7 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    clusters_explained = clusters_explained,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed, 
                                    centromere_table = centromere_table, 
-                                   clustering_depth = 1)
+                                   clustering_depth = 4)
 
 # these files will be saved after
 
@@ -78,7 +78,8 @@ if (T) {
   
 library(htmlwidgets)
 library(htmltools)
-  
+library(ggnewscale)
+    
 p <- landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_ampl, 
                            filtered_landscape_del = filtered_landscape_del, 
                            genome_mask = genome_mask_ampl, 
@@ -86,21 +87,42 @@ p <- landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_amp
                            model_mask = c("ampl","del"),
                            plot_ampl = TRUE, 
                            plot_del = TRUE, 
-                           annot_to_plot = 2)
+                           annot_to_plot = "all")
 
-css_style <- tags$style(HTML('
-  [class^="tooltip_svg_"] {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    color: inherit !important;
-    padding: 5px;
-    border-radius: 0px;
-  }
-'))
 
-p2 <- htmlwidgets::prependContent(p, css_style)
+tooltip_css <- "
+    [class^='tooltip_svg_'] {
+      background: transparent !important;
+      color: #fafafa;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 12px;
+      line-height: 1.2;
+      box-shadow: 0 0px 0px rgba(0,0,0,0);
+      opacity: 0;
+      transform: translateY(2px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      pointer-events: auto;
+      white-space: nowrap;
+      border: none !important;
+      z-index: 1000;
+    }
+    [class^='tooltip_svg_']:hover {
+      opacity: 0.9;
+      transform: translateY(0);
+    }
+    [class^='tooltip_svg_']::after { display: none !important; }
+    [class^='tooltip_svg_'] strong { font-weight: bold; }
+    @media (max-width: 600px) {
+      [class^='tooltip_svg_'] {
+        font-size: 11px;
+        padding: 2px 4px;
+      }
+    }
+  "
 
+p2 <- htmlwidgets::prependContent(p, tags$head(tags$style(HTML(tooltip_css))))
 p2
 
 }
