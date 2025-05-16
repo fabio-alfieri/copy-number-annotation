@@ -1,8 +1,8 @@
 rm(list=ls())
 gc(full=T)
 
-setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
-# setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
+# setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
+setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
 
 source('dev/0_LoadData.R')
 source('dev/1_dynamic_plotting_functions.R')
@@ -12,8 +12,7 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    toplot.plot = toplot.plot,
                                    clusters_explained = clusters_explained,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed, 
-                                   centromere_table = centromere_table, 
-                                   clustering_depth = 4)
+                                   centromere_table = centromere_table)
 
 # these files will be saved after
 
@@ -127,6 +126,7 @@ p2 <- htmlwidgets::prependContent(p, tags$head(tags$style(HTML(tooltip_css))))
 p2
 
 }
+
 
 
 

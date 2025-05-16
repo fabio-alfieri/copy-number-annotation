@@ -17,4 +17,4 @@ clusters_explained <- output.annotation$ampl$aggregated # updated
 centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
 load("dev/Data/All_levels_backbonetables.RData")
 
-rm(output.annotation)
+# rm(output.annotation)
