@@ -75,7 +75,7 @@ parse_input_data <- function(shap.list,
   
   # LANDSCAPE DF
   toplot.plot$binID <- paste0(toplot.plot$chr, "_", toplot.plot$bin)
-  toplot.plot$chr <- paste0("chr", toplot.plot$chr); toplot.plot$bin <- NULL
+  toplot.plot$chr <- paste0("chr", toplot.plot$chr); toplot.plot$bin <- NULL; toplot.plot$cluster <- NULL
   colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'ampl|del')] <- c("ampl", "del")
 
   toplot.plot$order <- seq_along(1:nrow(toplot.plot))

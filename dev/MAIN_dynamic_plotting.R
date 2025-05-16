@@ -13,7 +13,7 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    clusters_explained = clusters_explained,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed, 
                                    centromere_table = centromere_table, 
-                                   clustering_depth = 4)
+                                   clustering_depth = 1)
 
 # these files will be saved after
 
@@ -76,26 +76,33 @@ barplot_shap(shap.abs.sum = filtered_shap_abs_sum_del,
 
 if (T) {
   
-landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_ampl, 
+library(htmlwidgets)
+library(htmltools)
+  
+p <- landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_ampl, 
                            filtered_landscape_del = filtered_landscape_del, 
                            genome_mask = genome_mask_ampl, 
                            type_mask = type_mask_ampl, 
                            model_mask = c("ampl","del"),
                            plot_ampl = TRUE, 
-                           plot_del = TRUE,
-                           plot_unknown = TRUE, 
-                           plot_essential = TRUE, 
-                           plot_accessible = TRUE, 
-                           plot_hiexpr = TRUE, 
-                           plot_og_centr_lowmu = TRUE, 
-                           plot_active = TRUE, 
-                           plot_tsg_centr_tel_lowmu = TRUE ,
-                           plot_fgs = TRUE, 
-                           plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE, 
-                           plot_tsg_fgs_tel = TRUE, 
-                           plot_og = TRUE, 
-                           plot_rep = TRUE)
-  
+                           plot_del = TRUE, 
+                           annot_to_plot = 2)
+
+css_style <- tags$style(HTML('
+  [class^="tooltip_svg_"] {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: inherit !important;
+    padding: 5px;
+    border-radius: 0px;
+  }
+'))
+
+p2 <- htmlwidgets::prependContent(p, css_style)
+
+p2
+
 }
 
 

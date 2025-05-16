@@ -209,6 +209,24 @@ parse_clustering_depth <- function(input){
   
 }
 
+parse_annot_to_plot <- function(clustering_depth, input){
+  
+  valid_input <- seq_len(clustering_depth)
+  
+  if ((length(input) == 1) && (input == "all")) {
+    return(valid_input)
+  } 
+  
+  is_valid <- all(as.integer(input) %in% valid_input)
+    
+  if (is_valid) { 
+    return(sort(as.integer(input)))
+  } else {
+    stop("Invalid clusters selected")
+  }
+}
+
+
 filter_df <- function(input_obj, backbone_granges, type_input = NULL, model_input = NULL, chr_input = NULL, coord_input = NULL){
   
   # model filtering policy:
@@ -333,19 +351,15 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
                                        model_mask,
                                        plot_ampl = TRUE,
                                        plot_del = TRUE,
-                                       plot_unknown = TRUE,
-                                       plot_essential = TRUE,
-                                       plot_accessible = TRUE,
-                                       plot_hiexpr = TRUE,
-                                       plot_og_centr_lowmu = TRUE,
-                                       plot_active = TRUE,
-                                       plot_tsg_centr_tel_lowmu = TRUE,
-                                       plot_fgs = TRUE,
-                                       plot_acc_enh_prom_trx_rep_lowexp_himu = TRUE,
-                                       plot_tsg_fgs_tel = TRUE,
-                                       plot_og = TRUE,
-                                       plot_rep = TRUE) {
+                                       annot_to_plot = "all") {
 
+  
+  get_contrast <- function(hexcol) {
+    rgb <- col2rgb(hexcol) / 255
+    lum <- 0.299 * rgb[1, ] + 0.587 * rgb[2, ] + 0.114 * rgb[3, ]
+    ifelse(lum > 0.5, "#000000", "#FFFFFF")
+  }
+  
   generate_tick_df <- function(input_df, name_annot, mode) {
     height <- 0.015
     bg <- color_palette_ticks[as.character(name_annot)]
@@ -382,34 +396,37 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
         )
     }
     
-    df$color <- bg
-    df
+    df$cluster <- factor(name_annot, levels = names(color_palette_ticks))
+    return(df)
+    
   }
   
-  
   add_segment_layer <- function(base_plot, input_df, name_annot, ticksize, mode) {
+    
     cluster_ticks <- generate_tick_df(input_df, name_annot, mode)
+    
     if (is.null(cluster_ticks)) return(base_plot)  # SKIP layer if NULL
     
     base_plot +
       geom_segment_interactive(
         data = cluster_ticks,
-        aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax,
+        aes(x = pos, 
+            xend = pos, 
+            y = cluster_ymin, 
+            yend = cluster_ymax,
             tooltip = tooltip, data_id = paste0(.data[[top_clustering_col]], "_", binID)),
         color     = "transparent",
         linewidth = ticksize * 10
       ) +
       geom_segment(
         data = cluster_ticks,
-        aes(x = pos, xend = pos, y = cluster_ymin, yend = cluster_ymax, color = color),
+        aes(x = pos, 
+            xend = pos, 
+            y = cluster_ymin, 
+            yend = cluster_ymax, 
+            color = cluster),
         linewidth = ticksize
       )
-  }
-  
-  get_contrast <- function(hexcol) {
-    rgb <- col2rgb(hexcol) / 255
-    lum <- 0.299 * rgb[1, ] + 0.587 * rgb[2, ] + 0.114 * rgb[3, ]
-    ifelse(lum > 0.5, "#000000", "#FFFFFF")
   }
   
   valid_input <- c("ampl", "del")
@@ -521,33 +538,32 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   top_clustering_col <- paste0("top_",clustering_col)
   clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
   
+  annot_to_plot <- parse_annot_to_plot(clustering_depth = clustering_depth, 
+                                       input = annot_to_plot)
+  
   color_palette_ticks <- all_colors[1:clustering_depth]
   names(color_palette_ticks) <- levels(factor(1:clustering_depth))
   
-  ticksize <- 0.3
-  layers <- list(
-    list(flag = plot_unknown,                mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[1]),
-    list(flag = plot_essential,              mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[2]),
-    list(flag = plot_accessible,             mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[3]),
-    list(flag = plot_hiexpr,                 mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[4]),
-    list(flag = plot_og_centr_lowmu,         mode = "ampl",  input = filtered_landscape_ampl,  name = names(color_palette_ticks)[5]),
-    list(flag = plot_active,                 mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[6]),
-    list(flag = plot_tsg_centr_tel_lowmu,    mode = "ampl",  input = filtered_landscape_ampl,  name = names(color_palette_ticks)[7]),
-    list(flag = plot_fgs,                    mode = "ampl",  input = filtered_landscape_ampl,  name = names(color_palette_ticks)[8]),
-    list(flag = plot_acc_enh_prom_trx_rep_lowexp_himu, mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[9]),
-    list(flag = plot_tsg_fgs_tel,            mode = "ampl",  input = filtered_landscape_ampl,  name = names(color_palette_ticks)[10]),
-    list(flag = plot_og,                     mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[11]),
-    list(flag = plot_rep,                    mode = "ampl", input = filtered_landscape_ampl, name = names(color_palette_ticks)[12])
-  )
+  ticksize <- 0.1
+  
+  layers <- lapply(X = annot_to_plot, 
+         FUN = function(x)
+           {return(
+             list(mode = "ampl", 
+                  input = filtered_landscape_ampl, 
+                  name = names(color_palette_ticks)[x]
+                  )
+                )
+              }
+            )
+  
   for (lay in layers) {
-    if (lay$flag) {
       base_plot <- add_segment_layer(base_plot = base_plot, 
                                      input_df = lay$input, 
                                      name_annot = lay$name, 
                                      ticksize = ticksize, 
                                      mode = lay$mode)
     }
-  }
   
   upper_limit <- ceiling(max(filtered_landscape_ampl$ampl) * 10) / 10
   lower_limit <- floor(min(-filtered_landscape_del$del) * 10) / 10
@@ -577,7 +593,8 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     theme(
       axis.line.y = element_blank(),
       axis.text.x = element_text(angle = 45, hjust = 1)
-    ) # +  scale_color_manual(values = color_palette_ticks)
+    ) + 
+    scale_color_manual(values = color_palette_ticks)
   
   girafe(
     ggobj    = base_plot,
