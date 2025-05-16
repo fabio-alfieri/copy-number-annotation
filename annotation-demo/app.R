@@ -1,50 +1,79 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
 library(shiny)
+library(htmlwidgets)
+library(htmltools)
+library(ggnewscale)
 
-# Define UI for application that draws a histogram
+source('dev/MAIN_dynamic_plotting.R')
+
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+    # 1) CSS to make the plot container fill the window
+    tags$head(
+        tags$style(HTML("
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #plot_container {
+        width: 100%;
+        height: calc(100vh - 120px); /* adjust 120px to match title + input row height */
+      }
+      #plot_container .html-widget {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    "))
+    ),
+    
+    titlePanel("Copy Number Annotation Browser - CATCHY NAME NEEDED!"),
+    
+    fluidRow(
+        column(width = 2,
+               selectInput(
+                   inputId  = "type_input",
+                   label    = "Tumor type:",
+                   choices  = c("BRCA", "COADREAD", "ESCA", 
+                                "GBMLGG", "KIRC", "KIRP", 
+                                "LUAD", "LUSC", "OV", "PAAD", "STAD"),
+                   selected = "BRCA"
+               ),
+               selectInput(
+                   inputId  = "model_input",
+                   label    = "Model type:",
+                   choices  = c("Amplification", "Deletions"),
+                   selected = "Amplification"
+               ),
+               textInput(
+                   inputId     = "coord_input",
+                   label       = "Genomic coordinates:",
+                   value       = "chr1:1-1000000",
+                   placeholder = "e.g. chr1:100000-200000"
+               )
         ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
+        
+        column(width = 10,
+               # the resizable container for your widget
+               div(id = "plot_container",
+                   uiOutput("distPlot")
+               )
         )
     )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
+    
+    widget_reactive <- reactive({
+        req(input$type_input, input$model_input, input$coord_input)
+    
+        htmlwidgets::prependContent(
+          p,
+          tags$head(tags$style(HTML(tooltip_css)))
+        )
     })
+    
+    output$distPlot <- renderUI({
+        widget_reactive()
+    })
+    
+    # output$distPlot <- renderUI({
+    #     p2
+    # })
 }
 
 # Run the application 
