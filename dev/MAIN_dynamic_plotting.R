@@ -1,7 +1,7 @@
 rm(list=ls())
 gc(full=T)
 
-# setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
+setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
 # setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
 
 source('dev/0_LoadData.R')
@@ -13,13 +13,14 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    clusters_explained = clusters_explained,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed, 
                                    centromere_table = centromere_table,
-                                   clustering_depth = 2)
+                                   clustering_depth = 3)
 
 # these files will be saved after
 
 shap.list <- processed_data$shap.list; 
 toplot.plot <- processed_data$toplot.plot; 
 backbone.100kb <- processed_data$backbone.100kb
+backbone.500kb <- processed_data$backbone.500kb
 centromere_table <- processed_data$centromere_table
 
 # this will be replaced by user input
@@ -37,23 +38,16 @@ filtered_shap_output_del <- filter_df(input_obj = shap.list, backbone_granges = 
                                       chr_input = chr_input, coord_input = coord_input)
 
 
-filtered_landscape_output_ampl <- filter_df(input_obj = toplot.plot, 
-                                            backbone_granges = backbone.100kb,
-                                            type_input = type_input, 
-                                            model_input = model_input_ampl, 
-                                            chr_input = chr_input, 
-                                            coord_input = coord_input)
-
-filtered_landscape_output_del <- filter_df(input_obj = toplot.plot, 
-                                           backbone_granges = backbone.100kb,
-                                           type_input = type_input, 
-                                           model_input = model_input_del,  
-                                           chr_input = chr_input, 
-                                           coord_input = coord_input)
+filtered_landscape_output <- filter_df(input_obj = toplot.plot, 
+                                       backbone_granges = backbone.100kb,
+                                       type_input = type_input, 
+                                       model_input = "all", 
+                                       chr_input = chr_input, 
+                                       coord_input = coord_input)
 
 
 filtered_shap_ampl <- filtered_shap_output_ampl$final_df; filtered_shap_del <- filtered_shap_output_del$final_df
-filtered_landscape_ampl <- filtered_landscape_output_ampl$final_df; filtered_landscape_del <- filtered_landscape_output_del$final_df
+filtered_landscape <- filtered_landscape_output$final_df
 
 genome_mask_ampl <- filtered_shap_output_ampl$genome_mask; genome_mask_del <- filtered_shap_output_del$genome_mask
 model_mask_ampl <- filtered_shap_output_ampl$model_mask; model_mask_del <- filtered_shap_output_del$model_mask
@@ -80,15 +74,15 @@ library(htmlwidgets)
 library(htmltools)
 library(ggnewscale)
     
-p <- landscape_plot_interactive(filtered_landscape_ampl = filtered_landscape_ampl, 
-                           filtered_landscape_del = filtered_landscape_del, 
+p <- landscape_plot_interactive(filtered_landscape = filtered_landscape, 
                            genome_mask = genome_mask_ampl, 
                            type_mask = type_mask_ampl, 
                            model_mask = c("ampl","del"),
                            plot_ampl = TRUE, 
                            plot_del = TRUE, 
                            annot_to_plot = "all", 
-                           backbone.100kb = backbone.100kb)
+                           backbone.100kb = backbone.100kb,
+                           backbone.500kb = backbone.500kb)
 
 
 tooltip_css <- "

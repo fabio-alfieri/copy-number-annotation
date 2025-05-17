@@ -102,6 +102,17 @@ parse_input_data <- function(shap.list,
                                            ranges = IRanges(start = backbone.100kb$start_bin, end = backbone.100kb$end_bin),
                                            binID = backbone.100kb$binID)
   
+  
+  backbone.500kb <- chr_backbone_namesfixed$`0.5Mbp`; backbone.500kb <- dplyr::bind_rows(backbone.500kb)
+  backbone.500kb$binID <- paste0(backbone.500kb$chr, "_", backbone.500kb$bin)
+  backbone.500kb$chr <- paste0("chr", backbone.500kb$chr); backbone.500kb$bin <- NULL
+  
+  backbone.500kb <- GenomicRanges::GRanges(seqnames = backbone.500kb$chr, 
+                                           ranges = IRanges(start = as.numeric(backbone.500kb$start_bin), 
+                                                            end = as.numeric(backbone.500kb$end_bin)),
+                                           binID = backbone.500kb$binID)
+  
+  
   # CENTROMERE DF
   centromere_table$Centromere_Length <- NULL
   centromere_table$Centromere_Type <- NULL
@@ -123,7 +134,8 @@ parse_input_data <- function(shap.list,
   
   outlist <- list(shap.list = shap_clean_list,
                   toplot.plot = toplot.plot,
-                  backbone.100kb = backbone.100kb, 
+                  backbone.100kb = backbone.100kb,
+                  backbone.500kb = backbone.500kb,
                   centromere_table = centromere_table_out)
   
   return(outlist)

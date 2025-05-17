@@ -101,6 +101,7 @@ if(F){parse_input_data <- function(shap.list, toplot.plot, clusters_explained,
   
   return(outlist)
 }} # old parse_input_data()
+
 parse_input_coord <- function(input){
   
   chrom_sizes <- seqlengths(BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19)[1:22]
@@ -169,6 +170,14 @@ parse_input_type <- function(input){
 }
 parse_input_model <- function(input){
   
+  if ((length(input) == 1) && (input == "all")) {
+    
+    outlist <- list(selected = c("ampl","del"),
+                    not_selected = NA)
+    
+    return(outlist)
+  } 
+  
   valid_input <- c("ampl","del")
   is_valid <- input %in% valid_input
   
@@ -230,16 +239,20 @@ filter_df <- function(input_obj, backbone_granges, type_input = NULL,
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
-  
+
   model_mask <- parse_input_model(model_input)
   
   if (any(class(input_obj) == "list")) {
+    
+    if (length(model_mask$selected) == 2) {
+      stop("SHAP list must be explicitly filtered")       
+    }
     
     df_input <- input_obj[[model_mask$selected]]
 
   } else if (any(class(input_obj) == "data.frame")) {
     
-    df_input <- input_obj[,colnames(input_obj) != model_mask$not_selected]
+    df_input <- input_obj
       
   } else {
     
@@ -343,23 +356,185 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
   
 }
 
-landscape_plot_interactive <- function(filtered_landscape_ampl,
-                                       filtered_landscape_del,
+landscape_plot_interactive <- function(filtered_landscape,
                                        backbone.100kb,
+                                       backbone.500kb,
                                        genome_mask,
                                        type_mask,
                                        model_mask,
                                        plot_ampl = TRUE,
                                        plot_del = TRUE,
                                        annot_to_plot = "all") {
-
+  
+  
   get_contrast <- function(hexcol) {
     rgb <- col2rgb(hexcol) / 255
     lum <- 0.299 * rgb[1, ] + 0.587 * rgb[2, ] + 0.114 * rgb[3, ]
     ifelse(lum > 0.5, "#000000", "#FFFFFF")
   }
   
-  generate_tick_df <- function(input_df, name_annot, mode, backbone.100kb) {
+  generate_density_df <- function(backbone.500kb, 
+                                  backbone.100kb,
+                                  name_annot,
+                                  mode,
+                                  filtered_landscape, 
+                                  clustering_col,
+                                  top_clustering_col,
+                                  color_palette_ticks){
+    
+    
+    bg <- color_palette_ticks[as.character(name_annot)]
+    fg <- get_contrast(bg)
+    
+    name_annot <- paste0("y", name_annot)
+    
+    hits <- findOverlaps(backbone.500kb, backbone.100kb)
+    hits_500kb <- backbone.500kb[queryHits(hits)]
+    hits_100kb <- backbone.100kb[subjectHits(hits)]
+    
+    intersection_gr <- pintersect(hits_500kb, hits_100kb)
+    
+    binID_500 <- mcols(hits_500kb)$binID
+    binID_100 <- mcols(hits_100kb)$binID
+    mcols(intersection_gr)$binID_500 <- binID_500
+    mcols(intersection_gr)$binID_100 <- binID_100
+    mcols(intersection_gr)$binID <- NULL
+    
+    intersection_df <- data.frame(binID_500 = mcols(intersection_gr)$binID_500, 
+                                  binID_100 = mcols(intersection_gr)$binID_100, 
+                                  width = width(intersection_gr))
+    intersection_df_clean <- intersection_df %>% 
+      group_by(binID_100) %>% 
+      filter(width == max(width))
+    
+    correspondance_df <- merge(x = intersection_df_clean, 
+                               y = filtered_landscape, 
+                               by.x = "binID_100", by.y = "binID")
+    
+    correspondance_df <- correspondance_df[, c("binID_100", "binID_500", 
+                                               clustering_col, top_clustering_col,
+                                               "pos")]
+    
+    counts_per_region <- correspondance_df %>% 
+      count(binID_500, k8) %>% 
+      pivot_wider(names_from = k8, 
+                  values_from = n, 
+                  values_fill = 0)
+    
+    density_df <- correspondance_df %>% 
+      left_join(counts_per_region, by = "binID_500") %>% 
+      group_by(binID_500) %>% 
+      mutate(pos = mean(pos))
+    
+    density_df$binID_100 <- NULL; density_df$k8 <- NULL
+    
+    cluster_cols_range <- 4:length(colnames(density_df))
+    colnames(density_df)[cluster_cols_range] <- paste0("y",
+                                                       colnames(density_df)[cluster_cols_range])
+    
+    density_df <- density_df %>% 
+      select(binID_500, top_k8, pos, all_of(name_annot)) %>%
+      distinct()
+    
+    colnames(density_df) <- c("binID", top_clustering_col, "pos", "y")
+    
+    if (mode == "ampl") {
+      start <- max(filtered_landscape$ampl)
+      
+      density_df$y <- density_df$y + start
+      
+      density_df <- density_df %>%
+        rowwise() %>%
+        mutate(
+          coord = as.character(backbone.500kb[mcols(backbone.500kb)$binID == binID][1]),
+          tooltip = sprintf(
+            "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
+            bg, fg, coord, .data[[top_clustering_col]]
+          )
+         ) %>%
+        ungroup()
+    } else {
+      start <- min(-input_df$del) - 0.05
+      
+      density_df$y <- density_df$y + start
+      
+      density_df <- density_df %>%
+        rowwise() %>%
+        mutate(
+          coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
+          tooltip = sprintf(
+            "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
+            bg, fg, coord, .data[[top_clustering_col]]
+          )
+        ) %>%
+        ungroup()
+      
+    }
+    
+    density_df$cluster <- factor(name_annot, levels = names(color_palette_ticks))
+    
+    return(density_df)  
+  }
+  
+  
+  add_density_layer <- function(base_plot, 
+                                filtered_landscape, 
+                                name_annot,
+                                mode, 
+                                clustering_col, 
+                                top_clustering_col, 
+                                clustering_depth, 
+                                backbone.100kb, 
+                                backbone.500kb,
+                                linewidth,
+                                color_palette_ticks) {
+    
+    density_df <- generate_density_df(backbone.500kb = backbone.500kb, 
+                                      backbone.100kb = backbone.100kb,
+                                      name_annot = name_annot,
+                                      mode = mode,
+                                      filtered_landscape = filtered_landscape, 
+                                      clustering_col = clustering_col,
+                                      top_clustering_col = top_clustering_col, 
+                                      color_palette_ticks = color_palette_ticks)
+    
+    if (is.null(density_df)) return(base_plot)
+    
+    base_plot +
+      geom_smooth_interactive(
+        data = density_df,
+        aes(
+          x = pos, 
+          y = (y + 0.2),
+          tooltip = tooltip, 
+          data_id = paste0(.data[[top_clustering_col]], "_", binID)
+        ),
+        color = NA,
+        linewidth = linewidth * 10,
+        fill = NA
+      ) +
+      geom_smooth(
+        data = density_df,
+        aes(
+          x = pos,
+          y = (y + 0.2),
+          color = cluster
+        ), 
+        se = FALSE
+      )
+    
+    
+  }
+  
+  
+  generate_tick_df <- function(input_df, 
+                               name_annot, 
+                               mode, 
+                               clustering_col, 
+                               top_clustering_col, 
+                               clustering_depth, 
+                               backbone.100kb,
+                               color_palette_ticks) {
     
     height <- 0.015
     bg <- color_palette_ticks[as.character(name_annot)]
@@ -408,9 +583,25 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     
   }
   
-  add_segment_layer <- function(base_plot, input_df, name_annot, ticksize, mode, backbone.100kb) {
+  add_segment_layer <- function(base_plot, 
+                                input_df, 
+                                name_annot, 
+                                mode, 
+                                clustering_col, 
+                                top_clustering_col, 
+                                clustering_depth, 
+                                backbone.100kb, 
+                                ticksize,
+                                color_palette_ticks) {
     
-    cluster_ticks <- generate_tick_df(input_df, name_annot, mode, backbone.100kb)
+    cluster_ticks <- generate_tick_df(input_df = input_df, 
+                                      name_annot = name_annot, 
+                                      mode = mode, 
+                                      clustering_col = clustering_col, 
+                                      top_clustering_col = top_clustering_col, 
+                                      clustering_depth = clustering_depth, 
+                                      backbone.100kb =  backbone.100kb, 
+                                      color_palette_ticks = color_palette_ticks)
     
     if (is.null(cluster_ticks)) return(base_plot)  # SKIP layer if NULL
     
@@ -453,10 +644,9 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   title    <- "Segment Annotation (based on SHAP values)"
   subtitle <- paste0("[", genome_mask, "] [", type_mask, "] [", model_mask, "]")
   
-  filtered_landscape_ampl <- filtered_landscape_ampl %>% mutate(pos = row_number())
-  filtered_landscape_del  <- filtered_landscape_del  %>% mutate(pos = row_number())
+  filtered_landscape <- filtered_landscape %>% mutate(pos = row_number())
   
-  chr_bounds <- filtered_landscape_ampl %>%
+  chr_bounds <- filtered_landscape %>%
     group_by(chr) %>%
     summarize(start = min(pos), end = max(pos), .groups = "drop") %>%
     mutate(chr_num = readr::parse_number(chr)) %>%
@@ -473,12 +663,12 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
     scale_fill_identity() +
     new_scale_fill()
   
-  chr_to_plot <- unique(filtered_landscape_ampl$chr)
+  chr_to_plot <- unique(filtered_landscape$chr)
   
   if (plot_ampl) {
     bg_ampl <- "#FF0000"; fg_ampl <- get_contrast(bg_ampl)
     for (chr in chr_to_plot) {
-      chr_data <- filtered_landscape_ampl[filtered_landscape_ampl$chr == chr, ]
+      chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
       chr_data <- chr_data %>% mutate(
         tooltip = paste0("BinID: ", binID, "\nAmpl: ", round(ampl,3)),
         data_id = binID
@@ -508,7 +698,7 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   if (plot_del) {
     bg_del <- "#0000FF"; fg_del <- get_contrast(bg_del)
     for (chr in chr_to_plot) {
-      chr_data <- filtered_landscape_del[filtered_landscape_del$chr == chr, ]
+      chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
       chr_data <- chr_data %>% mutate(
         tooltip = paste0("BinID: ", binID, "\nDel: ", round(del,3)),
         data_id = binID
@@ -552,10 +742,9 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
                   "#ff66cc", "#8b4513", "#cc00cc", "#3399cc", 
                   "#FFC0CB", "#000000", "#FF0000", "#EE82EE") # madonna che bello così simmetrico
   
-  all_dfs <- list(filtered_landscape_ampl, filtered_landscape_del)
   all_modes <- c("ampl", "del")
   
-  clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape_ampl), value = T)
+  clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape), value = T)
   top_clustering_col <- paste0("top_",clustering_col)
   clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
   
@@ -566,13 +755,13 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
   names(color_palette_ticks) <- levels(factor(1:clustering_depth))
   
   ticksize <- 0.1
+  linewidth <- 1
   
   layers <- lapply(X = annot_to_plot, 
          FUN = function(x){
            y <- (x %% 2) + 1
            return(
-             list(mode = all_modes[y], 
-                  input = all_dfs[[y]], 
+             list(mode = all_modes[y],
                   name = names(color_palette_ticks)[x]
                   )
                 )
@@ -580,16 +769,22 @@ landscape_plot_interactive <- function(filtered_landscape_ampl,
             )
   
   for (lay in layers) {
+    
       base_plot <- add_segment_layer(base_plot = base_plot, 
-                                     input_df = lay$input, 
-                                     name_annot = lay$name, 
-                                     ticksize = ticksize, 
+                                     input_df = filtered_landscape, 
+                                     name_annot = lay$name,
                                      mode = lay$mode, 
-                                     backbone.100kb = backbone.100kb)
+                                     clustering_col = clustering_col,
+                                     top_clustering_col = top_clustering_col,
+                                     clustering_depth = clustering_depth,
+                                     backbone.100kb = backbone.100kb,
+                                     ticksize = ticksize, 
+                                     color_palette_ticks = color_palette_ticks
+                                     )
     }
   
-  upper_limit <- ceiling(max(filtered_landscape_ampl$ampl) * 10) / 10
-  lower_limit <- floor(min(-filtered_landscape_del$del) * 10) / 10
+  upper_limit <- ceiling(max(filtered_landscape$ampl) * 10) / 10
+  lower_limit <- floor(min(-filtered_landscape$del) * 10) / 10
   sym_limit   <- min(abs(upper_limit), abs(lower_limit))
   y_breaks    <- pretty(c(-sym_limit, sym_limit))
   
