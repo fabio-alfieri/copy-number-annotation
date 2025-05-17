@@ -234,8 +234,7 @@ parse_annot_to_plot <- function(clustering_depth, input){
   }
 }
 
-filter_df <- function(input_obj, backbone_granges, type_input = NULL, 
-                      model_input = NULL, chr_input = NULL, coord_input = NULL){
+filter_df <- function(input_obj, backbone_granges, type_input = NULL, model_input = NULL, chr_input = NULL, coord_input = NULL){
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
@@ -357,15 +356,99 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
 }
 
 landscape_plot_interactive <- function(filtered_landscape,
-                                       backbone.100kb,
-                                       backbone.500kb,
-                                       genome_mask,
-                                       type_mask,
-                                       model_mask,
-                                       plot_ampl = TRUE,
-                                       plot_del = TRUE,
+                                       backbone.100kb,backbone.500kb,
+                                       genome_mask, type_mask, model_mask,
+                                       plot_ampl = TRUE, plot_del = TRUE,
                                        annot_to_plot = "all") {
   
+  get_chr_bounds <- function(filtered_landscape){
+    
+    chr_bounds <- filtered_landscape %>%
+      group_by(chr) %>%
+      summarize(start = min(pos), end = max(pos), .groups = "drop") %>%
+      mutate(chr_num = readr::parse_number(chr)) %>%
+      arrange(chr_num) %>%
+      mutate(fill = rep(c("white", "#e7deed"), length.out = n())) %>%
+      select(-chr_num)
+    
+  }
+  plot_base_layer <- function(chr_bounds, filtered_landscape){
+    
+    base_plot <- ggplot() +
+      geom_rect(
+        data = chr_bounds,
+        aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = fill),
+        alpha = 0.3
+      ) +
+      scale_fill_identity() +
+      new_scale_fill()
+    
+    return(base_plot)
+  }
+  plot_ampl_layer <- function(base_plot, chr_to_plot, filtered_landscape){
+    
+    bg_ampl <- "#FF0000"; fg_ampl <- get_contrast(bg_ampl)
+    
+    for (chr in chr_to_plot) {
+      chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
+      chr_data <- chr_data %>% mutate(
+        tooltip = paste0("BinID: ", binID, "\nAmpl: ", round(ampl,3)),
+        data_id = binID
+      )
+      base_plot <- base_plot +
+        geom_line(data = chr_data, aes(x = pos, y = ampl), color = "red") +
+        geom_point_interactive(
+          data = chr_data,
+          aes(x = pos, y = ampl, 
+              tooltip = sprintf(
+                "<div style='background:%s; 
+                  color:%s; 
+                  padding:4px; 
+                  border-radius:0px; 
+                  border:none; 
+                  outline:none; 
+                  box-shadow:none;'>
+                  BinID: %s<br>
+                  Ampl: %s</div>",
+                bg_ampl, fg_ampl, binID, round(ampl,3)
+              ), 
+              data_id = data_id),
+          size = 3, color = "transparent"
+        )
+    }
+    return(base_plot)
+  }
+  plot_del_layer <- function(base_plot, chr_to_plot, filtered_landscape){
+    
+    bg_del <- "#0000FF"; fg_del <- get_contrast(bg_del)
+    for (chr in chr_to_plot) {
+      chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
+      chr_data <- chr_data %>% mutate(
+        tooltip = paste0("BinID: ", binID, "\nDel: ", round(del,3)),
+        data_id = binID
+      )
+      base_plot <- base_plot +
+        geom_line(data = chr_data, aes(x = pos, y = -del), color = "blue") +
+        geom_point_interactive(
+          data = chr_data,
+          aes(x = pos, y = -del, 
+              tooltip = sprintf(
+                "<div style='background:%s; 
+                  color:%s; 
+                  padding:4px; 
+                  border-radius:0px; 
+                  border:none; 
+                  outline:none; 
+                  box-shadow:none;'>
+                  BinID: %s<br>
+                  Del: %s</div>",
+                bg_del, fg_del, binID, round(del,3)
+              ), data_id = data_id),
+          size = 3, color = "transparent"
+        )
+    }
+    return(base_plot)
+  }
   
   get_contrast <- function(hexcol) {
     rgb <- col2rgb(hexcol) / 255
@@ -373,13 +456,10 @@ landscape_plot_interactive <- function(filtered_landscape,
     ifelse(lum > 0.5, "#000000", "#FFFFFF")
   }
   
-  generate_density_df <- function(backbone.500kb, 
-                                  backbone.100kb,
-                                  name_annot,
-                                  mode,
+  generate_density_df <- function(backbone.500kb, backbone.100kb,
+                                  name_annot, mode,
                                   filtered_landscape, 
-                                  clustering_col,
-                                  top_clustering_col,
+                                  clustering_col, top_clustering_col,
                                   color_palette_ticks){
     
     
@@ -477,17 +557,11 @@ landscape_plot_interactive <- function(filtered_landscape,
   }
   
   
-  add_density_layer <- function(base_plot, 
-                                filtered_landscape, 
-                                name_annot,
-                                mode, 
-                                clustering_col, 
-                                top_clustering_col, 
-                                clustering_depth, 
-                                backbone.100kb, 
-                                backbone.500kb,
-                                linewidth,
-                                color_palette_ticks) {
+  add_density_layer <- function(base_plot, filtered_landscape, 
+                                name_annot, mode, 
+                                clustering_col, top_clustering_col,clustering_depth, 
+                                backbone.100kb,backbone.500kb,
+                                linewidth, color_palette_ticks) {
     
     density_df <- generate_density_df(backbone.500kb = backbone.500kb, 
                                       backbone.100kb = backbone.100kb,
@@ -528,11 +602,8 @@ landscape_plot_interactive <- function(filtered_landscape,
   
   
   generate_tick_df <- function(input_df, 
-                               name_annot, 
-                               mode, 
-                               clustering_col, 
-                               top_clustering_col, 
-                               clustering_depth, 
+                               name_annot,mode, 
+                               clustering_col, top_clustering_col, clustering_depth, 
                                backbone.100kb,
                                color_palette_ticks) {
     
@@ -583,16 +654,11 @@ landscape_plot_interactive <- function(filtered_landscape,
     
   }
   
-  add_segment_layer <- function(base_plot, 
-                                input_df, 
-                                name_annot, 
-                                mode, 
-                                clustering_col, 
-                                top_clustering_col, 
-                                clustering_depth, 
+  add_segment_layer <- function(base_plot, input_df, 
+                                name_annot,mode, 
+                                clustering_col, top_clustering_col, clustering_depth, 
                                 backbone.100kb, 
-                                ticksize,
-                                color_palette_ticks) {
+                                ticksize, color_palette_ticks) {
     
     cluster_ticks <- generate_tick_df(input_df = input_df, 
                                       name_annot = name_annot, 
@@ -646,84 +712,23 @@ landscape_plot_interactive <- function(filtered_landscape,
   
   filtered_landscape <- filtered_landscape %>% mutate(pos = row_number())
   
-  chr_bounds <- filtered_landscape %>%
-    group_by(chr) %>%
-    summarize(start = min(pos), end = max(pos), .groups = "drop") %>%
-    mutate(chr_num = readr::parse_number(chr)) %>%
-    arrange(chr_num) %>%
-    mutate(fill = rep(c("white", "#e7deed"), length.out = n())) %>%
-    select(-chr_num)
+  chr_bounds <- get_chr_bounds(filtered_landscape = filtered_landscape)
   
-  base_plot <- ggplot() +
-    geom_rect(
-      data = chr_bounds,
-      aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = fill),
-      alpha = 0.3
-    ) +
-    scale_fill_identity() +
-    new_scale_fill()
+  base_plot <- plot_base_layer(chr_bounds = chr_bounds, filtered_landscape = filtered_landscape)
   
   chr_to_plot <- unique(filtered_landscape$chr)
   
   if (plot_ampl) {
-    bg_ampl <- "#FF0000"; fg_ampl <- get_contrast(bg_ampl)
-    for (chr in chr_to_plot) {
-      chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
-      chr_data <- chr_data %>% mutate(
-        tooltip = paste0("BinID: ", binID, "\nAmpl: ", round(ampl,3)),
-        data_id = binID
-      )
-      base_plot <- base_plot +
-        geom_line(data = chr_data, aes(x = pos, y = ampl), color = "red") +
-        geom_point_interactive(
-          data = chr_data,
-          aes(x = pos, y = ampl, 
-              tooltip = sprintf(
-                "<div style='background:%s; 
-                  color:%s; 
-                  padding:4px; 
-                  border-radius:0px; 
-                  border:none; 
-                  outline:none; 
-                  box-shadow:none;'>
-                  BinID: %s<br>
-                  Ampl: %s</div>",
-                bg_ampl, fg_ampl, binID, round(ampl,3)
-              ), 
-              data_id = data_id),
-          size = 3, color = "transparent"
-        )
+    base_plot <- plot_ampl_layer(base_plot = base_plot, 
+                                  chr_to_plot = chr_to_plot, 
+                                  filtered_landscape = filtered_landscape)
     }
-  }
+  
   if (plot_del) {
-    bg_del <- "#0000FF"; fg_del <- get_contrast(bg_del)
-    for (chr in chr_to_plot) {
-      chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
-      chr_data <- chr_data %>% mutate(
-        tooltip = paste0("BinID: ", binID, "\nDel: ", round(del,3)),
-        data_id = binID
-      )
-      base_plot <- base_plot +
-        geom_line(data = chr_data, aes(x = pos, y = -del), color = "blue") +
-        geom_point_interactive(
-          data = chr_data,
-          aes(x = pos, y = -del, 
-              tooltip = sprintf(
-            "<div style='background:%s; 
-                  color:%s; 
-                  padding:4px; 
-                  border-radius:0px; 
-                  border:none; 
-                  outline:none; 
-                  box-shadow:none;'>
-                  BinID: %s<br>
-                  Del: %s</div>",
-            bg_del, fg_del, binID, round(del,3)
-          ), data_id = data_id),
-          size = 3, color = "transparent"
-        )
+    base_plot <- plot_del_layer(base_plot = base_plot, 
+                   chr_to_plot = chr_to_plot, 
+                   filtered_landscape = filtered_landscape)
     }
-  }
   
   base_plot <- base_plot +
     geom_hline(yintercept = 0, 
