@@ -356,7 +356,7 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
 }
 
 landscape_plot_interactive <- function(filtered_landscape,
-                                       backbone.100kb,backbone.500kb,
+                                       backbone.100kb,
                                        genome_mask, type_mask, model_mask,
                                        plot_ampl = TRUE, plot_del = TRUE,
                                        annot_to_plot = "all") {
@@ -460,151 +460,120 @@ landscape_plot_interactive <- function(filtered_landscape,
     ifelse(lum > 0.5, "#000000", "#FFFFFF")
   }
   
-  
   add_density_layer <- function(base_plot, input_df, 
-                                name_annot, mode, 
-                                clustering_col, top_clustering_col,clustering_depth, 
-                                backbone.100kb,backbone.500kb,
-                                linewidth, color_palette_ticks) {
-
+                                name_annot,mode, 
+                                clustering_col, top_clustering_col, clustering_depth, 
+                                backbone.100kb, 
+                                ticksize, color_palette_ticks) {
     
-    generate_density_df <- function(backbone.500kb, backbone.100kb,
-                                    name_annot, mode,
-                                    input_df, 
-                                    clustering_col, top_clustering_col,
-                                    color_palette_ticks){
+    
+    generate_density_df <- function(input_df, 
+                                    name_annot,mode, 
+                                    clustering_col, top_clustering_col, clustering_depth, 
+                                    backbone.100kb,
+                                    color_palette_ticks) {
       
-      
+      height <- 0.015
       bg <- color_palette_ticks[as.character(name_annot)]
       fg <- get_contrast(bg)
       
-      name_annot <- paste0("y", name_annot)
+      df <- input_df %>%
+        filter(.data[[clustering_col]] == name_annot)
       
-      hits <- findOverlaps(backbone.500kb, backbone.100kb)
-      hits_500kb <- backbone.500kb[queryHits(hits)]
-      hits_100kb <- backbone.100kb[subjectHits(hits)]
-      
-      intersection_gr <- pintersect(hits_500kb, hits_100kb)
-      
-      binID_500 <- mcols(hits_500kb)$binID
-      binID_100 <- mcols(hits_100kb)$binID
-      mcols(intersection_gr)$binID_500 <- binID_500
-      mcols(intersection_gr)$binID_100 <- binID_100
-      mcols(intersection_gr)$binID <- NULL
-      
-      intersection_df <- data.frame(binID_500 = mcols(intersection_gr)$binID_500, 
-                                    binID_100 = mcols(intersection_gr)$binID_100, 
-                                    width = width(intersection_gr))
-      intersection_df_clean <- intersection_df %>% 
-        group_by(binID_100) %>% 
-        filter(width == max(width))
-      
-      correspondance_df <- merge(x = intersection_df_clean, 
-                                 y = input_df, 
-                                 by.x = "binID_100", by.y = "binID")
-      
-      correspondance_df <- correspondance_df[, c("binID_100", "binID_500", 
-                                                 clustering_col, top_clustering_col,
-                                                 "pos")]
-      
-      counts_per_region <- correspondance_df %>% 
-        count(binID_500, .data[[clustering_col]]) %>% 
-        pivot_wider(names_from = .data[[clustering_col]], 
-                    values_from = n, 
-                    values_fill = 0)
-      
-      density_df <- correspondance_df %>% 
-        left_join(counts_per_region, by = "binID_500") %>% 
-        group_by(binID_500) %>% 
-        mutate(pos = mean(pos))
-      
-      density_df$binID_100 <- NULL; density_df[,top_clustering_col] <- NULL
-      
-      cluster_cols_range <- 4:length(colnames(density_df))
-      colnames(density_df)[cluster_cols_range] <- paste0("y",
-                                                         colnames(density_df)[cluster_cols_range])
-      
-      density_df <- density_df %>% 
-        select(binID_500, all_of(clustering_col), pos, all_of(name_annot)) %>%
-        distinct()
-      
-      colnames(density_df) <- c("binID", top_clustering_col, "pos", "y")
+      if (nrow(df) == 0) return(NULL)
       
       if (mode == "ampl") {
-    
         start <- max(input_df$ampl)
-    
-        density_df <- density_df %>%
-          rowwise() %>%
-          mutate(
-            coord = as.character(backbone.500kb[mcols(backbone.500kb)$binID == binID][1]),
-            tooltip = sprintf(
-              "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
-              bg, fg, coord, .data[[top_clustering_col]]
-            )
-          ) %>%
-          ungroup()
-        
-      } else {
-        
-        start <- min(-input_df$del) - 0.05
-        
-        density_df <- density_df %>%
+        df <- df %>%
           rowwise() %>%
           mutate(
             coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
             tooltip = sprintf(
               "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
               bg, fg, coord, .data[[top_clustering_col]]
-            )
+            ),
+            cluster_ymid = (round(start, 1) + 0.05) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymin = cluster_ymid - height,
+            cluster_ymax = cluster_ymid + height
+          ) %>%
+          ungroup()
+      } else {
+        start <- min(-input_df$del) - 0.05
+        df <- df %>%
+          rowwise() %>%
+          mutate(
+            coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
+            tooltip = sprintf(
+              "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
+              bg, fg, coord, .data[[top_clustering_col]]
+            ),
+            cluster_ymid = (round(start, 1) - 0.05) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymin = cluster_ymid - height,
+            cluster_ymax = cluster_ymid + height
           ) %>%
           ungroup()
         
       }
+      df$cluster <- factor(name_annot, levels = names(color_palette_ticks))
+      return(df)
       
-      density_df$cluster <- factor(gsub(pattern = "y", replacement = "", name_annot), 
-                                   levels = names(color_palette_ticks))
-      
-      return(density_df)  
     }
     
-        
-    density_df <- generate_density_df(backbone.500kb = backbone.500kb, 
-                                      backbone.100kb = backbone.100kb,
-                                      name_annot = name_annot,
-                                      mode = mode,
-                                      input_df = input_df, 
-                                      clustering_col = clustering_col,
-                                      top_clustering_col = top_clustering_col, 
-                                      color_palette_ticks = color_palette_ticks)
     
-    if (is.null(density_df)) return(base_plot)
+    densities_input <- generate_density_df(input_df = input_df, 
+                                           name_annot = name_annot, 
+                                           mode = mode, 
+                                           clustering_col = clustering_col, 
+                                           top_clustering_col = top_clustering_col, 
+                                           clustering_depth = clustering_depth, 
+                                           backbone.100kb =  backbone.100kb, 
+                                           color_palette_ticks = color_palette_ticks)
+    
+    if (is.null(densities_input)) return(base_plot)
+    
+    dens <- density(densities_input$pos, bw = 5)
+    ymin <- unique(densities_input$cluster_ymin)
+    ymax <- unique(densities_input$cluster_ymax)
+    cluster <- unique(densities_input$cluster)
+    
+    scaled_y <- (dens$y / max(dens$y)) * (ymax - ymin) * 0.9 + ymin
+    
+    dens_df <- data.frame(
+      pos = dens$x,
+      ymin = ymin,
+      y = scaled_y,
+      cluster = cluster
+    )
+    
+    dens_df$cluster <- factor(dens_df$cluster, levels = names(color_palette_ticks))
+    
+    density_layer <- geom_ribbon(
+      data = dens_df,
+      aes(x = pos, 
+          ymin = ymin, 
+          ymax = y, fill = cluster),
+      alpha = 0.4
+    )
     
     base_plot +
-      geom_smooth_interactive(
-        data = density_df,
+      density_layer +
+      geom_segment(
+        data = dens_df,
         aes(
-          x = pos, 
-          y = y,
-          tooltip = tooltip, 
-          data_id = paste0(.data[[top_clustering_col]], "_", binID)
+          x     = min(input_df$pos), 
+          xend  = max(input_df$pos),
+          y     = ymin,
+          yend  = ymin,
+          colour = cluster
         ),
-        color = NA,
-        linewidth = linewidth * 10,
-        fill = NA
+        linewidth = 0.2
       ) +
-      geom_smooth(
-        data = density_df,
-        aes(
-          x = pos,
-          y = y,
-          color = cluster
-        ), 
-        se = FALSE
-      ) +
-      scale_colour_manual( values = color_palette_ticks )
+      scale_fill_manual(values = color_palette_ticks) +
+      scale_colour_manual(values = color_palette_ticks) +
+      theme_minimal()
+    
   }
-  
+
   
   add_segment_layer <- function(base_plot, input_df, 
                                 name_annot,mode, 
@@ -798,19 +767,17 @@ landscape_plot_interactive <- function(filtered_landscape,
                                      color_palette_ticks = color_palette_ticks
                                      )
       
-  #    base_plot <- add_density_layer(base_plot = base_plot, 
-  #                                   input_df = filtered_landscape, 
-  #                                   name_annot = lay$name,
-  #                                   mode = lay$mode, 
-  #                                   clustering_col = clustering_col,
-  #                                   top_clustering_col = top_clustering_col,
-  #                                   clustering_depth = clustering_depth,
-  #                                   backbone.100kb = backbone.100kb,
-  #                                   backbone.500kb = backbone.500kb,
-  #                                   linewidth = linewidth, 
-  #                                   color_palette_ticks = color_palette_ticks
-  #    )
-      
+      base_plot <- add_density_layer(base_plot = base_plot, 
+                                     input_df = filtered_landscape, 
+                                     name_annot = lay$name,
+                                     mode = lay$mode, 
+                                     clustering_col = clustering_col,
+                                     top_clustering_col = top_clustering_col,
+                                     clustering_depth = clustering_depth,
+                                     backbone.100kb = backbone.100kb,
+                                     ticksize = ticksize, 
+                                     color_palette_ticks = color_palette_ticks
+      )
     }
   
   upper_limit <- ceiling(max(filtered_landscape$ampl) * 10) / 10

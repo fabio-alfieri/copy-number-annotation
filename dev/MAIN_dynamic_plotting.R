@@ -13,7 +13,7 @@ processed_data <- parse_input_data(shap.list = shap.list,
                                    clusters_explained = clusters_explained,
                                    chr_backbone_namesfixed = chr_backbone_namesfixed, 
                                    centromere_table = centromere_table,
-                                   clustering_depth = 4)
+                                   clustering_depth = 3)
 
 # these files will be saved after
 
@@ -81,8 +81,7 @@ p <- landscape_plot_interactive(filtered_landscape = filtered_landscape,
                            plot_ampl = TRUE, 
                            plot_del = TRUE, 
                            annot_to_plot = "all", 
-                           backbone.100kb = backbone.100kb,
-                           backbone.500kb = backbone.500kb)
+                           backbone.100kb = backbone.100kb)
 
 
 tooltip_css <- "
