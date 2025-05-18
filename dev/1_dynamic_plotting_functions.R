@@ -385,14 +385,16 @@ landscape_plot_interactive <- function(filtered_landscape,
     
     return(base_plot)
   }
-  plot_ampl_layer <- function(base_plot, chr_to_plot, filtered_landscape){
+  plot_ampl_layer <- function(base_plot, chr_to_plot, filtered_landscape, backbone.100kb){
     
     bg_ampl <- "#FF0000"; fg_ampl <- get_contrast(bg_ampl)
     
     for (chr in chr_to_plot) {
       chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
-      chr_data <- chr_data %>% mutate(
-        tooltip = paste0("BinID: ", binID, "\nAmpl: ", round(ampl,3)),
+      chr_data <- chr_data %>% 
+        rowwise() %>% 
+        mutate(
+        coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
         data_id = binID
       )
       base_plot <- base_plot +
@@ -408,9 +410,9 @@ landscape_plot_interactive <- function(filtered_landscape,
                   border:none; 
                   outline:none; 
                   box-shadow:none;'>
-                  BinID: %s<br>
+                  Coords: %s<br>
                   Ampl: %s</div>",
-                bg_ampl, fg_ampl, binID, round(ampl,3)
+                bg_ampl, fg_ampl, coord, round(ampl,3)
               ), 
               data_id = data_id),
           size = 3, color = "transparent"
@@ -418,13 +420,15 @@ landscape_plot_interactive <- function(filtered_landscape,
     }
     return(base_plot)
   }
-  plot_del_layer <- function(base_plot, chr_to_plot, filtered_landscape){
+  plot_del_layer <- function(base_plot, chr_to_plot, filtered_landscape, backbone.100kb){
     
     bg_del <- "#0000FF"; fg_del <- get_contrast(bg_del)
     for (chr in chr_to_plot) {
       chr_data <- filtered_landscape[filtered_landscape$chr == chr, ]
-      chr_data <- chr_data %>% mutate(
-        tooltip = paste0("BinID: ", binID, "\nDel: ", round(del,3)),
+      chr_data <- chr_data %>% 
+        rowwise() %>% 
+        mutate(
+        coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
         data_id = binID
       )
       base_plot <- base_plot +
@@ -440,9 +444,9 @@ landscape_plot_interactive <- function(filtered_landscape,
                   border:none; 
                   outline:none; 
                   box-shadow:none;'>
-                  BinID: %s<br>
+                  Coords: %s<br>
                   Del: %s</div>",
-                bg_del, fg_del, binID, round(del,3)
+                bg_del, fg_del, coord, round(del,3)
               ), data_id = data_id),
           size = 3, color = "transparent"
         )
@@ -527,10 +531,9 @@ landscape_plot_interactive <- function(filtered_landscape,
       colnames(density_df) <- c("binID", top_clustering_col, "pos", "y")
       
       if (mode == "ampl") {
+    
         start <- max(input_df$ampl)
-        
-        density_df$y <- density_df$y + start
-        
+    
         density_df <- density_df %>%
           rowwise() %>%
           mutate(
@@ -541,10 +544,10 @@ landscape_plot_interactive <- function(filtered_landscape,
             )
           ) %>%
           ungroup()
-      } else {
-        start <- min(-input_df$del) - 0.05
         
-        density_df$y <- density_df$y + start
+      } else {
+        
+        start <- min(-input_df$del) - 0.05
         
         density_df <- density_df %>%
           rowwise() %>%
@@ -559,7 +562,8 @@ landscape_plot_interactive <- function(filtered_landscape,
         
       }
       
-      density_df$cluster <- factor(name_annot, levels = names(color_palette_ticks))
+      density_df$cluster <- factor(gsub(pattern = "y", replacement = "", name_annot), 
+                                   levels = names(color_palette_ticks))
       
       return(density_df)  
     }
@@ -726,13 +730,15 @@ landscape_plot_interactive <- function(filtered_landscape,
   if (plot_ampl) {
     base_plot <- plot_ampl_layer(base_plot = base_plot, 
                                   chr_to_plot = chr_to_plot, 
-                                  filtered_landscape = filtered_landscape)
+                                  filtered_landscape = filtered_landscape, 
+                                  backbone.100kb = backbone.100kb)
     }
   
   if (plot_del) {
     base_plot <- plot_del_layer(base_plot = base_plot, 
                    chr_to_plot = chr_to_plot, 
-                   filtered_landscape = filtered_landscape)
+                   filtered_landscape = filtered_landscape, 
+                   backbone.100kb = backbone.100kb)
     }
   
   base_plot <- base_plot +
