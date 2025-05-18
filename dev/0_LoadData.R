@@ -9,6 +9,9 @@ library(dplyr)
 library(BSgenome.Hsapiens.UCSC.hg19)
 library(ggiraph)
 library(readr)
+library(htmlwidgets)
+library(htmltools)
+library(ggnewscale)
 
 shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
 output.annotation <- readRDS("dev/Data/output_annotation.rds") # NEW
