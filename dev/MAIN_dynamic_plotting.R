@@ -80,7 +80,8 @@ p <- landscape_plot_interactive(filtered_landscape = filtered_landscape,
                            model_mask = c("ampl","del"),
                            plot_ampl = TRUE, 
                            plot_del = TRUE, 
-                           annot_to_plot = "all", 
+                           annot_to_plot_ticks = FALSE, 
+                           annot_to_plot_kde = "all",
                            backbone.100kb = backbone.100kb)
 
 

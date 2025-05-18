@@ -219,6 +219,10 @@ parse_clustering_depth <- function(input){
 }
 parse_annot_to_plot <- function(clustering_depth, input){
   
+  if (isFALSE(input)) {
+    return(input)
+  }
+  
   valid_input <- seq_len(clustering_depth)
   
   if ((length(input) == 1) && (input == "all")) {
@@ -359,7 +363,8 @@ landscape_plot_interactive <- function(filtered_landscape,
                                        backbone.100kb,
                                        genome_mask, type_mask, model_mask,
                                        plot_ampl = TRUE, plot_del = TRUE,
-                                       annot_to_plot = "all") {
+                                       annot_to_plot_ticks = "all",
+                                       annot_to_plot_kde = "all") {
   
   get_chr_bounds <- function(filtered_landscape){
     
@@ -551,11 +556,12 @@ landscape_plot_interactive <- function(filtered_landscape,
       data = dens_df,
       aes(x = pos, 
           ymin = ymin, 
-          ymax = y, fill = cluster),
+          ymax = y, 
+          fill = cluster),
       alpha = 0.4
     )
     
-    base_plot +
+    base_plot <- base_plot +
       density_layer +
       geom_segment(
         data = dens_df,
@@ -566,11 +572,8 @@ landscape_plot_interactive <- function(filtered_landscape,
           yend  = ymin,
           colour = cluster
         ),
-        linewidth = 0.2
-      ) +
-      scale_fill_manual(values = color_palette_ticks) +
-      scale_colour_manual(values = color_palette_ticks) +
-      theme_minimal()
+        linewidth = 0.1
+      )
     
   }
 
@@ -647,9 +650,9 @@ landscape_plot_interactive <- function(filtered_landscape,
                                       backbone.100kb =  backbone.100kb, 
                                       color_palette_ticks = color_palette_ticks)
     
-    if (is.null(cluster_ticks)) return(base_plot)  # SKIP layer if NULL
+    if (is.null(cluster_ticks)) return(base_plot)
     
-    base_plot +
+    base_plot <- base_plot +
       geom_rect_interactive(
         data = cluster_ticks,
         aes(
@@ -733,8 +736,8 @@ landscape_plot_interactive <- function(filtered_landscape,
   top_clustering_col <- paste0("top_",clustering_col)
   clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
   
-  annot_to_plot <- parse_annot_to_plot(clustering_depth = clustering_depth, 
-                                       input = annot_to_plot)
+  annot_to_plot_ticks <- parse_annot_to_plot(clustering_depth = clustering_depth, input = annot_to_plot_ticks)
+  annot_to_plot_kde <- parse_annot_to_plot(clustering_depth = clustering_depth, input = annot_to_plot_kde)
   
   color_palette_ticks <- all_colors[1:clustering_depth]
   names(color_palette_ticks) <- levels(factor(1:clustering_depth))
@@ -742,44 +745,62 @@ landscape_plot_interactive <- function(filtered_landscape,
   ticksize <- 0.1
   linewidth <- 0.2
   
-  layers <- lapply(X = annot_to_plot, 
-         FUN = function(x){
-           y <- (x %% 2) + 1
-           return(
-             list(mode = all_modes[y],
-                  name = names(color_palette_ticks)[x]
-                  )
-                )
-              }
-            )
-  
-  for (lay in layers) {
+  if (!isFALSE(annot_to_plot_ticks)) {
     
-      base_plot <- add_segment_layer(base_plot = base_plot, 
-                                     input_df = filtered_landscape, 
-                                     name_annot = lay$name,
-                                     mode = lay$mode, 
-                                     clustering_col = clustering_col,
-                                     top_clustering_col = top_clustering_col,
-                                     clustering_depth = clustering_depth,
-                                     backbone.100kb = backbone.100kb,
-                                     ticksize = ticksize, 
-                                     color_palette_ticks = color_palette_ticks
-                                     )
-      
-      base_plot <- add_density_layer(base_plot = base_plot, 
-                                     input_df = filtered_landscape, 
-                                     name_annot = lay$name,
-                                     mode = lay$mode, 
-                                     clustering_col = clustering_col,
-                                     top_clustering_col = top_clustering_col,
-                                     clustering_depth = clustering_depth,
-                                     backbone.100kb = backbone.100kb,
-                                     ticksize = ticksize, 
-                                     color_palette_ticks = color_palette_ticks
-      )
-    }
+  layers_ticks <- lapply(X = annot_to_plot_ticks, FUN = function(x){
+                                                    y <- (x %% 2) + 1
+                                                    return(
+                                                     list(mode = all_modes[y],
+                                                          name = names(color_palette_ticks)[x]
+                                                          )
+                                                        )
+                                                      }
+                                                    )
   
+  for (lay in layers_ticks) {
+    
+    base_plot <- add_segment_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape, 
+                                   name_annot = lay$name,
+                                   mode = lay$mode, 
+                                   clustering_col = clustering_col,
+                                   top_clustering_col = top_clustering_col,
+                                   clustering_depth = clustering_depth,
+                                   backbone.100kb = backbone.100kb,
+                                   ticksize = ticksize, 
+                                   color_palette_ticks = color_palette_ticks
+     )
+   }
+  }
+  
+  if (!isFALSE(annot_to_plot_kde)) {
+    
+  layers_kde <- lapply(X = annot_to_plot_kde, FUN = function(x){
+                                                    y <- (x %% 2) + 1
+                                                    return(
+                                                     list(mode = all_modes[y],
+                                                          name = names(color_palette_ticks)[x]
+                                                          )
+                                                        )
+                                                      }
+                                                    )
+  
+  for (lay in layers_kde) {
+    
+    base_plot <- add_density_layer(base_plot = base_plot, 
+                                   input_df = filtered_landscape, 
+                                   name_annot = lay$name,
+                                   mode = lay$mode, 
+                                   clustering_col = clustering_col,
+                                   top_clustering_col = top_clustering_col,
+                                   clustering_depth = clustering_depth,
+                                   backbone.100kb = backbone.100kb,
+                                   ticksize = ticksize, 
+                                   color_palette_ticks = color_palette_ticks
+    )
+   }
+  }
+                                            
   upper_limit <- ceiling(max(filtered_landscape$ampl) * 10) / 10
   lower_limit <- floor(min(-filtered_landscape$del) * 10) / 10
   sym_limit   <- min(abs(upper_limit), abs(lower_limit))
@@ -811,7 +832,9 @@ landscape_plot_interactive <- function(filtered_landscape,
       axis.line.y = element_blank(),
       axis.text.x = element_text(angle = 45, hjust = 1)
     ) + 
-    scale_fill_manual(values = color_palette_ticks)
+    scale_fill_manual(values = color_palette_ticks) +
+    scale_colour_manual(values = color_palette_ticks)
+  
   
   girafe(
     ggobj = base_plot,
