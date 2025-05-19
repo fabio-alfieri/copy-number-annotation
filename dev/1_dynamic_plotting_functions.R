@@ -170,14 +170,6 @@ parse_input_type <- function(input){
 }
 parse_input_model <- function(input){
   
-  if ((length(input) == 1) && (input == "all")) {
-    
-    outlist <- list(selected = c("ampl","del"),
-                    not_selected = NA)
-    
-    return(outlist)
-  } 
-  
   valid_input <- c("ampl","del")
   is_valid <- input %in% valid_input
   
@@ -238,28 +230,29 @@ parse_annot_to_plot <- function(clustering_depth, input){
   }
 }
 
-filter_df <- function(input_obj, backbone_granges, type_input = NULL, model_input = NULL, chr_input = NULL, coord_input = NULL){
+filter_df <- function(input_obj, 
+                      backbone_granges, 
+                      type_input = NULL, 
+                      model_input = NULL,
+                      chr_input = NULL, 
+                      coord_input = NULL){
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
 
   model_mask <- parse_input_model(model_input)
   
-  if (any(class(input_obj) == "list")) {
+  if (class(input_obj) == "list") {
     
-    if (length(model_mask$selected) == 2) {
-      stop("SHAP list must be explicitly filtered")       
+    if (length(model_mask$selected) > 1) {
+      stop("SHAP list or landscape df MUST be explicitly filtered")       
     }
     
     df_input <- input_obj[[model_mask$selected]]
 
-  } else if (any(class(input_obj) == "data.frame")) {
-    
-    df_input <- input_obj
-      
   } else {
     
-    stop("input_obj MUST either be a \"data.frame\" or a \"list\"") 
+    stop("input_obj MUST either be a \"list\"") 
   
   }
 
@@ -361,7 +354,7 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
 
 landscape_plot_interactive <- function(filtered_landscape,
                                        backbone.100kb,
-                                       genome_mask, type_mask, model_mask,
+                                       genome_mask, type_mask,
                                        plot_ampl = TRUE, plot_del = TRUE,
                                        annot_to_plot_ticks = "all",
                                        annot_to_plot_kde = "all") {
@@ -692,8 +685,13 @@ landscape_plot_interactive <- function(filtered_landscape,
   }
   
   valid_input <- c("ampl", "del")
+  model_mask <- valid_input[c(plot_ampl, plot_del)]
   
-  if (!all(model_mask %in% valid_input)) stop("Invalid model selected. Use 'ampl' and/or 'del'.")
+  if (length(model_mask) == 0) {
+    model_mask <- NA
+  }
+
+  if (!all(model_mask %in% c(valid_input,NA))) stop("Invalid model selected. Use 'ampl' and/or 'del'.")
   if (length(genome_mask) == 22) genome_mask <- "WHOLE GENOME"
   if (length(genome_mask) > 1) genome_mask <- paste(genome_mask, collapse = ", ")
   if (length(model_mask) > 1) model_mask <- paste(model_mask, collapse = ", ")

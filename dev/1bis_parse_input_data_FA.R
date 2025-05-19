@@ -1,14 +1,73 @@
-parse_input_data <- function(shap.list, 
-                             toplot.plot, 
-                             clusters_explained, 
-                             chr_backbone_namesfixed, 
-                             centromere_table, 
-                             clustering_depth){
+
+process_out_annot_list <- function(out_annot_list){
   
-  clustering_depth <- parse_clustering_depth(clustering_depth)
+  model_types <- c("ampl", "del")
+  
+  outlist <- list()
+  
+  for (idx in seq_along(along.with = model_types)){
+    
+    model <- model_types[idx]
+    
+    source <- out_annot_list[[model]]
+    source$p.final <- NULL
+    annot <- source$aggregated
+    clustering_depths <- names(annot)
+    final_toplot <- source$toplot
+    
+    for (clustering_depth in clustering_depths){
+      
+      corresponding_col <- match(clustering_depth, colnames(final_toplot))
+      curr_annot <- annot[[clustering_depth]]
+      
+      new_colname <- paste0("top_", clustering_depth)
+      
+      final_toplot <- merge(x = final_toplot, 
+                            y = curr_annot, 
+                            by.x = clustering_depth,
+                            by.y = "cluster")
+      
+      final_toplot[[new_colname]] <- final_toplot$top_features; final_toplot$top_features <- NULL
+      
+    }
+    outlist[[model]] <- final_toplot
+  }
+  
+  return(outlist)
+}
+process_toplot.plot <- function(toplot.plot, clustering_depth){
   
   selected_depth <- clustering_depth$selected
   not_selected_depth <- clustering_depth$not_selected
+  
+  toplot.plot <- toplot.plot[order(as.integer(toplot.plot$chr),
+                                   as.integer(toplot.plot$bin)),]
+  
+  toplot.plot$binID <- paste0(toplot.plot$chr, "_", toplot.plot$bin)
+  toplot.plot$chr <- paste0("chr", toplot.plot$chr); toplot.plot$bin <- NULL; toplot.plot$cluster <- NULL
+  colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'ampl|del')] <- c("ampl", "del")
+
+  toplot.plot$order <- seq_along(1:nrow(toplot.plot))
+  
+  selected_depth_code <- paste0("k",2**selected_depth)
+  not_selected_depth_code <- paste0("k",2**not_selected_depth)
+  
+  top_selected_depth_code <- paste0("top_", selected_depth_code)
+  top_not_selected_depth_code <- paste0("top_", not_selected_depth_code)
+  
+  # colnames(clusters_explained[[selected_depth_code]]) <- c(selected_depth_code, top_selected_depth_code) 
+  # toplot.plot <- left_join(toplot.plot, clusters_explained[[selected_depth_code]], by = selected_depth_code)
+  
+  toplot.plot[,not_selected_depth_code] <- NULL
+  toplot.plot[,top_not_selected_depth_code] <- NULL
+  
+  colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'Type')] <- 'type'
+  
+  toplot.plot <- toplot.plot[order(toplot.plot$order), ]; toplot.plot$order <- NULL
+  
+  return(toplot.plot)
+}
+process_shap_list <- function(shap.list){
   
   # SHAP DF
   shap_clean_list <- list()
@@ -38,15 +97,15 @@ parse_input_data <- function(shap.list,
   
   shap_cols_to_discard <- c("Chromosome_Length", "Centromere_Length", "Centromere_Type", 'BIAS')
   shap_cols_to_keep <- c(#"labels", "type", "chr", "bin",
-                         # "dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
-                         # "distance.to.centromere", "distance.to.telomere", "mutations_norm",
-                         # "genes.bin", "Length_Counts.E17", "Length_Counts.E19", "Ess.distance_pancancer",
-                         # "Length_Counts.E25", "Length_Counts.E1"
-                         "dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
-                         "distance.to.centromere", "distance.to.telomere", "mutations_norm",
-                         "genes.bin", "promoters", "transcribed", "Ess.distance_pancancer",
-                         "enhancers", "repressed","accessible",
-                         "labels")
+    # "dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
+    # "distance.to.centromere", "distance.to.telomere", "mutations_norm",
+    # "genes.bin", "Length_Counts.E17", "Length_Counts.E19", "Ess.distance_pancancer",
+    # "Length_Counts.E25", "Length_Counts.E1"
+    "dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
+    "distance.to.centromere", "distance.to.telomere", "mutations_norm",
+    "genes.bin", "promoters", "transcribed", "Ess.distance_pancancer",
+    "enhancers", "repressed","accessible",
+    "labels")
   
   for (idx in seq_along(along.with = shap.list)) {
     
@@ -71,29 +130,10 @@ parse_input_data <- function(shap.list,
     shap_clean_list[[name]] <- shap.df
     
   }
+  return(shap_clean_list)
+}
+process_backbone <- function(chr_backbone_namesfixed){
   
-  # LANDSCAPE DF
-  toplot.plot$binID <- paste0(toplot.plot$chr, "_", toplot.plot$bin)
-  toplot.plot$chr <- paste0("chr", toplot.plot$chr); toplot.plot$bin <- NULL; toplot.plot$cluster <- NULL
-  colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'ampl|del')] <- c("ampl", "del")
-
-  toplot.plot$order <- seq_along(1:nrow(toplot.plot))
-  
-  selected_depth_code <- paste0("k",2**selected_depth)
-  not_selected_depth_code <- paste0("k",2**not_selected_depth)
-  
-  top_selected_depth_code <- paste0("top_", selected_depth_code)
-
-  colnames(clusters_explained[[selected_depth_code]]) <- c(selected_depth_code, top_selected_depth_code) 
-  
-  toplot.plot <- left_join(toplot.plot, clusters_explained[[selected_depth_code]], by = selected_depth_code)
-  toplot.plot[,not_selected_depth_code] <- NULL
-  
-  colnames(toplot.plot)[str_detect(colnames(toplot.plot), pattern = 'Type')] <- 'type'
-  
-  toplot.plot <- toplot.plot[order(toplot.plot$order), ]; toplot.plot$order <- NULL
-
-  # BACKBONE DF
   backbone.100kb <- chr_backbone_namesfixed$`0.1Mbp`; backbone.100kb <- dplyr::bind_rows(backbone.100kb)
   backbone.100kb$binID <- paste0(backbone.100kb$chr, "_", backbone.100kb$bin)
   backbone.100kb$chr <- paste0("chr", backbone.100kb$chr); backbone.100kb$bin <- NULL
@@ -103,17 +143,11 @@ parse_input_data <- function(shap.list,
                                            binID = backbone.100kb$binID)
   
   
-  backbone.500kb <- chr_backbone_namesfixed$`0.5Mbp`; backbone.500kb <- dplyr::bind_rows(backbone.500kb)
-  backbone.500kb$binID <- paste0(backbone.500kb$chr, "_", backbone.500kb$bin)
-  backbone.500kb$chr <- paste0("chr", backbone.500kb$chr); backbone.500kb$bin <- NULL
+  return(backbone.100kb)
   
-  backbone.500kb <- GenomicRanges::GRanges(seqnames = backbone.500kb$chr, 
-                                           ranges = IRanges(start = as.numeric(backbone.500kb$start_bin), 
-                                                            end = as.numeric(backbone.500kb$end_bin)),
-                                           binID = backbone.500kb$binID)
+}
+process_centromere_table <- function(centromere_table, backbone.100kb){
   
-  
-  # CENTROMERE DF
   centromere_table$Centromere_Length <- NULL
   centromere_table$Centromere_Type <- NULL
   centromere_table$Centromere <- NULL
@@ -131,11 +165,33 @@ parse_input_data <- function(shap.list,
   centromere_table_out$width <- NULL; centromere_table_out$strand <- NULL
   colnames(centromere_table_out) <- c("chr", "start", "end", "binID")
   
+  return(centromere_table_out)
+  
+}
+
+parse_input_data <- function(shap.list, 
+                             out_annot_list, 
+                             chr_backbone_namesfixed, 
+                             centromere_table, 
+                             clustering_depth){
+  
+  clustering_depth <- parse_clustering_depth(clustering_depth)
+  
+  shap_clean_list <- process_shap_list(shap.list = shap.list)
+  
+  backbone.100kb <- process_backbone(chr_backbone_namesfixed = chr_backbone_namesfixed)
+  
+  centromere_table_out <- process_centromere_table(centromere_table = centromere_table, 
+                                                   backbone.100kb = backbone.100kb)
+  
+  out_annot_list_processed <- lapply(X = process_out_annot_list(out_annot_list), 
+                                     FUN = function(x){
+                                       process_toplot.plot(x, clustering_depth = clustering_depth)
+                                     })
   
   outlist <- list(shap.list = shap_clean_list,
-                  toplot.plot = toplot.plot,
+                  out_annot_list_processed = out_annot_list_processed,
                   backbone.100kb = backbone.100kb,
-                  backbone.500kb = backbone.500kb,
                   centromere_table = centromere_table_out)
   
   return(outlist)

@@ -15,9 +15,10 @@ library(ggnewscale)
 
 shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
 output.annotation <- readRDS("dev/Data/output_annotation.rds") # NEW
-toplot.plot <- output.annotation$ampl$toplot # updated
-clusters_explained <- output.annotation$ampl$aggregated # updated
+toplot.plot_before <- output.annotation$ampl$toplot # updated
+# clusters_explained <- output.annotation$ampl$aggregated # updated
 centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
 load("dev/Data/All_levels_backbonetables.RData")
+out_annot_list <- readRDS("dev/Data/output_annotation.rds")
 
 # rm(output.annotation)

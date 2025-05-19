@@ -15,7 +15,7 @@ library(tidyverse)
 #                                 `Mid-length::Deletion model` = models.shap.df$`Mid-length::Deletion model`))
 # write_rds(df, file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
-df <- readRDS(file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
+df <- readRDS(file = '../dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 tt <- 'BRCA'
 
 output <- list()
@@ -204,7 +204,7 @@ for(i in c('ampl','del')){
             cluster_columns = F)
     
   }
-  source('dev/12_hclust_nested.R')
+  source('../dev/12_hclust_nested.R')
   
   # build the heatmap with all the side annotations
   clusters <- as.data.frame(cbind(k2 = cluster_assignments$k2,
@@ -338,7 +338,7 @@ for(i in c('ampl','del')){
   output[[i]]$aggregated <- annotations_list
 }
 
-write_rds(output, file = 'dev/Data/output_annotation.rds')
+write_rds(output, file = '../dev/Data/output_annotation.rds')
 
 # Visualize plots with annotation for ampl or del
 output$ampl$p.final
