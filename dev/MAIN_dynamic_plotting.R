@@ -74,9 +74,9 @@ p <- landscape_plot_interactive(filtered_landscape = filtered_landscape,
                            genome_mask = genome_mask_ampl, 
                            type_mask = type_mask_ampl, 
                            model_mask = c("ampl","del"),
-                           plot_ampl = TRUE, 
-                           plot_del = TRUE, 
-                           annot_to_plot_ticks = "all", 
+                           plot_ampl = FALSE, 
+                           plot_del = FALSE, 
+                           annot_to_plot_ticks = FALSE, 
                            annot_to_plot_kde = "all",
                            backbone.100kb = backbone.100kb)
 

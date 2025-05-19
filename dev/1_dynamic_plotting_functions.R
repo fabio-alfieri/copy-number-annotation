@@ -469,7 +469,7 @@ landscape_plot_interactive <- function(filtered_landscape,
                                 name_annot,mode, 
                                 clustering_col, top_clustering_col, clustering_depth, 
                                 backbone.100kb, 
-                                ticksize, color_palette_ticks) {
+                                linewidth, color_palette_ticks) {
     
     
     generate_density_df <- function(input_df, 
@@ -492,10 +492,9 @@ landscape_plot_interactive <- function(filtered_landscape,
         df <- df %>%
           rowwise() %>%
           mutate(
-            coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
             tooltip = sprintf(
-              "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
-              bg, fg, coord, .data[[top_clustering_col]]
+              "<div style='background:%s; color:%s; padding:4px;'>%s</div>",
+              bg, fg, .data[[top_clustering_col]]
             ),
             cluster_ymid = (round(start, 1) + 0.05) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
@@ -509,8 +508,8 @@ landscape_plot_interactive <- function(filtered_landscape,
           mutate(
             coord = as.character(backbone.100kb[mcols(backbone.100kb)$binID == binID][1]),
             tooltip = sprintf(
-              "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
-              bg, fg, coord, .data[[top_clustering_col]]
+              "<div style='background:%s; color:%s; padding:4px;'>%s</div>",
+              bg, fg, .data[[top_clustering_col]]
             ),
             cluster_ymid = (round(start, 1) - 0.05) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
@@ -540,6 +539,7 @@ landscape_plot_interactive <- function(filtered_landscape,
     ymin <- unique(densities_input$cluster_ymin)
     ymax <- unique(densities_input$cluster_ymax)
     cluster <- unique(densities_input$cluster)
+    tooltip <- unique(densities_input$tooltip)
     
     scaled_y <- (dens$y / max(dens$y)) * (ymax - ymin) * 0.9 + ymin
     
@@ -547,33 +547,43 @@ landscape_plot_interactive <- function(filtered_landscape,
       pos = dens$x,
       ymin = ymin,
       y = scaled_y,
-      cluster = cluster
+      cluster = cluster,
+      tooltip = tooltip
     )
     
     dens_df$cluster <- factor(dens_df$cluster, levels = names(color_palette_ticks))
     
-    density_layer <- geom_ribbon(
+    density_layer <- geom_ribbon_interactive(
       data = dens_df,
-      aes(x = pos, 
-          ymin = ymin, 
-          ymax = y, 
-          fill = cluster),
+      aes(
+        x = pos, 
+        ymin = ymin, 
+        ymax = y, 
+        fill = cluster,
+        tooltip = tooltip,
+        data_id = cluster
+      ),
+      linetype = "blank",
       alpha = 0.4
+    )
+    
+    segment_layer <- geom_segment_interactive(
+      data = dens_df,
+      mapping = aes(
+        y = ymin,
+        yend = ymin,
+        colour = cluster,
+        tooltip = tooltip,
+        data_id = pos
+      ),
+      x = min(input_df$pos),
+      xend = max(input_df$pos),
+      linewidth = linewidth
     )
     
     base_plot <- base_plot +
       density_layer +
-      geom_segment(
-        data = dens_df,
-        aes(
-          x     = min(input_df$pos), 
-          xend  = max(input_df$pos),
-          y     = ymin,
-          yend  = ymin,
-          colour = cluster
-        ),
-        linewidth = 0.1
-      )
+      segment_layer
     
   }
 
@@ -743,7 +753,7 @@ landscape_plot_interactive <- function(filtered_landscape,
   names(color_palette_ticks) <- levels(factor(1:clustering_depth))
   
   ticksize <- 0.1
-  linewidth <- 0.2
+  linewidth <- 0.1
   
   if (!isFALSE(annot_to_plot_ticks)) {
     
@@ -795,7 +805,7 @@ landscape_plot_interactive <- function(filtered_landscape,
                                    top_clustering_col = top_clustering_col,
                                    clustering_depth = clustering_depth,
                                    backbone.100kb = backbone.100kb,
-                                   ticksize = ticksize, 
+                                   linewidth = linewidth, 
                                    color_palette_ticks = color_palette_ticks
     )
    }
