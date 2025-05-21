@@ -28,6 +28,7 @@ res.filt[['ampl']] <- res.ampl %>% filter(residual <= as.numeric(quantile(res.am
 res.filt[['del']] <- res.del %>% filter(residual <= as.numeric(quantile(res.del$residual, prob = .95)))
 
 tt <- 'BRCA'
+G <- 25
 
 output <- list()
 for(i in c('ampl','del')){
@@ -96,7 +97,7 @@ for(i in c('ampl','del')){
   
   library(mclust)
   set.seed(1234)
-  gmm <- Mclust(shap_agg %>% select(-labels), G = 25)
+  gmm <- Mclust(shap_agg %>% select(-labels), G = G)
   
   shap_agg$cluster <- predict(gmm)$classification
   table(shap_agg$cluster)
@@ -353,7 +354,7 @@ for(i in c('ampl','del')){
   output[[i]]$aggregated <- annotations_list
 }
 
-write_rds(output, file = 'dev/Data/output_annotation_95th.rds')
+write_rds(output, file = paste0('dev/Data/output_annotation_95th_G',G,'.rds'))
 
 if(F){
   # Visualize plots with annotation for ampl or del
