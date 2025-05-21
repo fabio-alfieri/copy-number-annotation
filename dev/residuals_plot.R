@@ -92,6 +92,7 @@ plot_residuals <- function(prediction_df){
       opts_tooltip(css   = "box-shadow:2px 2px 6px rgba(0,0,0,0.3); font-size:12px;")
     )
   )
+  return(prediction_df)
 }
 
 

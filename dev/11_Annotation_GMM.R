@@ -15,7 +15,18 @@ library(tidyverse)
 #                                 `Mid-length::Deletion model` = models.shap.df$`Mid-length::Deletion model`))
 # write_rds(df, file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
-df <- readRDS(file = '../dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
+df <- readRDS(file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
+
+# compute residuals and remove lowly predicted ones
+source('dev/residuals_plot.R')
+res.ampl <- plot_residuals(read_rds('dev/Data/pred_ampl.rds'))
+res.del <- plot_residuals(read_rds('dev/Data/pred_del.rds'))
+# hist(res.ampl$residual, breaks = 100)
+
+res.filt <- list()
+res.filt[['ampl']] <- res.ampl %>% filter(residual <= as.numeric(quantile(res.ampl$residual, prob = .95)))
+res.filt[['del']] <- res.del %>% filter(residual <= as.numeric(quantile(res.del$residual, prob = .95)))
+
 tt <- 'BRCA'
 
 output <- list()
@@ -33,6 +44,10 @@ for(i in c('ampl','del')){
   shap <- midlength$shap
   values <- midlength$values
   values$labels <- paste0(values$bin,'-',values$Type)
+  
+  values <- left_join(res.filt[[i]] %>% select(bin, Type, residual),
+            values)
+  shap <- left_join(values %>% select(labels), shap)
   
   # Aggregate Chromatin state into categories in both shap and values
   aggregate_chromatin_states <- function(df) {
@@ -204,7 +219,7 @@ for(i in c('ampl','del')){
             cluster_columns = F)
     
   }
-  source('../dev/12_hclust_nested.R')
+  source('dev/12_hclust_nested.R')
   
   # build the heatmap with all the side annotations
   clusters <- as.data.frame(cbind(k2 = cluster_assignments$k2,
@@ -338,76 +353,74 @@ for(i in c('ampl','del')){
   output[[i]]$aggregated <- annotations_list
 }
 
-write_rds(output, file = '../dev/Data/output_annotation.rds')
+write_rds(output, file = 'dev/Data/output_annotation_95th.rds')
 
-# Visualize plots with annotation for ampl or del
-output$ampl$p.final
-output$ampl$aggregated
-
-output$del$p.final
-output$del$aggregated
-
-
-# Explore Clusters
-ggplot(output$ampl$toplot) +
-  geom_boxplot(aes(x = as.factor(k4), y = ampl_score))
-ggplot(output$ampl$toplot) +
-  geom_boxplot(aes(x = as.factor(k8), y = ampl_score))
-ggplot(output$ampl$toplot) +
-  geom_boxplot(aes(x = as.factor(k16), y = ampl_score))
-
-output$ampl$toplot %>% ggplot(aes(x = ampl_score, color = as.factor(k8), fill = as.factor(k8))) +
-  geom_density(alpha = 0.4) +
-  labs(
-    x    = "Amplification score",
-    y    = "Density",
-    color = "Cluster (k = 8)",
-    fill  = "Cluster (k = 8)"
-  ) +
-  theme_minimal() +
-  xlim(-0.2,0.75)
-
-
-output$ampl$toplot %>% group_by(k8) %>% 
-  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
-  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
-  ggplot(aes(x = factor(k8), y = value, fill = factor(name))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  theme_minimal() +
-  ggtitle('Amplification Model Clusters')
-output$ampl$toplot %>% group_by(k16) %>% 
-  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
-  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
-  ggplot(aes(x = factor(k16), y = value, fill = factor(name))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  theme_minimal() +
-  ggtitle('Amplification Model Clusters')
-
-output$del$toplot %>% group_by(k8) %>% 
-  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
-  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
-  ggplot(aes(x = factor(k8), y = value, fill = factor(name))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  theme_minimal() +
-  ggtitle('Amplification Model Clusters')
-output$del$toplot %>% group_by(k16) %>% 
-  summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
-  pivot_longer(cols = c(mean.ampl, mean.del)) %>%
-  ggplot(aes(x = factor(k16), y = value, fill = factor(name))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  theme_minimal() +
-  ggtitle('Amplification Model Clusters')
-
-
-
-# Data
-# 1.  shap values
-# 2.  feature matrix (toplot.plot)
-# 3.  clustering + annotation
-        # list(cluster_explained = aggregated,
-        #      landscape = toplot.plot)
-# 4.  hclust
-
-
-
-
+if(F){
+  # Visualize plots with annotation for ampl or del
+  output$ampl$p.final
+  output$ampl$aggregated
+  
+  output$del$p.final
+  output$del$aggregated
+  
+  
+  # Explore Clusters
+  ggplot(output$ampl$toplot) +
+    geom_boxplot(aes(x = as.factor(k4), y = ampl_score))
+  ggplot(output$ampl$toplot) +
+    geom_boxplot(aes(x = as.factor(k8), y = ampl_score))
+  ggplot(output$ampl$toplot) +
+    geom_boxplot(aes(x = as.factor(k16), y = ampl_score))
+  
+  output$ampl$toplot %>% ggplot(aes(x = ampl_score, color = as.factor(k8), fill = as.factor(k8))) +
+    geom_density(alpha = 0.4) +
+    labs(
+      x    = "Amplification score",
+      y    = "Density",
+      color = "Cluster (k = 8)",
+      fill  = "Cluster (k = 8)"
+    ) +
+    theme_minimal() +
+    xlim(-0.2,0.75)
+  
+  
+  output$ampl$toplot %>% group_by(k8) %>% 
+    summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+    pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+    ggplot(aes(x = factor(k8), y = value, fill = factor(name))) +
+    geom_bar(stat = "identity", position = "dodge") +
+    theme_minimal() +
+    ggtitle('Amplification Model Clusters')
+  output$ampl$toplot %>% group_by(k16) %>% 
+    summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+    pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+    ggplot(aes(x = factor(k16), y = value, fill = factor(name))) +
+    geom_bar(stat = "identity", position = "dodge") +
+    theme_minimal() +
+    ggtitle('Amplification Model Clusters')
+  
+  output$del$toplot %>% group_by(k8) %>% 
+    summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+    pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+    ggplot(aes(x = factor(k8), y = value, fill = factor(name))) +
+    geom_bar(stat = "identity", position = "dodge") +
+    theme_minimal() +
+    ggtitle('Amplification Model Clusters')
+  output$del$toplot %>% group_by(k16) %>% 
+    summarise(mean.ampl = mean(ampl_score),mean.del = mean(del_score)) %>%
+    pivot_longer(cols = c(mean.ampl, mean.del)) %>%
+    ggplot(aes(x = factor(k16), y = value, fill = factor(name))) +
+    geom_bar(stat = "identity", position = "dodge") +
+    theme_minimal() +
+    ggtitle('Amplification Model Clusters')
+  
+  
+  # Data
+  # 1.  shap values
+  # 2.  feature matrix (toplot.plot)
+  # 3.  clustering + annotation
+  # list(cluster_explained = aggregated,
+  #      landscape = toplot.plot)
+  # 4.  hclust
+  
+}
