@@ -24,8 +24,9 @@ res.del <- plot_residuals(read_rds('dev/Data/pred_del.rds'))
 # hist(res.ampl$residual, breaks = 100)
 
 res.filt <- list()
-res.filt[['ampl']] <- res.ampl %>% filter(residual <= as.numeric(quantile(res.ampl$residual, prob = .95)))
-res.filt[['del']] <- res.del %>% filter(residual <= as.numeric(quantile(res.del$residual, prob = .95)))
+quantile_filt <- 0.95
+res.filt[['ampl']] <- res.ampl %>% filter(residual <= as.numeric(quantile(res.ampl$residual, prob = quantile_filt)))
+res.filt[['del']] <- res.del %>% filter(residual <= as.numeric(quantile(res.del$residual, prob = quantile_filt)))
 
 tt <- 'BRCA'
 G <- 25
@@ -354,7 +355,8 @@ for(i in c('ampl','del')){
   output[[i]]$aggregated <- annotations_list
 }
 
-write_rds(output, file = paste0('dev/Data/output_annotation_95th_G',G,'.rds'))
+write_rds(output, file = paste0('dev/Data/output_annotation_keepLOW',ifelse(quantile_filt == 1, '', 
+                                                                     paste0('_',quantile_filt*100,'th')),'_G',G,'.rds'))
 
 if(F){
   # Visualize plots with annotation for ampl or del
