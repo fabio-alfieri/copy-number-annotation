@@ -36,11 +36,11 @@ for(k in ks) {
       mean_others = (sum(value) - value) / (n() - 1),
       delta = abs(value - mean_others),
       direction = ifelse(value > mean_others, "HIGH", "LOW")
-    ) %>% filter(direction == 'HIGH') %>%
+    ) %>% # filter(direction == 'HIGH') %>%
     ungroup() %>%
     group_by(cluster) %>%
     arrange(desc(delta)) %>%
-    slice_head(n = 2) %>%
+    slice_head(n = 4) %>%
     mutate(annotated_feature = paste0(feature, " [", direction, "]")) %>%
     summarise(top_features = paste(annotated_feature, collapse = ", "))
   
