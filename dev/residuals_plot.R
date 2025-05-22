@@ -97,5 +97,3 @@ plot_residuals <- function(prediction_df){
 
 
 
-
-  

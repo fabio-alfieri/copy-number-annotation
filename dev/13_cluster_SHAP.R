@@ -2,8 +2,8 @@
 rm(list=ls())
 gc(full=T)
 
-# setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
-setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
+setwd('/Users/gabry/OneDrive/Desktop/shiny_app/') # Gab
+# setwd('/Users/ieo5099/Desktop/copy-number-annotation/') # Fab
 
 shap_sum_abs_cluster <- list()
 for(clustering_depth in 1:4){
