@@ -138,7 +138,7 @@ actual_shap_mat <- actual_shap_mat %>%
   )
 
 actual_values_mat <- data.frame(
-  apply(X = actual_values_mat[,-ncol(actual_values_mat)],
+  apply(X = actual_values_mat,
         MARGIN = 2,
         FUN = scale)
   )
