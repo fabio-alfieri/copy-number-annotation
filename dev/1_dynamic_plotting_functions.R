@@ -408,8 +408,8 @@ landscape_plot_interactive <- function(filtered_landscape,
                   border:none; 
                   outline:none; 
                   box-shadow:none;'>
-                  Coords: %s<br>
-                  Ampl: %s</div>",
+                  Coordinates: %s<br>
+                  Amplification Frequency: %s</div>",
                 bg_ampl, fg_ampl, coord, round(ampl,3)
               ), 
               data_id = data_id),
@@ -442,8 +442,8 @@ landscape_plot_interactive <- function(filtered_landscape,
                   border:none; 
                   outline:none; 
                   box-shadow:none;'>
-                  Coords: %s<br>
-                  Del: %s</div>",
+                  Coordinates: %s<br>
+                  Deletion Frequency: %s</div>",
                 bg_del, fg_del, coord, round(del,3)
               ), data_id = data_id),
           size = 3, color = "transparent"
@@ -557,7 +557,7 @@ landscape_plot_interactive <- function(filtered_landscape,
         data_id = cluster
       ),
       linetype = "blank",
-      alpha = 0.4
+      alpha = 0.65
     )
     
     segment_layer <- geom_segment_interactive(

@@ -26,7 +26,7 @@ centromere_table <- processed_data$centromere_table
 plot_shap <- TRUE
 plot_landscape <- TRUE
 
-type_input <- "KIRC"
+type_input <- "LUSC"
 model_input <- parse_input_model("ampl")
 coord_input <- NULL
 chr_input <- NULL
@@ -54,17 +54,21 @@ shap_plotting_list <- prepare_shap_to_plot(filtered_shap_ampl = filtered_shap_am
                                            filtered_shap_del = filtered_shap_del)
 
 if (model_input$selected == "ampl") {
+  
   filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_ampl
   genome_mask <- filtered_shap_output_ampl$genome_mask
   model_mask <- filtered_shap_output_ampl$model_mask
   type_mask <- filtered_shap_output_ampl$type_mask
   filtered_landscape <- filtered_landscape_ampl
+  
 } else {
+  
   filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_del
   genome_mask <- filtered_shap_output_del$genome_mask
   model_mask <- filtered_shap_output_del$model_mask
   type_mask <- filtered_shap_output_del$type_mask
   filtered_landscape <- filtered_landscape_del
+  
 }
 
 if (plot_shap) {
@@ -81,7 +85,7 @@ p <- landscape_plot_interactive(filtered_landscape = filtered_landscape,
                            type_mask = type_mask,
                            plot_ampl = TRUE, 
                            plot_del = TRUE, 
-                           annot_to_plot_ticks = FALSE, 
+                           annot_to_plot_ticks = "all", 
                            annot_to_plot_kde = "all",
                            backbone.100kb = backbone.100kb)
 
@@ -120,6 +124,10 @@ tooltip_css <- "
 
 p2 <- htmlwidgets::prependContent(p, tags$head(tags$style(HTML(tooltip_css))))
 p2
+
+# htmlwidgets::saveWidget(p2, 
+#                         paste0("dev/Plots/landscape_", type_mask, ".html"), 
+#                         selfcontained = TRUE)
 
 }
 
