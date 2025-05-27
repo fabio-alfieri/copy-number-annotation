@@ -703,11 +703,13 @@ landscape_plot_interactive <- function(filtered_landscape,
   
   chr_bounds <- get_chr_bounds(filtered_landscape = filtered_landscape)
   
+  message("Plotting base layer...")
   base_plot <- plot_base_layer(chr_bounds = chr_bounds, filtered_landscape = filtered_landscape)
   
   chr_to_plot <- unique(filtered_landscape$chr)
   
   if (plot_ampl) {
+    message("Plotting Amplification track...")
     base_plot <- plot_ampl_layer(base_plot = base_plot, 
                                   chr_to_plot = chr_to_plot, 
                                   filtered_landscape = filtered_landscape, 
@@ -715,6 +717,7 @@ landscape_plot_interactive <- function(filtered_landscape,
     }
   
   if (plot_del) {
+    message("Plotting Deletion track...")
     base_plot <- plot_del_layer(base_plot = base_plot, 
                    chr_to_plot = chr_to_plot, 
                    filtered_landscape = filtered_landscape, 
@@ -754,7 +757,7 @@ landscape_plot_interactive <- function(filtered_landscape,
   linewidth <- 0.1
   
   if (!isFALSE(annot_to_plot_ticks)) {
-    
+  message("Plotting Ticks layers....")
   layers_ticks <- lapply(X = annot_to_plot_ticks, FUN = function(x){
                                                     y <- (x %% 2) + 1
                                                     return(
@@ -782,7 +785,7 @@ landscape_plot_interactive <- function(filtered_landscape,
   }
   
   if (!isFALSE(annot_to_plot_kde)) {
-    
+  message("Plotting KDE layers....")
   layers_kde <- lapply(X = annot_to_plot_kde, FUN = function(x){
                                                     y <- (x %% 2) + 1
                                                     return(
@@ -808,7 +811,8 @@ landscape_plot_interactive <- function(filtered_landscape,
     )
    }
   }
-                                            
+  
+  message("Almost done!")                                     
   upper_limit <- ceiling(max(filtered_landscape$ampl) * 10) / 10
   lower_limit <- floor(min(-filtered_landscape$del) * 10) / 10
   sym_limit   <- min(abs(upper_limit), abs(lower_limit))
@@ -843,8 +847,8 @@ landscape_plot_interactive <- function(filtered_landscape,
     scale_fill_manual(values = color_palette_ticks) +
     scale_colour_manual(values = color_palette_ticks)
   
-  
-  girafe(
+  message("Making the plot interactive...")
+  p <- girafe(
     ggobj = base_plot,
     fonts = list(sans = "Roboto"),
     width_svg  = 10,
@@ -858,5 +862,7 @@ landscape_plot_interactive <- function(filtered_landscape,
         )
       )
     )
+  message("The plot is ready! Enjoy!")
+  return(p)
 }
 

@@ -1,8 +1,13 @@
+# app.R
+
 library(shiny)
 library(ggiraph)
 library(htmlwidgets)
 library(ggplot2)
 library(dplyr)
+library(shinycssloaders)   # for overlay spinner
+
+setwd("./")
 
 # Source data loading and helper functions
 source('dev/0_LoadData.R')
@@ -17,13 +22,12 @@ data_processed <- parse_input_data(
   centromere_table = centromere_table,
   clustering_depth = 4
 )
-# Extract processed objects
-shap.list <- data_processed$shap.list
+shap.list                <- data_processed$shap.list
 out_annot_list_processed <- data_processed$out_annot_list_processed
-backbone.100kb <- data_processed$backbone.100kb
-centromere_table <- data_processed$centromere_table
+backbone.100kb           <- data_processed$backbone.100kb
+centromere_table         <- data_processed$centromere_table
 
-# Define CSS for tooltips
+# Define CSS for tooltips and hover
 tooltip_css <- "
   background: transparent !important;
   color: #fafafa;
@@ -32,84 +36,109 @@ tooltip_css <- "
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
   line-height: 1.2;
-  box-shadow: 0 0px 0px rgba(0,0,0,0);
+  box-shadow: none !important;
   transform: translateY(2px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
   white-space: nowrap;
-  border: none !important;
-  z-index: 1000;
 "
-# Define CSS for hover state
-hover_css <- "
-  opacity: 0.9 !important;
-  transform: translateY(0) !important;
-"
+hover_css <- "opacity: 0.9 !important; transform: translateY(0) !important;"
 
-# Define UI: allow selection of cancer type
+# UI: inputs and Go button (defaults with all checked)
 ui <- fluidPage(
   titlePanel("SCNA Landscape Plot"),
   sidebarLayout(
     sidebarPanel(
-      selectInput(
-        inputId = "type_input",
-        label = "Select cancer type:",
-        choices = c("STAD","GBMLGG","COADREAD","KIRP","KIRC",
-                    "OV","ESCA","LUAD","LUSC","PAAD","BRCA"),
-        selected = "BRCA"
-      )
+      selectInput("type_input", "Select cancer type:",
+                  choices = c("STAD","GBMLGG","COADREAD","KIRP","KIRC",
+                              "OV","ESCA","LUAD","LUSC","PAAD","BRCA"),
+                  selected = "BRCA"),
+      checkboxInput("plot_ampl", "Show amplification track", TRUE),
+      checkboxInput("plot_del",  "Show deletion track",    TRUE),
+      checkboxInput("enable_ticks", "Enable annotation ticks", TRUE),
+      conditionalPanel(
+        condition = "input.enable_ticks",
+        textInput("annot_ticks_input", 
+                  "Ticks clusters ('all' or numbers comma-separated):", 
+                  "all")
+      ),
+      checkboxInput("enable_kde", "Enable KDE layers", TRUE),
+      conditionalPanel(
+        condition = "input.enable_kde",
+        textInput("annot_kde_input", 
+                  "KDE clusters ('all' or numbers comma-separated):", 
+                  "all")
+      ),
+      actionButton("go", "Go!", class = "btn-primary")
     ),
     mainPanel(
-      girafeOutput("landscape_plot", width = "100%", height = "600px")
+      withSpinner(
+        girafeOutput("landscape_plot", width = "100%", height = "600px"),
+        type = 6
+      )
     )
   )
 )
 
-# Server logic: dynamic type input
+# Server: plot only when Go! pressed with overlay spinner
+template_time <- Sys.time()
 server <- function(input, output, session) {
+  # Reactive plot generator: runs on startup and whenever Go is clicked
+  plot_reactive <- eventReactive(input$go, {
+    withProgress(message = "Building SCNA landscape…", value = 0, {
+      # Step 1: filter (10%)
+      incProgress(0.1, detail = "Filtering data")
+      shap_res <- filter_df(shap.list, backbone.100kb,
+                            input$type_input, "ampl", NULL, NULL)
+      land_res <- filter_df(out_annot_list_processed, backbone.100kb,
+                            input$type_input, "ampl", NULL, NULL)
+      df_land <- land_res$final_df
+      req(nrow(df_land) > 0)
+      
+      # Parse ticks/KDE inputs
+      ticks_val <- if (!input$enable_ticks) FALSE else {
+        txt <- tolower(input$annot_ticks_input)
+        if (txt == "all") "all" else as.numeric(strsplit(txt, ",")[[1]])
+      }
+      kde_val <- if (!input$enable_kde) FALSE else {
+        txt <- tolower(input$annot_kde_input)
+        if (txt == "all") "all" else as.numeric(strsplit(txt, ",")[[1]])
+      }
+      
+      # Step 2: generate (60%)
+      incProgress(0.6, detail = "Generating plot")
+      gir_widget <- landscape_plot_interactive(
+        filtered_landscape  = df_land,
+        backbone.100kb      = backbone.100kb,
+        genome_mask         = shap_res$genome_mask,
+        type_mask           = shap_res$type_mask,
+        plot_ampl           = input$plot_ampl,
+        plot_del            = input$plot_del,
+        annot_to_plot_ticks = ticks_val,
+        annot_to_plot_kde   = kde_val
+      )
+      
+      # Step 3: configure interactivity (20%)
+      incProgress(0.2, detail = "Configuring interactivity")
+      gir_widget <- girafe_options(
+        gir_widget,
+        opts_tooltip(
+          css             = tooltip_css,
+          delay_mouseover = 0,
+          delay_mouseout  = 0,
+          offx            = 10,
+          offy            = -10
+        ),
+        opts_hover(css = hover_css)
+      )
+      
+      # Done (remaining 10%)
+      incProgress(1)
+      showNotification("Landscape ready!", type = "message", duration = 2)
+      gir_widget
+    })
+  }, ignoreNULL = FALSE)  # fires once at startup as well
+  
   output$landscape_plot <- renderGirafe({
-    # Filter based on user-selected type and ampl
-    shap_res <- filter_df(
-      input_obj = shap.list,
-      backbone_granges = backbone.100kb,
-      type_input = input$type_input,
-      model_input = "ampl",
-      chr_input = NULL,
-      coord_input = NULL
-    )
-    land_res <- filter_df(
-      input_obj = out_annot_list_processed,
-      backbone_granges = backbone.100kb,
-      type_input = input$type_input,
-      model_input = "ampl",
-      chr_input = NULL,
-      coord_input = NULL
-    )
-    df_land <- land_res$final_df
-    req(nrow(df_land) > 0)
-    
-    # Generate interactive ggiraph object
-    girafe_obj <- landscape_plot_interactive(
-      filtered_landscape = df_land,
-      backbone.100kb      = backbone.100kb,
-      genome_mask         = shap_res$genome_mask,
-      type_mask           = shap_res$type_mask,
-      plot_ampl           = FALSE,
-      plot_del            = FALSE,
-      annot_to_plot_ticks = FALSE,
-      annot_to_plot_kde   = "all"
-    )
-    # Apply tooltip and hover CSS without pointer-events
-    girafe_options(
-      girafe_obj,
-      opts_tooltip(
-        css = tooltip_css,
-        delay_mouseover = 0,
-        delay_mouseout = 0,
-        offx = 10,
-        offy = -10
-      ),
-      opts_hover(css = hover_css)
-    )
+    plot_reactive()
   })
 }
 
