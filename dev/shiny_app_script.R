@@ -5,11 +5,11 @@ library(ggiraph)
 library(htmlwidgets)
 library(ggplot2)
 library(dplyr)
-library(shinycssloaders)   # for overlay spinner
+library(shinycssloaders)
 
 setwd("./")
 
-# Source data loading and helper functions
+# Load helper functions
 source('dev/0_LoadData.R')
 source('dev/1_dynamic_plotting_functions.R')
 source('dev/1bis_parse_input_data_FA.R')
@@ -27,7 +27,7 @@ out_annot_list_processed <- data_processed$out_annot_list_processed
 backbone.100kb           <- data_processed$backbone.100kb
 centromere_table         <- data_processed$centromere_table
 
-# Define CSS for tooltips and hover
+# CSS styles
 tooltip_css <- "
   background: transparent !important;
   color: #fafafa;
@@ -42,7 +42,7 @@ tooltip_css <- "
 "
 hover_css <- "opacity: 0.9 !important; transform: translateY(0) !important;"
 
-# UI: inputs and Go button (defaults with all checked)
+# UI
 ui <- fluidPage(
   titlePanel("SCNA Landscape Plot"),
   sidebarLayout(
@@ -51,8 +51,18 @@ ui <- fluidPage(
                   choices = c("STAD","GBMLGG","COADREAD","KIRP","KIRC",
                               "OV","ESCA","LUAD","LUSC","PAAD","BRCA"),
                   selected = "BRCA"),
+      
+      selectInput("chr_input", "Select chromosome:",
+                  choices = c("Whole Genome" = "whole_genome", paste0("chr", 1:22)),
+                  selected = "whole_genome"),
+      
+      textInput("genomic_coords", 
+                "Genomic coordinates (chr:start-end):", 
+                ""),  # Must be "" in UI, will convert to NULL in server
+      
       checkboxInput("plot_ampl", "Show amplification track", TRUE),
       checkboxInput("plot_del",  "Show deletion track",    TRUE),
+      
       checkboxInput("enable_ticks", "Enable annotation ticks", TRUE),
       conditionalPanel(
         condition = "input.enable_ticks",
@@ -60,6 +70,7 @@ ui <- fluidPage(
                   "Ticks clusters ('all' or numbers comma-separated):", 
                   "all")
       ),
+      
       checkboxInput("enable_kde", "Enable KDE layers", TRUE),
       conditionalPanel(
         condition = "input.enable_kde",
@@ -67,6 +78,7 @@ ui <- fluidPage(
                   "KDE clusters ('all' or numbers comma-separated):", 
                   "all")
       ),
+      
       actionButton("go", "Go!", class = "btn-primary")
     ),
     mainPanel(
@@ -78,32 +90,46 @@ ui <- fluidPage(
   )
 )
 
-# Server: plot only when Go! pressed with overlay spinner
-template_time <- Sys.time()
+# Server
 server <- function(input, output, session) {
-  # Reactive plot generator: runs on startup and whenever Go is clicked
   plot_reactive <- eventReactive(input$go, {
     withProgress(message = "Building SCNA landscape…", value = 0, {
-      # Step 1: filter (10%)
       incProgress(0.1, detail = "Filtering data")
-      shap_res <- filter_df(shap.list, backbone.100kb,
-                            input$type_input, "ampl", NULL, NULL)
-      land_res <- filter_df(out_annot_list_processed, backbone.100kb,
-                            input$type_input, "ampl", NULL, NULL)
+      
+      selected_chr <- if (input$chr_input == "whole_genome") NULL else input$chr_input
+      input_coord  <- if (input$genomic_coords == "") NULL else input$genomic_coords
+      
+      shap_res <- filter_df(
+        shap.list,
+        backbone.100kb,
+        input$type_input,
+        "ampl",
+        selected_chr,
+        input_coord
+      )
+      
+      land_res <- filter_df(
+        out_annot_list_processed,
+        backbone.100kb,
+        input$type_input,
+        "ampl",
+        selected_chr,
+        input_coord
+      )
+      
       df_land <- land_res$final_df
       req(nrow(df_land) > 0)
       
-      # Parse ticks/KDE inputs
       ticks_val <- if (!input$enable_ticks) FALSE else {
         txt <- tolower(input$annot_ticks_input)
         if (txt == "all") "all" else as.numeric(strsplit(txt, ",")[[1]])
       }
+      
       kde_val <- if (!input$enable_kde) FALSE else {
         txt <- tolower(input$annot_kde_input)
         if (txt == "all") "all" else as.numeric(strsplit(txt, ",")[[1]])
       }
       
-      # Step 2: generate (60%)
       incProgress(0.6, detail = "Generating plot")
       gir_widget <- landscape_plot_interactive(
         filtered_landscape  = df_land,
@@ -116,7 +142,6 @@ server <- function(input, output, session) {
         annot_to_plot_kde   = kde_val
       )
       
-      # Step 3: configure interactivity (20%)
       incProgress(0.2, detail = "Configuring interactivity")
       gir_widget <- girafe_options(
         gir_widget,
@@ -130,17 +155,15 @@ server <- function(input, output, session) {
         opts_hover(css = hover_css)
       )
       
-      # Done (remaining 10%)
       incProgress(1)
       showNotification("Landscape ready!", type = "message", duration = 2)
       gir_widget
     })
-  }, ignoreNULL = FALSE)  # fires once at startup as well
+  }, ignoreNULL = FALSE)
   
   output$landscape_plot <- renderGirafe({
     plot_reactive()
   })
 }
 
-# Launch app
 shinyApp(ui, server)
