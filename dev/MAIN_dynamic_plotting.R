@@ -26,7 +26,7 @@ centromere_table <- processed_data$centromere_table
 plot_shap <- TRUE
 plot_landscape <- TRUE
 
-type_input <- "LUSC"
+type_input <- "BRCA"
 model_input <- parse_input_model("ampl")
 coord_input <- NULL
 chr_input <- NULL

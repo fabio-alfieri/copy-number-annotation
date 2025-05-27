@@ -81,14 +81,14 @@ shap_agg <- shap[, columns]
 values_agg <- values[, columns]
 
 
-k <- 5
+num_of_top_features <- 5
 actual_values_mat <- values_agg[,-ncol(values_agg)]
 actual_shap_mat <- shap_agg[,-ncol(shap_agg)] 
 
 res <- t(apply(X = actual_shap_mat, 
       MARGIN = 1, 
       FUN = function(row){
-        idxs <- order(unlist(abs(row)), na.last = TRUE)[1:k]
+        idxs <- order(unlist(abs(row)), na.last = TRUE)[1:num_of_top_features]
         cluster_identity <- paste0(idxs, collapse = "")
         top_features <- colnames(actual_shap_mat)[idxs]
         return(c(cluster_identity, top_features))
@@ -113,8 +113,8 @@ rownames(actual_shap_mat_medians) <- cluster_id_first_round
 dist_matrix <- dist(actual_shap_mat_medians, method = "euclidean")
 hc <- hclust(dist_matrix, method = "complete")
 
-k = 16
-new_cluster_ids <- cutree(hc, k = k)
+num_of_clusters = 16
+new_cluster_ids <- cutree(hc, k = num_of_clusters)
 actual_shap_mat_medians$new_cluster_id <- new_cluster_ids[rownames(actual_shap_mat_medians)]
 actual_shap_mat_medians$cluster_id <- cluster_id_first_round
 
@@ -164,13 +164,13 @@ plots <- df_medians %>%
     cluster_label <- unique(sub_df$new_cluster_id)
     
     ggplot(sub_df, aes(x = feature, y = median_value)) +
-      geom_col(fill = "steelblue") +
+      geom_col(aes(fill = feature)) +
       labs(title = paste("Cluster", cluster_label),
            x = "Feature", y = "Median Value") +
       theme_minimal(base_size = 10) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+            legend.position = "none")
   })
-
 
 do.call(gridExtra::grid.arrange, c(plots, ncol = 4))
 

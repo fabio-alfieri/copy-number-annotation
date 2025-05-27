@@ -21,6 +21,6 @@ out_annot_list <- readRDS("dev/Data/output_annotation.rds")
 pred_ampl <- readRDS("dev/Data/pred_ampl.rds")
 pred_del <- readRDS("dev/Data/pred_del.rds")
 
-toplot.plot_before <- output.annotation$ampl$toplot # updated
+# toplot.plot_before <- output.annotation$ampl$toplot # updated
 # clusters_explained <- output.annotation$ampl$aggregated # updated
 # rm(output.annotation)
