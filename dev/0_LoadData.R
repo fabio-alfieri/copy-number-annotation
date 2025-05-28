@@ -18,8 +18,12 @@ output.annotation <- readRDS("dev/Data/output_annotation.rds") # NEW
 centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
 load("dev/Data/All_levels_backbonetables.RData")
 out_annot_list <- readRDS("dev/Data/output_annotation.rds")
-pred_ampl <- readRDS("dev/Data/pred_ampl.rds")
-pred_del <- readRDS("dev/Data/pred_del.rds")
+
+lis_names <- c("ampl", "del")
+paths_vec <- c("dev/Data/pred_ampl.rds", "dev/Data/pred_del.rds")
+
+pred_list <- lapply(X = paths_vec, FUN = readRDS)
+names(pred_list) <- lis_names
 
 # toplot.plot_before <- output.annotation$ampl$toplot # updated
 # clusters_explained <- output.annotation$ampl$aggregated # updated

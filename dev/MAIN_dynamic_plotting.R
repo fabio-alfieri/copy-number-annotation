@@ -61,6 +61,15 @@ if (model_input$selected == "ampl") {
   type_mask <- filtered_shap_output_ampl$type_mask
   filtered_landscape <- filtered_landscape_ampl
   
+  # the prediction logic is yet to be added to the shiny app.
+  
+  pred_df <- pred_list[[model_input$selected]]; pred_df$ampl_score <- NULL
+  
+  filtered_landscape_prova <- merge(x = filtered_landscape, by.x = c("type", "binID"),
+                                    y = pred_df,            by.y = c("Type", "bin"),
+                                    sort = F
+                                )
+  
 } else {
   
   filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_del
@@ -68,6 +77,15 @@ if (model_input$selected == "ampl") {
   model_mask <- filtered_shap_output_del$model_mask
   type_mask <- filtered_shap_output_del$type_mask
   filtered_landscape <- filtered_landscape_del
+  
+  # the prediction logic is yet to be added to the shiny app.
+  
+  pred_df <- pred_list[[model_input$selected]]; pred_df$del_score <- NULL
+  
+  filtered_landscape_prova <- merge(x = filtered_landscape, by.x = c("type", "binID"),
+                                    y = pred_df,            by.y = c("Type", "bin"),
+                                    sort = F
+  )
   
 }
 
@@ -88,6 +106,23 @@ p <- landscape_plot_interactive(filtered_landscape = filtered_landscape,
                            annot_to_plot_ticks = "all", 
                            annot_to_plot_kde = "all",
                            backbone.100kb = backbone.100kb)
+
+##### to add above
+filtered_landscape_prova <- filtered_landscape_prova[,c(1,2,3,4,5,7,8,9)]
+filtered_landscape_prova$obs <- filtered_landscape_prova$ampl
+filtered_landscape_prova$pred <- filtered_landscape_prova$prediction
+filtered_landscape_prova$ampl <- NULL
+filtered_landscape_prova$prediction <- NULL
+
+p <- landscape_plot_interactive_prediction(filtered_landscape = filtered_landscape_prova, 
+                                           genome_mask = genome_mask, 
+                                           type_mask = type_mask, 
+                                           model_mask = model_mask, 
+                                           plot_observed = TRUE, 
+                                           plot_predicted = TRUE, 
+                                           annot_to_plot_ticks = FALSE, 
+                                           annot_to_plot_kde = FALSE,
+                                           backbone.100kb = backbone.100kb)
 
 
 tooltip_css <- "

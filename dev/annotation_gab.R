@@ -6,6 +6,8 @@ library(tidyr)
 library(stringr)
 library(tidyverse)
 
+setwd("/Users/gabry/OneDrive/Desktop/shiny_app/")
+
 df <- readRDS(file = 'dev/Data/SHAP_and_FeatureMatrix_Mid-length_AmplDel.rds')
 
 source('dev/residuals_plot.R')
@@ -14,8 +16,8 @@ res.del <- plot_residuals(read_rds('dev/Data/pred_del.rds'))
 
 res.filt <- list()
 quantile_filt <- 0.95
-res.filt[['ampl']] <- res.ampl %>% filter(residual <= as.numeric(quantile(res.ampl$residual, prob = quantile_filt)))
-res.filt[['del']] <- res.del %>% filter(residual <= as.numeric(quantile(res.del$residual, prob = quantile_filt)))
+res.filt[['ampl']] <- res.ampl #%>% filter(residual <= as.numeric(quantile(res.ampl$residual, prob = quantile_filt)))
+res.filt[['del']] <- res.del #%>% filter(residual <= as.numeric(quantile(res.del$residual, prob = quantile_filt)))
 
 tt <- 'BRCA'
 
@@ -80,7 +82,6 @@ columns <- c("dist.to.closest.OG", "dist.to.closest.TSG", "dist.to.closest.FGS",
 shap_agg <- shap[, columns]
 values_agg <- values[, columns]
 
-
 num_of_top_features <- 5
 actual_values_mat <- values_agg[,-ncol(values_agg)]
 actual_shap_mat <- shap_agg[,-ncol(shap_agg)] 
@@ -88,11 +89,17 @@ actual_shap_mat <- shap_agg[,-ncol(shap_agg)]
 res <- t(apply(X = actual_shap_mat, 
       MARGIN = 1, 
       FUN = function(row){
-        idxs <- order(unlist(abs(row)), na.last = TRUE)[1:num_of_top_features]
+        
+        idxs <- order(unlist(abs(row)))[1:num_of_top_features]
         cluster_identity <- paste0(idxs, collapse = "")
+        
+        signs <- sign(row[idxs]); signs <- gsub(pattern = "1", replacement = "", signs)
         top_features <- colnames(actual_shap_mat)[idxs]
+        top_features <- paste0(signs, top_features)
+        
         return(c(cluster_identity, top_features))
-      }))
+      
+        }))
 
 # unique_elems <- unique(as.vector(res))
 # palette <- rainbow(n = length(unique_elems))
