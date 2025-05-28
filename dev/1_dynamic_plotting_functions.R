@@ -932,7 +932,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                   outline:none; 
                   box-shadow:none;'>
                   Coordinates: %s<br>
-                  %s Observed Frequency: %s</div>",
+                  Observed %s Frequency: %s</div>",
                 bg_obs, fg_obs, coord, model_text, round(obs,3)
               ), 
               data_id = data_id),
@@ -946,7 +946,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
   plot_pred_layer <- function(base_plot, chr_to_plot, filtered_landscape, backbone.100kb, model){
     
     if (model == "ampl") {
-      bg_pred <- "#FF1671"; fg_pred <- get_contrast(bg_pred)
+      bg_pred <- "#FF5257"; fg_pred <- get_contrast(bg_pred)
       model_text <- "Amplification"
     } else if (model == "del") {
       bg_pred <- "#1671FF"; fg_pred <- get_contrast(bg_pred)
@@ -975,7 +975,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                   outline:none; 
                   box-shadow:none;'>
                   Coordinates: %s<br>
-                  %s Predicted Frequency: %s</div>",
+                  Predicted %s Frequency: %s</div>",
                 bg_pred, fg_pred, coord, model_text, round(obs,3)
               ), 
               data_id = data_id),
@@ -1014,8 +1014,8 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
       
       if (nrow(df) == 0) return(NULL)
       
-      if (mode == "ampl") {
-        start <- max(input_df$ampl)
+      if (mode == "obs") {
+        start <- max(input_df$obs)
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1023,13 +1023,13 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
               "<div style='background:%s; color:%s; padding:4px;'>%s</div>",
               bg, fg, .data[[top_clustering_col]]
             ),
-            cluster_ymid = (round(start, 1) + 0.05) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymid = (round(start, 1) + 0.1) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
             cluster_ymax = cluster_ymid + height
           ) %>%
           ungroup()
       } else {
-        start <- min(-input_df$del) - 0.05
+        start <- min(input_df$pred) - 0.05
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1038,7 +1038,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
               "<div style='background:%s; color:%s; padding:4px;'>%s</div>",
               bg, fg, .data[[top_clustering_col]]
             ),
-            cluster_ymid = (round(start, 1) - 0.05) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymid = (round(start, 1) - 0.02) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
             cluster_ymax = cluster_ymid + height
           ) %>%
@@ -1137,8 +1137,8 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
       
       if (nrow(df) == 0) return(NULL)
       
-      if (mode == "ampl") {
-        start <- max(input_df$ampl)
+      if (mode == "obs") {
+        start <- max(input_df$obs)
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1147,13 +1147,13 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
               "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
               bg, fg, coord, .data[[top_clustering_col]]
             ),
-            cluster_ymid = (round(start, 1) + 0.05) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymid = (round(start, 1) + 0.1) + ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
             cluster_ymax = cluster_ymid + height
           ) %>%
           ungroup()
       } else {
-        start <- min(-input_df$del) - 0.05
+        start <- min(input_df$pred) - 0.05
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1162,7 +1162,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
               "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
               bg, fg, coord, .data[[top_clustering_col]]
             ),
-            cluster_ymid = (round(start, 1) - 0.05) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymid = (round(start, 1) - 0.02) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
             cluster_ymax = cluster_ymid + height
           ) %>%
@@ -1229,10 +1229,10 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
   if (!all(model_mask %in% c(valid_input,NA))) stop("Invalid model selected. Use 'ampl' and/or 'del'.")
   if (length(genome_mask) == 22) genome_mask <- "WHOLE GENOME"
   if (length(genome_mask) > 1) genome_mask <- paste(genome_mask, collapse = ", ")
-  if (length(track_mask) > 1) model_mask <- paste(model_mask, collapse = ", ")
+  if (length(track_mask) > 1) track_mask <- paste(track_mask, collapse = ", ")
   
   title    <- "Segment Annotation (based on SHAP values)"
-  subtitle <- paste0("[", genome_mask, "] [", type_mask, "] [", model_mask, "]")
+  subtitle <- paste0("[", genome_mask, "] [", type_mask, "] [", track_mask, "]")
   
   filtered_landscape <- filtered_landscape %>% mutate(pos = row_number())
   
@@ -1278,7 +1278,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                   "#ff66cc", "#8b4513", "#cc00cc", "#3399cc", 
                   "#FFC0CB", "#000000", "#FF0000", "#EE82EE") # madonna che bello così simmetrico
   
-  all_modes <- c("ampl", "del")
+  all_modes <- c("obs", "pred")
   
   clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape), value = T)
   top_clustering_col <- paste0("top_",clustering_col)

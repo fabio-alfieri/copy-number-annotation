@@ -27,7 +27,7 @@ plot_shap <- TRUE
 plot_landscape <- TRUE
 
 type_input <- "BRCA"
-model_input <- parse_input_model("ampl")
+model_input <- parse_input_model("del")
 coord_input <- NULL
 chr_input <- NULL
 
@@ -70,6 +70,12 @@ if (model_input$selected == "ampl") {
                                     sort = F
                                 )
   
+  filtered_landscape_prova <- filtered_landscape_prova %>% dplyr::select(type, binID, k16, chr, ampl, pos, top_k16, prediction)
+  filtered_landscape_prova$obs <- filtered_landscape_prova$ampl
+  filtered_landscape_prova$pred <- filtered_landscape_prova$prediction
+  filtered_landscape_prova$ampl <- NULL; filtered_landscape_prova$prediction <- NULL
+  
+  
 } else {
   
   filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_del
@@ -86,6 +92,13 @@ if (model_input$selected == "ampl") {
                                     y = pred_df,            by.y = c("Type", "bin"),
                                     sort = F
   )
+  
+  filtered_landscape_prova <- filtered_landscape_prova %>% dplyr::select(type, binID, k16, chr, del, pos, top_k16, prediction)
+  filtered_landscape_prova$obs <- filtered_landscape_prova$del
+  filtered_landscape_prova$pred <- filtered_landscape_prova$prediction
+  filtered_landscape_prova$del <- NULL; filtered_landscape_prova$prediction <- NULL
+  
+  
   
 }
 
@@ -107,21 +120,14 @@ p <- landscape_plot_interactive(filtered_landscape = filtered_landscape,
                            annot_to_plot_kde = "all",
                            backbone.100kb = backbone.100kb)
 
-##### to add above
-filtered_landscape_prova <- filtered_landscape_prova[,c(1,2,3,4,5,7,8,9)]
-filtered_landscape_prova$obs <- filtered_landscape_prova$ampl
-filtered_landscape_prova$pred <- filtered_landscape_prova$prediction
-filtered_landscape_prova$ampl <- NULL
-filtered_landscape_prova$prediction <- NULL
-
 p <- landscape_plot_interactive_prediction(filtered_landscape = filtered_landscape_prova, 
                                            genome_mask = genome_mask, 
                                            type_mask = type_mask, 
                                            model_mask = model_mask, 
                                            plot_observed = TRUE, 
                                            plot_predicted = TRUE, 
-                                           annot_to_plot_ticks = FALSE, 
-                                           annot_to_plot_kde = FALSE,
+                                           annot_to_plot_ticks = "all", 
+                                           annot_to_plot_kde = "all",
                                            backbone.100kb = backbone.100kb)
 
 
