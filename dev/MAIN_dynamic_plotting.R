@@ -27,7 +27,7 @@ plot_shap <- TRUE
 plot_landscape <- TRUE
 
 type_input <- "BRCA"
-model_input <- parse_input_model("del")
+model_input <- parse_input_model("ampl")
 coord_input <- NULL
 chr_input <- NULL
 

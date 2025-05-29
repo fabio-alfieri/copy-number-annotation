@@ -996,14 +996,16 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                                 name_annot,mode, 
                                 clustering_col, top_clustering_col, clustering_depth, 
                                 backbone.100kb, 
-                                linewidth, color_palette_ticks) {
+                                linewidth, color_palette_ticks, 
+                                lower_limit, upper_limit) {
     
     
     generate_density_df <- function(input_df, 
                                     name_annot,mode, 
                                     clustering_col, top_clustering_col, clustering_depth, 
                                     backbone.100kb,
-                                    color_palette_ticks) {
+                                    color_palette_ticks, 
+                                    lower_limit, upper_limit) {
       
       height <- 0.015
       bg <- color_palette_ticks[as.character(name_annot)]
@@ -1015,7 +1017,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
       if (nrow(df) == 0) return(NULL)
       
       if (mode == "obs") {
-        start <- max(input_df$obs)
+        start <- upper_limit
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1029,7 +1031,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
           ) %>%
           ungroup()
       } else {
-        start <- min(input_df$pred) - 0.05
+        start <- lower_limit - 0.05
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1038,7 +1040,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
               "<div style='background:%s; color:%s; padding:4px;'>%s</div>",
               bg, fg, .data[[top_clustering_col]]
             ),
-            cluster_ymid = (round(start, 1) - 0.02) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymid = (round(start, 1) - 0.1) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
             cluster_ymax = cluster_ymid + height
           ) %>%
@@ -1058,7 +1060,8 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                                            top_clustering_col = top_clustering_col, 
                                            clustering_depth = clustering_depth, 
                                            backbone.100kb =  backbone.100kb, 
-                                           color_palette_ticks = color_palette_ticks)
+                                           color_palette_ticks = color_palette_ticks, 
+                                           lower_limit = lower_limit, upper_limit = upper_limit)
     
     if (is.null(densities_input)) return(base_plot)
     
@@ -1119,14 +1122,16 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                                 name_annot,mode, 
                                 clustering_col, top_clustering_col, clustering_depth, 
                                 backbone.100kb, 
-                                ticksize, color_palette_ticks) {
+                                ticksize, color_palette_ticks, 
+                                lower_limit, upper_limit) {
     
     
     generate_tick_df <- function(input_df, 
                                  name_annot,mode, 
                                  clustering_col, top_clustering_col, clustering_depth, 
                                  backbone.100kb,
-                                 color_palette_ticks) {
+                                 color_palette_ticks, 
+                                 lower_limit, upper_limit) {
       
       height <- 0.015
       bg <- color_palette_ticks[as.character(name_annot)]
@@ -1138,7 +1143,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
       if (nrow(df) == 0) return(NULL)
       
       if (mode == "obs") {
-        start <- max(input_df$obs)
+        start <- upper_limit
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1153,7 +1158,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
           ) %>%
           ungroup()
       } else {
-        start <- min(input_df$pred) - 0.05
+        start <- lower_limit - 0.05
         df <- df %>%
           rowwise() %>%
           mutate(
@@ -1162,7 +1167,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
               "<div style='background:%s; color:%s; padding:4px;'>Coords: %s<br>%s</div>",
               bg, fg, coord, .data[[top_clustering_col]]
             ),
-            cluster_ymid = (round(start, 1) - 0.02) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
+            cluster_ymid = (round(start, 1) - 0.1) - ((.data[[clustering_col]] / (clustering_depth / 3.8)) * 0.1),
             cluster_ymin = cluster_ymid - height,
             cluster_ymax = cluster_ymid + height
           ) %>%
@@ -1185,7 +1190,8 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                                       top_clustering_col = top_clustering_col, 
                                       clustering_depth = clustering_depth, 
                                       backbone.100kb =  backbone.100kb, 
-                                      color_palette_ticks = color_palette_ticks)
+                                      color_palette_ticks = color_palette_ticks, 
+                                      lower_limit = lower_limit, upper_limit = upper_limit)
     
     if (is.null(cluster_ticks)) return(base_plot)
     
@@ -1225,7 +1231,6 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
   if (length(track_mask) == 0) {
     model_mask <- NA
   }
-  
   if (!all(model_mask %in% c(valid_input,NA))) stop("Invalid model selected. Use 'ampl' and/or 'del'.")
   if (length(genome_mask) == 22) genome_mask <- "WHOLE GENOME"
   if (length(genome_mask) > 1) genome_mask <- paste(genome_mask, collapse = ", ")
@@ -1280,6 +1285,9 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
   
   all_modes <- c("obs", "pred")
   
+  upper_limit <- ceiling(max(filtered_landscape$obs) * 10) / 10
+  lower_limit <- 0
+  
   clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape), value = T)
   top_clustering_col <- paste0("top_",clustering_col)
   clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
@@ -1316,7 +1324,8 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                                      clustering_depth = clustering_depth,
                                      backbone.100kb = backbone.100kb,
                                      ticksize = ticksize, 
-                                     color_palette_ticks = color_palette_ticks
+                                     color_palette_ticks = color_palette_ticks, 
+                                     lower_limit = lower_limit, upper_limit = upper_limit
       )
     }
   }
@@ -1344,15 +1353,15 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                                      clustering_depth = clustering_depth,
                                      backbone.100kb = backbone.100kb,
                                      linewidth = linewidth, 
-                                     color_palette_ticks = color_palette_ticks
+                                     color_palette_ticks = color_palette_ticks, 
+                                     lower_limit = lower_limit, upper_limit = upper_limit
       )
     }
   }
   
   message("Almost done!")                                     
-  upper_limit <- ceiling(max(filtered_landscape$obs) * 10) / 10
-  lower_limit <- 0
-  y_breaks    <- pretty(c(lower_limit, upper_limit))
+  
+  y_breaks <- pretty(c(lower_limit, upper_limit))
   
   base_plot <- base_plot +
     geom_segment(
