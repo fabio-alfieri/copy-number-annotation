@@ -27,7 +27,7 @@ plot_shap <- TRUE
 plot_landscape <- TRUE
 
 type_input <- "BRCA"
-model_input <- parse_input_model("ampl")
+model_input <- parse_input_model("del")
 coord_input <- NULL
 chr_input <- NULL
 
@@ -53,54 +53,83 @@ filtered_landscape_ampl <- filtered_landscape_output_ampl$final_df; filtered_lan
 shap_plotting_list <- prepare_shap_to_plot(filtered_shap_ampl = filtered_shap_ampl, 
                                            filtered_shap_del = filtered_shap_del)
 
-if (model_input$selected == "ampl") {
+prepare_landscape_to_plot <- function(model_input, 
+                                      shap_plotting_list, 
+                                      filtered_shap_output,
+                                      filtered_landscape, 
+                                      pred_list){
+
+  if (model_input$selected == "ampl") {
   
-  filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_ampl
-  genome_mask <- filtered_shap_output_ampl$genome_mask
-  model_mask <- filtered_shap_output_ampl$model_mask
-  type_mask <- filtered_shap_output_ampl$type_mask
-  filtered_landscape <- filtered_landscape_ampl
-  
-  # the prediction logic is yet to be added to the shiny app.
-  
-  pred_df <- pred_list[[model_input$selected]]; pred_df$ampl_score <- NULL
-  
-  filtered_landscape_prova <- merge(x = filtered_landscape, by.x = c("type", "binID"),
-                                    y = pred_df,            by.y = c("Type", "bin"),
-                                    sort = F
-                                )
-  
-  filtered_landscape_prova <- filtered_landscape_prova %>% dplyr::select(type, binID, k16, chr, ampl, pos, top_k16, prediction)
-  filtered_landscape_prova$obs <- filtered_landscape_prova$ampl
-  filtered_landscape_prova$pred <- filtered_landscape_prova$prediction
-  filtered_landscape_prova$ampl <- NULL; filtered_landscape_prova$prediction <- NULL
-  
-  
-} else {
-  
-  filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_del
-  genome_mask <- filtered_shap_output_del$genome_mask
-  model_mask <- filtered_shap_output_del$model_mask
-  type_mask <- filtered_shap_output_del$type_mask
-  filtered_landscape <- filtered_landscape_del
-  
-  # the prediction logic is yet to be added to the shiny app.
-  
-  pred_df <- pred_list[[model_input$selected]]; pred_df$del_score <- NULL
-  
-  filtered_landscape_prova <- merge(x = filtered_landscape, by.x = c("type", "binID"),
-                                    y = pred_df,            by.y = c("Type", "bin"),
-                                    sort = F
-  )
-  
-  filtered_landscape_prova <- filtered_landscape_prova %>% dplyr::select(type, binID, k16, chr, del, pos, top_k16, prediction)
-  filtered_landscape_prova$obs <- filtered_landscape_prova$del
-  filtered_landscape_prova$pred <- filtered_landscape_prova$prediction
-  filtered_landscape_prova$del <- NULL; filtered_landscape_prova$prediction <- NULL
+    filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_ampl
+    genome_mask <- filtered_shap_output$genome_mask
+    model_mask <- filtered_shap_output$model_mask
+    type_mask <- filtered_shap_output$type_mask
+
+    pred_df <- pred_list[[model_input$selected]]; pred_df$ampl_score <- NULL
+    
+    filtered_landscape <- merge(x = filtered_landscape, by.x = c("type", "binID"),
+                                y = pred_df,            by.y = c("Type", "bin"),
+                                sort = F
+    )
+    
+    clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape), value = T)
+    top_clustering_col <- paste0("top_",clustering_col)
+    clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
+    
+    filtered_landscape <- filtered_landscape %>% 
+                            dplyr::select(type, binID, all_of(clustering_col), 
+                                          chr, ampl, pos, 
+                                          all_of(top_clustering_col), prediction)
+    
+    filtered_landscape$obs <- filtered_landscape$ampl
+    filtered_landscape$pred <- filtered_landscape$prediction
+    filtered_landscape$ampl <- NULL; filtered_landscape$prediction <- NULL
   
   
+  } else {
   
+    filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_del
+    genome_mask <- filtered_shap_output$genome_mask
+    model_mask <- filtered_shap_output$model_mask
+    type_mask <- filtered_shap_output$type_mask
+
+    pred_df <- pred_list[[model_input$selected]]; pred_df$del_score <- NULL
+    
+    filtered_landscape <- merge(x = filtered_landscape, by.x = c("type", "binID"),
+                                y = pred_df,            by.y = c("Type", "bin"),
+                                sort = F
+    )
+    
+    clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape), value = T)
+    top_clustering_col <- paste0("top_",clustering_col)
+    clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
+    
+    filtered_landscape <- filtered_landscape %>% 
+                            dplyr::select(type, binID, all_of(clustering_col), 
+                                          chr, del, pos, 
+                                          all_of(top_clustering_col), prediction)
+    
+    filtered_landscape$obs <- filtered_landscape$del
+    filtered_landscape$pred <- filtered_landscape$prediction
+    filtered_landscape$del <- NULL; filtered_landscape$prediction <- NULL
+  
+  }
+  
+  outlist <- list(filtered_landscape = filtered_landscape,
+                  genome_mask = genome_mask,
+                  model_mask = model_mask,
+                  type_mask = type_mask)
+  
+  return(outlist)
 }
+
+
+outlist <- prepare_landscape_to_plot(model_input = model_input, 
+                                     shap_plotting_list = shap_plotting_list, 
+                                     filtered_shap_output = filtered_shap_output_del, 
+                                     filtered_landscape = filtered_landscape_del, 
+                                     pred_list = pred_list)
 
 if (plot_shap) {
   barplot_shap(shap.abs.sum = filtered_shap_abs_sum, 
@@ -111,19 +140,19 @@ if (plot_shap) {
 
 if (plot_landscape) {
   
-p <- landscape_plot_interactive(filtered_landscape = filtered_landscape, 
-                           genome_mask = genome_mask, 
-                           type_mask = type_mask,
-                           plot_ampl = TRUE, 
-                           plot_del = TRUE, 
-                           annot_to_plot_ticks = "all", 
-                           annot_to_plot_kde = "all",
-                           backbone.100kb = backbone.100kb)
+# p <- landscape_plot_interactive(filtered_landscape = filtered_landscape, 
+#                            genome_mask = genome_mask, 
+#                            type_mask = type_mask,
+#                            plot_ampl = TRUE, 
+#                            plot_del = TRUE, 
+#                            annot_to_plot_ticks = "all", 
+#                            annot_to_plot_kde = "all",
+#                            backbone.100kb = backbone.100kb)
 
-p <- landscape_plot_interactive_prediction(filtered_landscape = filtered_landscape_prova, 
-                                           genome_mask = genome_mask, 
-                                           type_mask = type_mask, 
-                                           model_mask = model_mask, 
+p <- landscape_plot_interactive_prediction(filtered_landscape = outlist$filtered_landscape, 
+                                           genome_mask = outlist$genome_mask, 
+                                           type_mask = outlist$type_mask, 
+                                           model_mask = outlist$model_mask, 
                                            plot_observed = TRUE, 
                                            plot_predicted = TRUE, 
                                            annot_to_plot_ticks = "all", 
