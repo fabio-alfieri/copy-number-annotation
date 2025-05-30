@@ -4,6 +4,8 @@ library(htmlwidgets)
 library(ggplot2)
 library(dplyr)
 library(shinycssloaders)
+library(zip)
+library(glue)
 
 # Load helper functions
 source('dev/0_LoadData.R')
@@ -23,7 +25,15 @@ out_annot_list_processed <- data_processed$out_annot_list_processed
 backbone.100kb           <- data_processed$backbone.100kb
 centromere_table         <- data_processed$centromere_table
 
-# CSS styles
+# Define palette
+palette_custom <- list(
+  background = "#f0f4fa",
+  primary = "#2a78e8",
+  primary_dark = "#155ab3",
+  border = "#dbe9ff"
+)
+
+# CSS styles for tooltip and hover
 tooltip_css <- "[class^='tooltip_svg_'] {
   background: transparent !important;
   color: #fafafa;
@@ -41,126 +51,131 @@ hover_css <- "opacity: 0.9 !important; transform: translateY(0) !important;"
 # UI
 ui <- fluidPage(
   tags$head(
-    tags$style(HTML("
-      html, body {
+    tags$style(HTML(glue::glue("
+      html, body {{
         height: 100%;
         margin: 0;
         padding: 0;
         overflow: hidden;
         font-family: 'Segoe UI', sans-serif;
-      }
+        background-color: {palette_custom$background};
+      }}
 
-      .container-fluid {
+      .container-fluid {{
         padding: 0 !important;
         margin: 0 !important;
         height: 100vh;
         display: flex;
         flex-direction: column;
-      }
+      }}
 
-      .title-panel {
+      .title-panel {{
         flex: 0 0 auto;
         padding: 10px 0;
         font-size: 22px;
         font-weight: bold;
-        background-color: #f0f4fa;
-        border-bottom: 1px solid #dbe9ff;
+        background-color: {palette_custom$background};
+        border-bottom: 1px solid {palette_custom$border};
         text-align: center;
         width: 100vw;
         margin: 0;
         box-sizing: border-box;
-      }
+        color: {palette_custom$primary_dark};
+      }}
 
-      #flex-container {
+      #flex-container {{
         display: flex;
         flex-grow: 1;
         overflow: hidden;
-      }
+      }}
 
-      #sidebar-container {
+      #sidebar-container {{
         width: 300px;
         overflow-y: auto;
         flex-shrink: 0;
         transition: width 0.3s ease;
         display: flex;
         flex-direction: column;
-        background-color: #ffffff;
-        border-right: 1px solid #ffffff;
+        background-color: {palette_custom$background};
+        border-right: 1px solid {palette_custom$border};
         padding: 10px;
         align-items: center;
-      }
+      }}
 
-      #sidebar-container.collapsed {
+      #sidebar-container.collapsed {{
         width: 50px !important;
         padding: 10px 5px;
         display: flex !important;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-      }
+      }}
 
       #sidebar-container.collapsed .well,
       #sidebar-container.collapsed .form-group,
       #sidebar-container.collapsed .checkbox,
-      #sidebar-container.collapsed .shiny-input-container {
+      #sidebar-container.collapsed .shiny-input-container {{
         display: none !important;
-      }
+      }}
 
-      #sidebar-container.collapsed .btn {
+      #sidebar-container.collapsed .btn {{
         width: 100%;
         margin: 0 0 10px 0;
         font-size: 18px;
         padding: 6px 0;
         text-align: center;
-      }
+      }}
 
-      #sidebar-container .btn {
+      #sidebar-container .btn {{
         width: auto;
         margin: 0 auto;
-      }
+      }}
 
-      #main-panel-container {
+      #main-panel-container {{
         flex-grow: 1;
         padding-left: 20px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
-      }
+      }}
 
-      #main-panel-container.expanded {
+      #main-panel-container.expanded {{
         margin-left: 0;
-      }
+      }}
 
-      #landscape_plot {
+      #landscape_plot {{
         flex-grow: 1;
         min-height: 0;
-      }
+      }}
 
-      .form-control, .selectize-input {
+      .form-control, .selectize-input {{
         border-radius: 6px;
-        border-color: #cfe2ff;
-      }
+        border-color: {palette_custom$border};
+      }}
 
-      .btn-primary {
-        background-color: #2a78e8;
-        border-color: #2a78e8;
-      }
+      .btn-primary {{
+        background-color: {palette_custom$primary};
+        border-color: {palette_custom$primary};
+        color: white;
+      }}
 
-      .btn-primary:hover {
-        background-color: #155ab3;
-        border-color: #155ab3;
-      }
+      .btn-primary:hover {{
+        background-color: {palette_custom$primary_dark};
+        border-color: {palette_custom$primary_dark};
+        color: white;
+      }}
 
-      .checkbox input[type='checkbox'] {
-        accent-color: #2a78e8;
-      }
+      .checkbox input[type='checkbox'] {{
+        accent-color: {palette_custom$primary};
+      }}
 
-      .shiny-input-container label {
+      .shiny-input-container label {{
         font-weight: 600;
         font-size: 14px;
         margin-bottom: 4px;
-      }
-    ")),
+        color: {palette_custom$primary_dark};
+      }}
+    "))),
     tags$script(HTML(
       "$(document).on('shiny:connected', function(){
          $('#toggle_sidebar').on('click', function(){
@@ -201,7 +216,8 @@ ui <- fluidPage(
                          condition = "input.enable_kde",
                          textInput("annot_kde_input", "KDE clusters ('all' or numbers comma-separated):", "all")
                        ),
-                       actionButton("go", "Go!", class = "btn-primary")
+                       actionButton("go", "Go!", class = "btn-primary"),
+                       downloadButton("download_html", "Download HTML", class = "btn btn-secondary", style = "margin-top: 10px;")
           )
       ),
       div(id = "main-panel-container",
@@ -265,7 +281,8 @@ server <- function(input, output, session) {
       p <- girafe_options(
         p,
         opts_tooltip(css = tooltip_css, delay_mouseover = 0, delay_mouseout = 0, offx = 10, offy = -10),
-        opts_hover(css = hover_css)
+        opts_hover(css = hover_css),
+        opts_toolbar(saveaspng = FALSE) # Remove lasso & download
       )
       
       incProgress(1)
@@ -277,6 +294,29 @@ server <- function(input, output, session) {
   output$landscape_plot <- renderGirafe({
     plot_reactive()
   })
+  
+  output$download_html <- downloadHandler(
+    filename = function() {
+      paste0("SCNA_landscape_", Sys.Date(), ".zip")
+    },
+    content = function(file) {
+      tempdir_path <- tempdir()
+      html_file <- file.path(tempdir_path, "SCNA_landscape.html")
+      
+      saveWidget(plot_reactive(), html_file, selfcontained = FALSE)
+      
+      folder_name <- sub(".html$", "_files", html_file)
+      zipfile <- file.path(tempdir_path, "SCNA_landscape_bundle.zip")
+      oldwd <- setwd(tempdir_path)
+      on.exit(setwd(oldwd), add = TRUE)
+      
+      zip::zip(zipfile = zipfile,
+               files = c("SCNA_landscape.html", basename(folder_name)),
+               recurse = TRUE)
+      
+      file.copy(zipfile, file)
+    }
+  )
 }
 
 # Run the app
