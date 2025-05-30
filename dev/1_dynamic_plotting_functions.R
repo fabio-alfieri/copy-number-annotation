@@ -352,6 +352,79 @@ barplot_shap <- function(shap.abs.sum, genome_mask, type_mask, model_mask){
   
 }
 
+prepare_landscape_to_plot <- function(model_input, 
+                                      shap_plotting_list, 
+                                      filtered_shap_output,
+                                      filtered_landscape, 
+                                      pred_list){
+  
+  if (model_input$selected == "ampl") {
+    
+    filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_ampl
+    genome_mask <- filtered_shap_output$genome_mask
+    model_mask <- filtered_shap_output$model_mask
+    type_mask <- filtered_shap_output$type_mask
+    
+    pred_df <- pred_list[[model_input$selected]]; pred_df$ampl_score <- NULL
+    
+    filtered_landscape <- merge(x = filtered_landscape, by.x = c("type", "binID"),
+                                y = pred_df,            by.y = c("Type", "bin"),
+                                sort = F
+    )
+    
+    clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape), value = T)
+    top_clustering_col <- paste0("top_",clustering_col)
+    clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
+    
+    filtered_landscape <- filtered_landscape %>% 
+      dplyr::select(type, binID, all_of(clustering_col), 
+                    chr, ampl, pos, 
+                    all_of(top_clustering_col), prediction)
+    
+    filtered_landscape$obs <- filtered_landscape$ampl
+    filtered_landscape$pred <- filtered_landscape$prediction
+    filtered_landscape$ampl <- NULL; filtered_landscape$prediction <- NULL
+    
+    
+  } else {
+    
+    filtered_shap_abs_sum <- shap_plotting_list$filtered_shap_abs_sum_del
+    genome_mask <- filtered_shap_output$genome_mask
+    model_mask <- filtered_shap_output$model_mask
+    type_mask <- filtered_shap_output$type_mask
+    
+    pred_df <- pred_list[[model_input$selected]]; pred_df$del_score <- NULL
+    
+    filtered_landscape <- merge(x = filtered_landscape, by.x = c("type", "binID"),
+                                y = pred_df,            by.y = c("Type", "bin"),
+                                sort = F
+    )
+    
+    clustering_col <- grep(pattern = "^k\\d{1,2}$", x = colnames(filtered_landscape), value = T)
+    top_clustering_col <- paste0("top_",clustering_col)
+    clustering_depth <- as.integer(gsub(pattern = "k", x = clustering_col, replacement = ""))
+    
+    filtered_landscape <- filtered_landscape %>% 
+      dplyr::select(type, binID, all_of(clustering_col), 
+                    chr, del, pos, 
+                    all_of(top_clustering_col), prediction)
+    
+    filtered_landscape$obs <- filtered_landscape$del
+    filtered_landscape$pred <- filtered_landscape$prediction
+    filtered_landscape$del <- NULL; filtered_landscape$prediction <- NULL
+    
+  }
+  
+  outlist <- list(filtered_landscape = filtered_landscape,
+                  genome_mask = genome_mask,
+                  model_mask = model_mask,
+                  type_mask = type_mask)
+  
+  return(outlist)
+}
+
+################ OBSOLETE ################
+
 landscape_plot_interactive <- function(filtered_landscape,
                                        backbone.100kb,
                                        genome_mask, type_mask,
@@ -866,6 +939,7 @@ landscape_plot_interactive <- function(filtered_landscape,
   return(p)
 }
 
+################
 
 landscape_plot_interactive_prediction <- function(filtered_landscape,
                                                   backbone.100kb,
@@ -1236,8 +1310,8 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
   if (length(genome_mask) > 1) genome_mask <- paste(genome_mask, collapse = ", ")
   if (length(track_mask) > 1) track_mask <- paste(track_mask, collapse = ", ")
   
-  title    <- "Segment Annotation (based on SHAP values)"
-  subtitle <- paste0("[", genome_mask, "] [", type_mask, "] [", track_mask, "]")
+  title    <- "Segment Annotation (based on SHAP values)"; title <- ""
+  subtitle <- paste0("[", genome_mask, "] [", type_mask, "] [", track_mask, "]"); subtitle <- ""
   
   filtered_landscape <- filtered_landscape %>% mutate(pos = row_number())
   
