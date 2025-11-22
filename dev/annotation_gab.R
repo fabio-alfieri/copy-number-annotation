@@ -15,11 +15,50 @@ res.ampl <- plot_residuals(read_rds('dev/Data/pred_ampl.rds'))
 res.del <- plot_residuals(read_rds('dev/Data/pred_del.rds'))
 
 res.filt <- list()
-quantile_filt <- 0.95
-res.filt[['ampl']] <- res.ampl %>% filter(residual <= as.numeric(quantile(res.ampl$residual, prob = quantile_filt)))
-res.filt[['del']] <- res.del %>% filter(residual <= as.numeric(quantile(res.del$residual, prob = quantile_filt)))
 
-tt <- 'BRCA'
+quantile_filt <- 0.85
+quant_ampl <- quantile(res.ampl$residual, prob = quantile_filt)
+quant_del <- quantile(res.del$residual, prob = quantile_filt)
+
+res_pre_filt_ampl <- res.ampl$observed - res.ampl$prediction
+hist(res_pre_filt_ampl, breaks = 100, main = "Residual Plot for Ampl Model")
+abline(v = quant_ampl)
+abline(v = -quant_ampl)
+
+res_pre_filt_del <- res.del$observed - res.del$prediction
+hist(res_pre_filt_del, breaks = 100, main = "Residual Plot for Del Model")
+abline(v = quant_del)
+abline(v = -quant_del)
+
+# If residual > quantile, it means than that the observed value is surprisingly high.
+# The model trained on healthy cells  data was not able to predict a change. Possible selection event? 
+# Meaning something useful for cancer, not explainable by healthy tissue only (interaction with different tissues?????)
+
+# If residual < quantile ,the model fails to predict, flag as a warning
+
+# If residual > -quantile and < quantile, the models is correctly predicting changes, that might be selected events,
+# but also random events, need to assess looking at cluster identity
+
+res.ampl$residual <- res_pre_filt_ampl
+res.del$residual <- res_pre_filt_del
+
+res.ampl_filt <- res.ampl %>% filter((residual >= -as.numeric(quant_ampl) & residual <= as.numeric(quant_ampl)))
+res.ampl_filt_sel <- res.ampl %>% filter((residual >= as.numeric(quant_ampl)))
+res.ampl_filt_error <- res.ampl %>% filter((residual <= -as.numeric(quant_ampl)))
+
+res.del_filt <- res.del %>% filter((residual >= -as.numeric(quant_del) & residual <= as.numeric(quant_del)))
+res.del_filt_sel <- res.del %>% filter((residual >= as.numeric(quant_del)))
+res.del_filt_error <- res.del %>% filter((residual <= -as.numeric(quant_del)))
+
+res_post_filt_ampl <- res.ampl_filt$observed - res.ampl_filt$prediction
+hist(as.numeric(res_post_filt_ampl), breaks = 50, main = "Residual Plot for Ampl Model")
+abline(v = quant_ampl)
+abline(v = -quant_ampl)
+
+res_post_filt_del <- res.del_filt$observed - res.del_filt$prediction
+hist(res_post_filt_del, breaks = 100, main = "Residual Plot for Del Model")
+abline(v = quant_del)
+abline(v = -quant_del)
 
 output <- list()
 

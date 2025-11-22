@@ -1,4 +1,4 @@
-# rm(list=ls())
+rm(list=ls())
 gc(full=T)
 
 library(tidyverse)
@@ -13,18 +13,61 @@ library(htmlwidgets)
 library(htmltools)
 library(ggnewscale)
 
-shap.list <- readRDS("dev/Data/shap_Mid-length_AmplDel.rds")
-output.annotation <- readRDS("dev/Data/output_annotation.rds") # NEW
-centromere_table <- read.table("dev/Data/centomere.tsv", header = T)
-load("dev/Data/All_levels_backbonetables.RData")
-out_annot_list <- readRDS("dev/Data/output_annotation.rds")
+setwd("/Users/gabry/OneDrive/Desktop/shiny_app/")
+
+centromere_table <- read.table("dev/Data/cytoBand.txt", header = F)
+colnames(centromere_table) <- c("chr", "start", "end", "cytoband", "type")
+
+centromere_table <- centromere_table[centromere_table$type == "acen",]
 
 lis_names <- c("ampl", "del")
-paths_vec <- c("dev/Data/pred_ampl.rds", "dev/Data/pred_del.rds")
+model_types <- c("Mid-length", "Small-scale", "Arm-level", "Chromosome-level", "no_cluster")
 
-pred_list <- lapply(X = paths_vec, FUN = readRDS)
-names(pred_list) <- lis_names
+meta_list <- list()
+for (model_type in model_types) {
 
-# toplot.plot_before <- output.annotation$ampl$toplot # updated
-# clusters_explained <- output.annotation$ampl$aggregated # updated
-# rm(output.annotation)
+  name_ampl <- paste0("dev/Data/res_ratio_with_annot_with_backbone_ampl_", model_type, ".tsv")
+  name_del <- paste0("dev/Data/res_ratio_with_annot_with_backbone_del_", model_type, ".tsv")
+  
+  res_ratio_with_annot_with_backbone_ampl <- read.table(name_ampl, header = T, sep = "\t")
+  res_ratio_with_annot_with_backbone_del <- read.table(name_del, header = T, sep = "\t")
+  
+  if(!(all(startsWith(x = as.character(res_ratio_with_annot_with_backbone_ampl$chr), prefix = "chr")))){
+    res_ratio_with_annot_with_backbone_ampl$chr <- paste0("chr", res_ratio_with_annot_with_backbone_ampl$chr)
+  }
+  
+  if(!(all(startsWith(x = as.character(res_ratio_with_annot_with_backbone_del$chr), prefix = "chr")))){
+    res_ratio_with_annot_with_backbone_del$chr <- paste0("chr", res_ratio_with_annot_with_backbone_del$chr)
+    
+  }
+  
+  res_ratio_with_annot_with_backbone_ampl <- res_ratio_with_annot_with_backbone_ampl[order(as.integer(gsub(x = res_ratio_with_annot_with_backbone_ampl$chr, 
+                                                               pattern = "chr", 
+                                                               replacement = "")), 
+                                               res_ratio_with_annot_with_backbone_ampl$start, 
+                                               decreasing = F),]
+  
+  res_ratio_with_annot_with_backbone_del <- res_ratio_with_annot_with_backbone_del[order(as.integer(gsub(x = res_ratio_with_annot_with_backbone_del$chr, 
+                                                               pattern = "chr", 
+                                                               replacement = "")), 
+                                               res_ratio_with_annot_with_backbone_del$start, 
+                                               decreasing = F),]
+  
+  dfs_list <- list(ampl = res_ratio_with_annot_with_backbone_ampl,
+                   del = res_ratio_with_annot_with_backbone_del)
+  
+  meta_list[[model_type]] <- dfs_list
+  
+}
+
+load("dev/Data/All_levels_backbonetables.RData")
+backbone.100kbp <- chr_backbone_namesfixed[["0.1Mbp"]]
+backbone.100kbp <- do.call(rbind, backbone.100kbp)
+backbone.100kbp$binID <- paste0(backbone.100kbp$chr, "_", backbone.100kbp$bin)
+backbone.100kbp$chr <- paste0("chr", backbone.100kbp$chr)
+
+backbone.100kbp_granges <- GRanges(seqnames = backbone.100kbp$chr, 
+                                   ranges = IRanges(start = backbone.100kbp$start_bin, 
+                                                    end = backbone.100kbp$end_bin), 
+                                   binID = backbone.100kbp$binID)
+

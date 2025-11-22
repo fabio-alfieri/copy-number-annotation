@@ -7,286 +7,91 @@ library(shinycssloaders)
 library(zip)
 library(glue)
 
-# Load helper functions
+setwd("/Users/gabry/OneDrive/Desktop/shiny_app/")
+
 source('dev/0_LoadData.R')
 source('dev/1_dynamic_plotting_functions.R')
 source('dev/1bis_parse_input_data_FA.R')
+source('dev/plotting_helpers.R')
+source('dev/landscape_plot_observed_prediction.R')
+source('dev/ui.R')
 
-# Preprocess data once at startup
-data_processed <- parse_input_data(
-  shap.list = shap.list,
-  out_annot_list = out_annot_list,
-  chr_backbone_namesfixed = chr_backbone_namesfixed,
-  centromere_table = centromere_table,
-  clustering_depth = 4
-)
-shap.list                <- data_processed$shap.list
-out_annot_list_processed <- data_processed$out_annot_list_processed
-backbone.100kb           <- data_processed$backbone.100kb
-centromere_table         <- data_processed$centromere_table
-
-# Define palette
-palette_custom <- list(
-  background = "#f0f4fa",
-  primary = "#2a78e8",
-  primary_dark = "#155ab3",
-  border = "#dbe9ff"
+centromere_table_out <- process_centromere_table(
+  centromere_table = centromere_table, 
+  backbone.100kb = backbone.100kbp_granges
 )
 
-# CSS styles for tooltip and hover
-tooltip_css <- "[class^='tooltip_svg_'] {
-  background: transparent !important;
-  color: #fafafa;
-  padding: 2px 6px;
-  border-radius: 2px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  line-height: 1.2;
-  box-shadow: none !important;
-  transform: translateY(2px);
-  white-space: nowrap;
-}"
-hover_css <- "opacity: 0.9 !important; transform: translateY(0) !important;"
-
-# UI
-ui <- fluidPage(
-  tags$head(
-    tags$style(HTML(glue::glue("
-      html, body {{
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        font-family: 'Segoe UI', sans-serif;
-        background-color: {palette_custom$background};
-      }}
-
-      .container-fluid {{
-        padding: 0 !important;
-        margin: 0 !important;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }}
-
-      .title-panel {{
-        flex: 0 0 auto;
-        padding: 10px 0;
-        font-size: 22px;
-        font-weight: bold;
-        background-color: {palette_custom$background};
-        border-bottom: 1px solid {palette_custom$border};
-        text-align: center;
-        width: 100vw;
-        margin: 0;
-        box-sizing: border-box;
-        color: {palette_custom$primary_dark};
-      }}
-
-      #flex-container {{
-        display: flex;
-        flex-grow: 1;
-        overflow: hidden;
-      }}
-
-      #sidebar-container {{
-        width: 300px;
-        overflow-y: auto;
-        flex-shrink: 0;
-        transition: width 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        background-color: {palette_custom$background};
-        border-right: 1px solid {palette_custom$border};
-        padding: 10px;
-        align-items: center;
-      }}
-
-      #sidebar-container.collapsed {{
-        width: 50px !important;
-        padding: 10px 5px;
-        display: flex !important;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-      }}
-
-      #sidebar-container.collapsed .well,
-      #sidebar-container.collapsed .form-group,
-      #sidebar-container.collapsed .checkbox,
-      #sidebar-container.collapsed .shiny-input-container {{
-        display: none !important;
-      }}
-
-      #sidebar-container.collapsed .btn {{
-        width: 100%;
-        margin: 0 0 10px 0;
-        font-size: 18px;
-        padding: 6px 0;
-        text-align: center;
-      }}
-
-      #sidebar-container .btn {{
-        width: auto;
-        margin: 0 auto;
-      }}
-
-      #main-panel-container {{
-        flex-grow: 1;
-        padding-left: 20px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }}
-
-      #main-panel-container.expanded {{
-        margin-left: 0;
-      }}
-
-      #landscape_plot {{
-        flex-grow: 1;
-        min-height: 0;
-      }}
-
-      .form-control, .selectize-input {{
-        border-radius: 6px;
-        border-color: {palette_custom$border};
-      }}
-
-      .btn-primary {{
-        background-color: {palette_custom$primary};
-        border-color: {palette_custom$primary};
-        color: white;
-      }}
-
-      .btn-primary:hover {{
-        background-color: {palette_custom$primary_dark};
-        border-color: {palette_custom$primary_dark};
-        color: white;
-      }}
-
-      .checkbox input[type='checkbox'] {{
-        accent-color: {palette_custom$primary};
-      }}
-
-      .shiny-input-container label {{
-        font-weight: 600;
-        font-size: 14px;
-        margin-bottom: 4px;
-        color: {palette_custom$primary_dark};
-      }}
-    "))),
-    tags$script(HTML(
-      "$(document).on('shiny:connected', function(){
-         $('#toggle_sidebar').on('click', function(){
-           $('#sidebar-container').toggleClass('collapsed');
-           $('#main-panel-container').toggleClass('expanded');
-         });
-       });"
-    ))
-  ),
-  
-  div(class = "title-panel", "SCNA Landscape Plot"),
-  
-  div(id = "flex-container",
-      div(id = "sidebar-container", class = "sidebar-panel",
-          actionButton("toggle_sidebar", "☰", class = "btn btn-secondary", style = "margin-bottom:10px; width:100%; font-size:18px;"),
-          sidebarPanel(width = 12,
-                       selectInput("type_input", "Select cancer type:",
-                                   choices = c("STAD","GBMLGG","COADREAD","KIRP","KIRC","OV","ESCA","LUAD","LUSC","PAAD","BRCA"),
-                                   selected = "BRCA"),
-                       selectInput("model_input", "Select model:",
-                                   choices = c("Amplification" = "ampl", "Deletion" = "del"),
-                                   selected = "ampl"),
-                       selectInput("chr_input", "Select chromosome(s):",
-                                   choices = paste0("chr", 1:22),
-                                   selected = paste0("chr", 1:22),
-                                   multiple = TRUE,
-                                   selectize = TRUE),
-                       textInput("genomic_coords", "Genomic coordinates (chr:start-end):", ""),
-                       checkboxInput("plot_observed", "Show observed track", TRUE),
-                       checkboxInput("plot_predicted", "Show predicted track", TRUE),
-                       checkboxInput("enable_ticks", "Enable annotation ticks", TRUE),
-                       conditionalPanel(
-                         condition = "input.enable_ticks",
-                         textInput("annot_ticks_input", "Ticks clusters ('all' or numbers comma-separated):", "all")
-                       ),
-                       checkboxInput("enable_kde", "Enable KDE layers", TRUE),
-                       conditionalPanel(
-                         condition = "input.enable_kde",
-                         textInput("annot_kde_input", "KDE clusters ('all' or numbers comma-separated):", "all")
-                       ),
-                       actionButton("go", "Go!", class = "btn-primary"),
-                       downloadButton("download_html", "Download HTML", class = "btn btn-secondary", style = "margin-top: 10px;")
-          )
-      ),
-      div(id = "main-panel-container",
-          girafeOutput("landscape_plot", width = "100%", height = "calc(100vh - 70px)")
-      )
-  )
-)
-
-# Server
 server <- function(input, output, session) {
+  
   plot_reactive <- eventReactive(input$go, {
     withProgress(message = "Building SCNA landscape…", value = 0, {
+      
       incProgress(0.1, detail = "Filtering data")
-      sel_chr   <- input$chr_input
+      
       sel_coord <- if (input$genomic_coords == "") NULL else input$genomic_coords
       
       land_out <- filter_df(
-        input_obj        = out_annot_list_processed,
-        backbone_granges = backbone.100kb,
+        input_obj        = meta_list,
+        backbone_granges = backbone.100kbp_granges,
+        cluster_input    = input$cluster_input,
         type_input       = input$type_input,
         model_input      = input$model_input,
-        chr_input        = sel_chr,
+        chr_input        = input$chr_input,
         coord_input      = sel_coord
       )
+      
       df_land <- land_out$final_df
-      req(nrow(df_land) > 0)
+      df_land$is_centromere <- df_land$binID %in% centromere_table_out$binID
       
-      shap_amp <- filter_df(shap.list, backbone.100kb, input$type_input, 'ampl', sel_chr, sel_coord)$final_df
-      shap_del <- filter_df(shap.list, backbone.100kb, input$type_input, 'del',  sel_chr, sel_coord)$final_df
-      shap_plot_list <- prepare_shap_to_plot(shap_amp, shap_del)
+      if (nrow(df_land) == 0) {
+        showNotification("No data available with current filters.", type = "error", duration = 4)
+        return(NULL)
+      }
       
-      outl <- prepare_landscape_to_plot(
-        model_input         = parse_input_model(input$model_input),
-        shap_plotting_list  = shap_plot_list,
-        filtered_shap_output = land_out,
-        filtered_landscape  = df_land,
-        pred_list           = pred_list
-      )
-      fland <- outl$filtered_landscape
-      gmask <- outl$genome_mask
-      tmask <- outl$type_mask
-      mmask <- outl$model_mask
+      annot_col <- input$annot_to_plot
       
-      ticks_val <- if (!input$enable_ticks) FALSE else { txt <- tolower(input$annot_ticks_input); if (txt == "all") "all" else as.numeric(strsplit(txt, ",")[[1]]) }
-      kde_val   <- if (!input$enable_kde) FALSE else { txt <- tolower(input$annot_kde_input);   if (txt == "all") "all" else as.numeric(strsplit(txt, ",")[[1]]) }
+      ticks_val <- if (!input$enable_ticks) FALSE else {
+        txt <- trimws(input$annot_ticks_input)
+        if (identical(tolower(txt), "all")) "all" else unlist(strsplit(txt, "\\s*,\\s*"))
+      }
+      
+      kde_val <- if (!input$enable_kde) FALSE else {
+        txt <- trimws(input$annot_kde_input)
+        if (identical(tolower(txt), "all")) "all" else unlist(strsplit(txt, "\\s*,\\s*"))
+      }
+      
+      meta_val <- if (input$enable_meta) "shap_top1" else FALSE
       
       incProgress(0.6, detail = "Generating plot")
-      p <- landscape_plot_interactive_prediction(
-        filtered_landscape  = fland,
-        backbone.100kb      = backbone.100kb,
-        genome_mask         = gmask,
-        type_mask           = tmask,
-        model_mask          = mmask,
+      
+      p <- landscape_plot_observed_prediction(
+        filtered_landscape  = df_land,
+        cluster_mask        = input$cluster_input,
+        genome_mask         = input$chr_input,
+        type_mask           = input$type_input,
+        model_mask          = input$model_input,
         plot_observed       = input$plot_observed,
         plot_predicted      = input$plot_predicted,
+        annot_to_plot       = annot_col,
         annot_to_plot_ticks = ticks_val,
-        annot_to_plot_kde   = kde_val
+        annot_to_plot_kde   = kde_val,
+        annot_to_plot_meta  = meta_val
       )
       
       incProgress(0.2, detail = "Configuring interactivity")
-      p <- girafe_options(
-        p,
-        opts_tooltip(css = tooltip_css, delay_mouseover = 0, delay_mouseout = 0, offx = 10, offy = -10),
-        opts_hover(css = hover_css),
-        opts_toolbar(saveaspng = FALSE) # Remove lasso & download
-      )
+      
+      if (inherits(p, "gg")) { 
+        p <- girafe_options(
+          girafe(ggobj = p, fonts = list(sans = "Roboto"), width_svg = 10, height_svg = 6),
+          opts_tooltip(css = tooltip_css, delay_mouseover = 0, delay_mouseout = 0, offx = 10, offy = -10),
+          opts_hover(css = hover_css),
+          opts_toolbar(saveaspng = FALSE)
+        )
+      }
       
       incProgress(1)
       showNotification("Landscape ready!", type = "message", duration = 2)
+      
       p
     })
   }, ignoreNULL = FALSE)
@@ -297,27 +102,93 @@ server <- function(input, output, session) {
   
   output$download_html <- downloadHandler(
     filename = function() {
-      paste0("SCNA_landscape_", Sys.Date(), ".zip")
+      paste0("SCNA_landscape_", Sys.Date(), "_", input$cluster_input, "_", input$type_input, "_", input$model_input, ".zip")
     },
     content = function(file) {
-      tempdir_path <- tempdir()
-      html_file <- file.path(tempdir_path, "SCNA_landscape.html")
+      td <- tempfile("scna_export_")
+      dir.create(td)
+      on.exit(unlink(td, recursive = TRUE), add = TRUE)
       
-      saveWidget(plot_reactive(), html_file, selfcontained = FALSE)
+      html_file <- file.path(td, "SCNA_landscape.html")
+      widget_obj <- plot_reactive()
+      if (is.null(widget_obj)) stop("No plot to export.")
       
-      folder_name <- sub(".html$", "_files", html_file)
-      zipfile <- file.path(tempdir_path, "SCNA_landscape_bundle.zip")
-      oldwd <- setwd(tempdir_path)
+      saveWidget(widget_obj, html_file, selfcontained = FALSE)
+      
+      assets_dir <- sub("\\.html$", "_files", html_file)
+      files_to_zip <- c("SCNA_landscape.html")
+      if (dir.exists(assets_dir)) {
+        files_to_zip <- c(files_to_zip, basename(assets_dir))
+      }
+      
+      oldwd <- setwd(td)
       on.exit(setwd(oldwd), add = TRUE)
+      zipfile <- file.path(td, "SCNA_landscape_bundle.zip")
+      zip::zip(zipfile = zipfile, files = files_to_zip, recurse = TRUE)
       
-      zip::zip(zipfile = zipfile,
-               files = c("SCNA_landscape.html", basename(folder_name)),
-               recurse = TRUE)
+      file.copy(zipfile, file, overwrite = TRUE)
+    }
+  )
+  
+  output$download_pdf <- downloadHandler(
+    filename = function() {
+      paste0("SCNA_landscape_", Sys.Date(), "_", input$cluster_input, "_", input$type_input, "_", input$model_input, ".pdf")
+    },
+    content = function(file) {
+      sel_coord <- if (input$genomic_coords == "") NULL else input$genomic_coords
       
-      file.copy(zipfile, file)
+      land_out <- filter_df(
+        input_obj        = meta_list,
+        backbone_granges = backbone.100kbp_granges,
+        cluster_input    = input$cluster_input,
+        type_input       = input$type_input,
+        model_input      = input$model_input,
+        chr_input        = input$chr_input,
+        coord_input      = sel_coord
+      )
+      
+      df_land <- land_out$final_df
+      df_land$is_centromere <- df_land$binID %in% centromere_table_out$binID
+      
+      if (nrow(df_land) == 0) stop("No data to export.")
+      
+      annot_col <- input$annot_to_plot
+      
+      ticks_val <- if (!input$enable_ticks) FALSE else {
+        txt <- trimws(input$annot_ticks_input)
+        if (identical(tolower(txt), "all")) "all" else unlist(strsplit(txt, "\\s*,\\s*"))
+      }
+      
+      kde_val <- if (!input$enable_kde) FALSE else {
+        txt <- trimws(input$annot_kde_input)
+        if (identical(tolower(txt), "all")) "all" else unlist(strsplit(txt, "\\s*,\\s*"))
+      }
+      
+      meta_val <- if (input$enable_meta) "shap_top1" else FALSE
+      
+      p <- landscape_plot_observed_prediction(
+        filtered_landscape  = df_land,
+        cluster_mask        = input$cluster_input,
+        genome_mask         = input$chr_input,
+        type_mask           = input$type_input,
+        model_mask          = input$model_input,
+        plot_observed       = input$plot_observed,
+        plot_predicted      = input$plot_predicted,
+        annot_to_plot       = annot_col,
+        annot_to_plot_ticks = ticks_val,
+        annot_to_plot_kde   = kde_val,
+        annot_to_plot_meta  = meta_val,
+        make.interactive    = FALSE
+      )
+      
+      if (!inherits(p, "ggplot")) {
+        stop("PDF export failed: Plot is not a ggplot object.")
+      }
+      
+      ggsave(file, p, device = "pdf", width = 10, height = 6)
     }
   )
 }
 
-# Run the app
 shinyApp(ui = ui, server = server)
+
