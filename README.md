@@ -1,2 +1,1 @@
-shiny app
-https://fabio-alfieri.github.io/copy-number-annotation/
+https://schaeferlab.shinyapps.io/PENNE
