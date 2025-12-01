@@ -1,9 +1,9 @@
 ### Explainable machine learning reveals drivers of amplifications and deletions across cancer genomes
 Fabio Alfieri, Gokce Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Davoli, Martin Schaefer
 
-For any questions regarding the code and/or data, please contact with [Fabio Alfieri][fabio.alfieri@nyulangone.org] or [Gabriele Oliveto][gabriele.oliveto@ieo.it].
+For any questions regarding the code and/or data, please contact with [Fabio Alfieri](fabio.alfieri@nyulangone.org) or [Gabriele Oliveto](gabriele.oliveto@ieo.it).
 
-[PENNE][https://schaeferlab.shinyapps.io/PENNE/] (Prediction & Explanation of Non-neutral copy Number Events)
+[PENNE](https://schaeferlab.shinyapps.io/PENNE/) (Prediction & Explanation of Non-neutral copy Number Events)
 
 
 ## Abstract
