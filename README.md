@@ -3,7 +3,7 @@ Fabio Alfieri, Gokce Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Davol
 
 For any questions regarding the code and/or data, please contact with Fabio Alfieri (fabio.alfieri@nyulangone.org) or Gabriele Oliveto (gabriele.oliveto@ieo.it).
 
-![PENNE_logo](https://github.com/fabio-alfieri/copy-number-annotation/blob/main/PENNE-logo.png){ width: 200px; }
+<img src="https://github.com/fabio-alfieri/copy-number-annotation/blob/main/PENNE-logo.png" alt="drawing" width="200"/>
 [PENNE](https://schaeferlab.shinyapps.io/PENNE/) (Prediction & ExplanatioPEn of Non-neutral copy Number Events)
 
 
