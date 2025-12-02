@@ -4,7 +4,7 @@ Fabio Alfieri, Gokce Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Davol
 For any questions regarding the code and/or data, please contact with Fabio Alfieri (fabio.alfieri@nyulangone.org) or Gabriele Oliveto (gabriele.oliveto@ieo.it).
 
 <div class="container-flex">
-  <img src="https://github.com/fabio-alfieri/copy-number-annotation/blob/main/PENNE-logo.png" alt="Descrizione immagine" width="200"/>
+  <img src="https://github.com/fabio-alfieri/copy-number-annotation/blob/main/PENNE-logo.png" alt="Descrizione immagine" class="image-right" width="200"/>
   <p>Questo è il testo che apparirà a fianco dell'immagine...</p>
 </div>
 
