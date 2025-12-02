@@ -1,11 +1,12 @@
-<table>
-<tr>
-<td>
 
 ### Explainable machine learning reveals drivers of amplifications and deletions across cancer genomes
 Fabio Alfieri, Gokce Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Davoli, Martin Schaefer
 
 For any questions regarding the code and/or data, please contact with Fabio Alfieri (fabio.alfieri@nyulangone.org) or Gabriele Oliveto (gabriele.oliveto@ieo.it).
+
+<table>
+<tr>
+<td>
 
 </td>
 <td style="width:200px; text-align:right;">
