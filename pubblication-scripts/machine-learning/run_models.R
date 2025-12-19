@@ -1,30 +1,30 @@
 
-mode <- "CLASSIC"
+mode <- "ONLY_OCCURRENCE"
 
-if(mode == "CLASSIC"){
-  script <- './0_prepareRegressor.R'
-} else if(mode == "LOCO"){
+if(mode == "LOCO"){
   script <- './0_prepareRegressor_LOCO.R'
+} else if(mode == "CLASSIC"){
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor.R'
 } else if(mode == "NO_SEGMENT_SPECIFIC"){
-  script <- './0_prepareRegressor_NSS.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_NSS.R'
 } else if(mode == "ONLY_OCCURRENCE"){
-  script <- './0_prepareRegressor_OO.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_OO.R'
 } else if(mode == "PROXIMITY"){
-  script <- './0_prepareRegressor_PRO.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_PRO.R'
 } else if(mode == "LOCO_NSS"){
-  script <- './0_prepareRegressor_LOCO_NSS.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOCO_NSS.R'
 } else if(mode == "LOFO"){
-  script <- './0_prepareRegressor_LOFO.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOFO.R'
 } else if(mode == "PROXY"){
-  script <- './0_prepareRegressor_PROXY.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_PROXY.R'
 } else if(mode == "LOFO_PROXY"){
-  script <- './0_prepareRegressor_LOFO_PROXY.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOFO_PROXY.R'
 } else if(mode == "NO_OG"){
-  script <- './0_prepareRegressor_NO_OG.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_NO_OG.R'
 } else if(mode == "LOCTO"){
-  script <- './0_prepareRegressor_LOCTO.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOCTO.R'
 } else if(mode == "LAFO_PROXY"){
-  script <- './0_prepareRegressor_LAFO_PROXY.R'
+  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LAFO_PROXY.R'
 }
 
 packages <- c(

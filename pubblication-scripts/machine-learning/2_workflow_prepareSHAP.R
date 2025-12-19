@@ -82,6 +82,8 @@ for(file in model.outputs){
   avg.shap.values <- as.data.frame(avg.shap.values)
   avg.shap.values <- avg.shap.values %>% group_by(Feature) %>% summarise("Mean_Abs_SHAP" = mean(Mean_Abs_SHAP))
   models.shap.values[[paste(class,model,sep = "::")]] <- avg.shap.values
+ 
+  # major edit here, shifted this inside loop and sourcing next code
   
   models_shap_path <- paste0("../Data/SHAP/",class,"::",model,"_Avg_shap_values_InteractomeINSIDER.RData")
   

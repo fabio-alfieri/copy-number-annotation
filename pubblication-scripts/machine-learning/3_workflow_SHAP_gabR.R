@@ -9,7 +9,7 @@ bars <- "#a4ac86" # Feature importance plots/bar plots
 shap_path <- "../Data/SHAP/"
 avg_shap_path <- paste0(shap_path,class,"::",model,"_Avg_shap_values_InteractomeINSIDER.RData")
 
-directionality_script <- './4_SHAP_directionality.R'
+directionality_script <- './8_SHAP_directionality.R'
 
 load(avg_shap_path) 
 models <- names(models.shap.df)
