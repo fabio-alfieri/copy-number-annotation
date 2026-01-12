@@ -30,7 +30,7 @@ unzip data.zip
 ```
 
 #### Reproduce the feature matrix
-The R scripts needed to reproduce the feature matrix are stored in
+The R scripts needed to reproduce the feature matrix are located at
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/compute-features/
 ```
@@ -45,7 +45,7 @@ unzip feature_matrix.zip
 
 
 #### Calculate the CNA scores 
-The R scripts needed to calculate CNA scores are stored in
+The R scripts needed to calculate CNA scores are located at
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/classify-CNAs/
 ```
@@ -60,11 +60,11 @@ unzip CNA_scores.zip
 
 
 #### Run the ML models
-The R scripts needed to train the ML models and the subsequent analyses are stored in
+The R scripts needed to train the ML models and the subsequent analyses are located at
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 ```
-The main script 
+The main script is *workflow.R*
 
 
 
