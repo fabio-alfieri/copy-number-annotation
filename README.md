@@ -8,7 +8,8 @@ For any questions regarding the code and/or data, please contact with Fabio Alfi
 ### Abstract
 <div style="float: right; text-align: center; width: 270px;">
 
-  <img src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/PENNE-logo.png"
+  <img align="right" 
+       src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/PENNE-logo.png"
        alt="PENNE web browser"
        width="250"/>
 
