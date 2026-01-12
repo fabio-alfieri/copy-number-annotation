@@ -8,8 +8,7 @@ For any questions regarding the code and/or data, please contact with Fabio Alfi
 <tr>
 <td>
 
-[PENNE web browser](https://schaeferlab.shinyapps.io/PENNE
-  
+[PENNE web browser](https://schaeferlab.shinyapps.io/PENNE)
 
 Prediction & Explanation of Non neutral copy Number Events
 
