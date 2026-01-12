@@ -4,7 +4,6 @@ Fabio Alfieri, Gökçe Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Dav
 
 For any questions regarding the code and/or data, please contact with Fabio Alfieri (fabio.alfieri@nyulangone.org) or Gabriele Oliveto (gabriele.oliveto@ieo.it).
 
-
 ### Abstract
 <img align="right"
      src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/PENNE-logo.png"
@@ -14,14 +13,6 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 
 <img src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/figure-GitHub.png"
      alt="paper-workflow"/>
-
-
-
-
-### System requirements
-Analyses were run on Linux:
-R version: 
-Required R packages (supplementary file with packages link here)
 
 
 ### Reproduce the analyses
@@ -41,20 +32,44 @@ unzip data.zip
 #### Reproduce the feature matrix
 The R scripts needed to reproduce the feature matrix are stored in
 ```bash
-cd path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/compute-features/
+path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/compute-features/
 ```
 Scripts are numbered in execution order.
+
+Pre-built feature matrix are available in Zenodo as follows.
+```bash
+cd path/to/GitHub/copy-number-annotation/
+wget -O feature_matrix.zip https://zenodo.org/FEATURE_MATRIX.zip
+unzip feature_matrix.zip
+```
+
 
 #### Calculate the CNA scores 
 The R scripts needed to calculate CNA scores are stored in
 ```bash
-cd path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/classify-CNAs/
+path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/classify-CNAs/
 ```
 Scripts are numbered in execution order.
+
+Pre-calculated CNA scores are available in Zenodo as follows.
+```bash
+cd path/to/GitHub/copy-number-annotation/
+wget -O CNA_scores.zip https://zenodo.org/CNA_scores.zip
+unzip CNA_scores.zip
+```
+
 
 #### Run the ML models
 The R scripts needed to train the ML models and the subsequent analyses are stored in
 ```bash
-cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
+path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 ```
 The main script 
+
+
+
+### System requirements
+Analyses were run on Linux:
+R version: 
+Required R packages (supplementary file with packages link here)
+
