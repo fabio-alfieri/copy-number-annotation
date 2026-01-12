@@ -4,25 +4,12 @@ Fabio Alfieri, Gökçe Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Dav
 
 For any questions regarding the code and/or data, please contact with Fabio Alfieri (fabio.alfieri@nyulangone.org) or Gabriele Oliveto (gabriele.oliveto@ieo.it).
 
-
-<div style="display: flex; align-items: center; gap: 12px;">
-  <img src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/PENNE-logo.png"
-       alt="PENNE-logo"
-       width="110"/>
-  <div>
-    <a href="https://schaeferlab.shinyapps.io/PENNE/"><strong>PENNE Browser</strong></a><br>
-    Prediction & Explanation of Non-neutral copy Number Events.
-  </div>
-</div>
-
-
-
 <table>
 <tr>
 <td>
 
-PENNE web browser available [here](https://schaeferlab.shinyapps.io/PENNE/)
-(Prediction & Explanation of Non neutral copy Number Events)
+[PENNE web browser](https://schaeferlab.shinyapps.io/PENNE/) 
+Prediction & Explanation of Non neutral copy Number Events
 
 </td>
 <td style="width:200px; text-align:right;">
