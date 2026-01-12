@@ -17,7 +17,7 @@ Prediction & Explanation of Non neutral copy Number Events
 
 <img src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/PENNE-logo.png"
      alt="PENNE-logo"
-     width="200"/>
+     width="250"/>
 
 </td>
 </tr>
