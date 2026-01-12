@@ -64,7 +64,7 @@ The R scripts needed to train the ML models and the subsequent analyses are loca
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 ```
-The main script is *workflow.R*
+Please run *workflow.R* first.
 
 
 
