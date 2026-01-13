@@ -42,7 +42,7 @@ xgb_tune <- caret::train(
 
 print(xgb_tune$bestTune)
 
-hyperTuning_path <- paste0('../Data/hyperparam_tuning/', classS, '_hyper_tuning.rds')
+hyperTuning_path <- paste0(wd, 'data/hyperparam_tuning/', classS, '_hyper_tuning.rds')
 
 saveRDS(xgb_tune, file = hyperTuning_path)
 
