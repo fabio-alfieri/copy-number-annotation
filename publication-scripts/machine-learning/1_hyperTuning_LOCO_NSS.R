@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 # Extract features
 
 chr_idxs <- which(chr_nums != chromosome) # choose chromosomes NOT to test on
@@ -54,7 +56,7 @@ xgb_tune <- caret::train(
 # Print the best parameters
 print(xgb_tune$bestTune)
 
-hyperTuning_path <- paste0('../Data/hyperparam_tuning/', classS, '_hyper_tuning_LOCO_NSS_', chromosome,'.rds')
+hyperTuning_path <- paste0(wd, 'data/hyperparam_tuning/', classS, '_hyper_tuning_LOCO_NSS_', chromosome,'.rds')
 
 saveRDS(xgb_tune, file = hyperTuning_path)
 
