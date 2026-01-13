@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 chromosome_length <- unique(ml_table$Chromosome_Length)
 proxy <- c(36,27,30,76,53,39,81,4,243,11,52,6,32,17,16,68,45,85,78,61,97,22) #random sampled on 13/11/2025 using rng
 names(chromosome_length) <- proxy
@@ -62,7 +64,7 @@ xgb_tune <- caret::train(
 # Print the best parameters
 print(xgb_tune$bestTune)
 
-hyperTuning_path <- paste0('../Data/hyperparam_tuning/', classS, '_hyper_tuning_PROXY.rds')
+hyperTuning_path <- paste0(wd, 'data/hyperparam_tuning/', classS, '_hyper_tuning_PROXY.rds')
 
 saveRDS(xgb_tune, file = hyperTuning_path)
 
