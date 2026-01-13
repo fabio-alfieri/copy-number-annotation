@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 extract_indexes <- function(ml_table, train_length, test_length){
   
   bool_vec <- c(rep(T, train_length), rep(F, test_length)) # 50 20
@@ -99,7 +101,7 @@ xgb_tune <- caret::train(
 # Print the best parameters
 print(xgb_tune$bestTune)
 
-hyperTuning_path <- paste0('../Data/hyperparam_tuning/', classS,'_hyper_tuning_PRO_', train_length, "_", test_length, "_", num_of_skipped_chrs, '.rds')
+hyperTuning_path <- paste0(wd, 'data/hyperparam_tuning/', classS,'_hyper_tuning_PRO_', train_length, "_", test_length, "_", num_of_skipped_chrs, '.rds')
 
 saveRDS(xgb_tune, file = hyperTuning_path)
 
