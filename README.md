@@ -24,15 +24,35 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 ```bash
 git clone https://github.com/fabio-alfieri/copy-number-annotation.git
 ```
-#### Download supplementary data from Zenodo
-(change Zenodo repo link)
+#### Download data from Zenodo
+(change Zenodo link with final after publishing repo)
 ```bash
 cd path/to/GitHub/copy-number-annotation/
-wget -O data.zip https://zenodo.org/record/7079304/files/data.zip?download=1
+wget -O data.zip https://zenodo.org/api/records/17737479/draft/files/data.zip/content
 unzip data.zip
 ```
 
+#### Run the ML models
+The R scripts needed to train the ML models and the subsequent analyses are located at
+```bash
+path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
+```
+Please run *main_workflow.R*.
+```bash
+cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
+Rscript main_workflow.R
+```
 
+#### Compute the annotation
+```bash
+cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
+Rscript compute_sum_abs_SHAPs.R
+```
+Annotation matrices and plots are stored at
+```bash
+data/annotation/merged_res_annot_*
+data/plots/
+```
 
 
 #### Reproduce the feature matrix
@@ -63,14 +83,6 @@ cd path/to/GitHub/copy-number-annotation/
 wget -O CNA_scores.zip https://zenodo.org/CNA_scores.zip
 unzip CNA_scores.zip
 ```
-
-
-#### Run the ML models
-The R scripts needed to train the ML models and the subsequent analyses are located at
-```bash
-path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
-```
-Please run *workflow.R* first.
 
 
 
