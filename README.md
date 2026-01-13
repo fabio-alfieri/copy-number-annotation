@@ -20,7 +20,7 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 
 ## Reproduce the Analyses 
 
-### Clone GitHub repository and download the data
+### Clone GitHub Repository and Download the Data
 ```bash
 git clone https://github.com/fabio-alfieri/copy-number-annotation.git
 ```
@@ -35,11 +35,11 @@ unzip data.zip
 ```
 
 ### Train the XGBoost Models
-The R scripts needed to train the ML models and the subsequent analyses are located at
+The R scripts needed to train the ML models and the subsequent analyses are located at `path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/`
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 ```
-Please run *main_workflow.R*.
+Please run *main_workflow.R* ad follows:
 ```bash
 cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 Rscript main_workflow.R
