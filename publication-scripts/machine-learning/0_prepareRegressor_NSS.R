@@ -1,7 +1,7 @@
 wd <- 'path/to/GitHub/copy-number-annotation/'
 
-hyperTuning_script <- './1_hyperTuning_NSS.R'
-runRegressor_script <- './2_runRegressor_NSS.R'
+hyperTuning_script <- 'publication-scripts/machine-learning/1_hyperTuning_NSS.R'
+runRegressor_script <- 'publication-scripts/machine-learning/2_runRegressor_NSS.R'
 
 source(paste0(wd, hyperTuning_script), local = T)
 
