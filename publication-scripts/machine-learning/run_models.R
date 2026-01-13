@@ -1,5 +1,5 @@
 
-mode <- "ONLY_OCCURRENCE"
+mode <- "CLASSIC"
 
 if(mode == "LOCO"){
   script <- './0_prepareRegressor_LOCO.R'
