@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 # 1. Initialization
 
 nrounds <- 10 # Number of iterations for model averaging
