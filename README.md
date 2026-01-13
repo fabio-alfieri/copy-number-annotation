@@ -18,7 +18,7 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
      alt="paper-workflow"/>
 
 
-### Reproduce the Analyses
+### Reproduce the Analyses 
 
 #### Clone the repository
 ```bash
@@ -53,7 +53,12 @@ Annotation matrices and plots are stored at
 data/annotation/merged_res_annot_*
 data/plots/
 ```
-
+Annotation matrices are also available on Zenodo
+```bash
+cd path/to/GitHub/copy-number-annotation/
+wget -O annotation-matrix.zip https://zenodo.org/api/records/17737479/draft/files/annotation-matrix.zip/content
+unzip annotation-matrix.zip
+```
 
 ### Supplementary
 #### Reproduce the Feature Matrix
