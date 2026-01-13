@@ -1,6 +1,6 @@
 
 ## Explainable machine learning reveals drivers of amplifications and deletions across cancer genomes
-**Fabio Alfieri, Gökçe Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Davoli, Martin Schaefer**
+*Fabio Alfieri, Gökçe Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Davoli, Martin Schaefer*
 
 <img align="right"
      src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/PENNE-logo.png"
