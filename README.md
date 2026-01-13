@@ -32,7 +32,7 @@ wget -O data.zip https://zenodo.org/api/records/17737479/draft/files/data.zip/co
 unzip data.zip
 ```
 
-#### Run the ML models
+#### Train the XGBoost models
 The R scripts needed to train the ML models and the subsequent analyses are located at
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
