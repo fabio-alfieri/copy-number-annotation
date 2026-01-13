@@ -6,7 +6,7 @@
      src="https://raw.githubusercontent.com/fabio-alfieri/copy-number-annotation/main/PENNE-logo.png"
      width="250"
      alt="PENNE web browser">
-     his manuscript also presents [PENNE (Prediction & Explanation of Non-neutral copy Number Events)](https://schaeferlab.shinyapps.io/PENNE/), a publicly accessible web platform that supports interactive, pan-cancer exploration of curated copy-number annotation profiles.
+This manuscript also presents [PENNE (Prediction & Explanation of Non-neutral copy Number Events)](https://schaeferlab.shinyapps.io/PENNE/), a publicly accessible web platform that supports interactive, pan-cancer exploration of curated copy-number annotation profiles.
 
 For any questions regarding the code and/or data, please contact with Fabio Alfieri (fabio.alfieri@nyulangone.org) or Gabriele Oliveto (gabriele.oliveto@ieo.it).
 
