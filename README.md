@@ -47,18 +47,18 @@ The `main_workflow.R` script sets the general variables in the R environment nee
 This script automatically launch `run_models.R`, where the used can choose between different options:
 | mode | description |
 | --- | --- |
-| CLASSIC | *default* Models used in the manuscript trained with the entire feature matrix |
-| NO_SEGMENT_SPECIFIC or NSS | Train-test splits that block neighboring genomic bins |
-| ONLY_OCCURRENCE or OO | Remove selection-driven features |
-| LOCO | Leave-One-Chromosome-Out |
-| LOFO | Leave-One-Feature-Out |
-| PROXIMITY or PROXY |  |
-| LOCO_NSS | Leave-One-Chromosome-Out and XXX |
-| PROXY |  |
-| LOFO_PROXY |  |
-| NO_OG | Remove Oncogenes |
-| LOCTO |  |
-| LAFO_PROXY |  |
+| "CLASSIC" (*default*) | Models used in the manuscript trained with the entire feature matrix |
+| "NO_SEGMENT_SPECIFIC" or "NSS" | Train-test splits that block neighboring genomic bins |
+| "ONLY_OCCURRENCE" or "OO" | Remove selection-driven features |
+| "LOCO" | Leave-One-Chromosome-Out |
+| "LOFO" | Leave-One-Feature-Out |
+| "PROXIMITY" or "PROXY" |  |
+| "LOCO_NSS" | Leave-One-Chromosome-Out and XXX |
+| "PROXY" |  |
+| "LOFO_PROXY" |  |
+| "NO_OG" | Remove Oncogenes |
+| 'LOCTO' |  |
+| "LAFO_PROXY" |  |
 
 #### Compute the SHAP-based CNA Annotation
 ```bash
