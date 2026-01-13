@@ -18,7 +18,7 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
      alt="paper-workflow"/>
 
 
-### Reproduce the analyses
+### Reproduce the Analyses
 
 #### Clone the repository
 ```bash
@@ -32,7 +32,7 @@ wget -O data.zip https://zenodo.org/api/records/17737479/draft/files/data.zip/co
 unzip data.zip
 ```
 
-#### Train the XGBoost models
+#### Train the XGBoost Models
 The R scripts needed to train the ML models and the subsequent analyses are located at
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
@@ -43,7 +43,7 @@ cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 Rscript main_workflow.R
 ```
 
-#### Compute the annotation
+#### Compute the SHAP-based CNA Annotation
 ```bash
 cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 Rscript compute_sum_abs_SHAPs.R
@@ -55,34 +55,22 @@ data/plots/
 ```
 
 
-#### Reproduce the feature matrix
+### Supplementary
+#### Reproduce the Feature Matrix
+Pre-built feature matrix are available in Zenodo as follows (as .tsv).
+```bash
+cd path/to/GitHub/copy-number-annotation/
+wget -O feature-matrix.zip https://zenodo.org/api/records/17737479/draft/files/feature-matrix.zip/content
+unzip feature_matrix.zip
+```
+
 The R scripts needed to reproduce the feature matrix are located at
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/compute-features/
 ```
 Scripts are numbered in execution order.
 
-Pre-built feature matrix are available in Zenodo as follows.
-```bash
-cd path/to/GitHub/copy-number-annotation/
-wget -O feature_matrix.zip https://zenodo.org/FEATURE_MATRIX.zip
-unzip feature_matrix.zip
-```
 
-
-#### Calculate the CNA scores 
-The R scripts needed to calculate CNA scores are located at
-```bash
-path/to/GitHub/copy-number-annotation/publication-scripts/feature-matrix/classify-CNAs/
-```
-Scripts are numbered in execution order.
-
-Pre-calculated CNA scores are available in Zenodo as follows.
-```bash
-cd path/to/GitHub/copy-number-annotation/
-wget -O CNA_scores.zip https://zenodo.org/CNA_scores.zip
-unzip CNA_scores.zip
-```
 
 
 
