@@ -11,7 +11,7 @@ if(mode == "LOCO"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_NSS.R')
 } else if(mode == "ONLY_OCCURRENCE" | mode == "OO"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_OO.R')
-} else if(mode == "PROXIMITY" | mode == "PROXY"){
+} else if(mode == "PROXIMITY"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_PRO.R')
 } else if(mode == "LOCO_NSS"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOCO_NSS.R')
