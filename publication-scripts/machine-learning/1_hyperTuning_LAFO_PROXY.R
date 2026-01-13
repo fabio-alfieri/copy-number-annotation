@@ -63,7 +63,7 @@ xgb_tune <- caret::train(
 # Print the best parameters
 print(xgb_tune$bestTune)
 
-hyperTuning_path <- paste0('../Data/hyperparam_tuning/', classS, '_hyper_tuning_LAFO_PROXY_', feature_to_keep,'.rds')
+hyperTuning_path <- paste0(wd, 'data/hyperparam_tuning/', classS, '_hyper_tuning_LAFO_PROXY_', feature_to_keep,'.rds')
 
 saveRDS(xgb_tune, file = hyperTuning_path)
 
