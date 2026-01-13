@@ -47,7 +47,7 @@ The `main_workflow.R` script sets the general variables in the R environment nee
 This script automatically launch `run_models.R`, where the used can choose between different options:
 | mode | description |
 | --- | --- |
-| CLASSIC | Models used in the manuscript trained with the entire feature matrix |
+| CLASSIC | *default* Models used in the manuscript trained with the entire feature matrix |
 | NO_SEGMENT_SPECIFIC or NSS | Train-test splits that block neighboring genomic bins |
 | ONLY_OCCURRENCE or OO | Remove selection-driven features |
 | LOCO | Leave-One-Chromosome-Out |
