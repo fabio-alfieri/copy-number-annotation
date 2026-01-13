@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 X_data <- ml_table[,!colnames(ml_table) %in% c('bin','Type','ampl_score', 'del_score', "Centromere_Length", "Chromosome_Length", "Centromere_Type","distance.to.centromere", "distance.to.telomere")]
 features <- colnames(X_data)
 print(setdiff(colnames(ml_table), features))
@@ -50,7 +52,7 @@ xgb_tune <- caret::train(
 # Print the best parameters
 print(xgb_tune$bestTune)
 
-hyperTuning_path <- paste0('../Data/hyperparam_tuning/', classS, '_hyper_tuning_NSS_new.rds')
+hyperTuning_path <- paste0(wd, 'data/hyperparam_tuning/', classS, '_hyper_tuning_NSS_new.rds')
 
 saveRDS(xgb_tune, file = hyperTuning_path)
 
