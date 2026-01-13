@@ -7,11 +7,11 @@ if(mode == "LOCO"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOCO.R')
 } else if(mode == "CLASSIC"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor.R')
-} else if(mode == "NO_SEGMENT_SPECIFIC"){
+} else if(mode == "NO_SEGMENT_SPECIFIC" | mode == "NSS"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_NSS.R')
-} else if(mode == "ONLY_OCCURRENCE"){
+} else if(mode == "ONLY_OCCURRENCE" | mode == "OO"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_OO.R')
-} else if(mode == "PROXIMITY"){
+} else if(mode == "PROXIMITY" | mode == "PROXY"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_PRO.R')
 } else if(mode == "LOCO_NSS"){
   script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOCO_NSS.R')

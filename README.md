@@ -43,6 +43,23 @@ cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 Rscript main_workflow.R
 ```
 
+The `main_workflow.R` script sets the general variables in the R environment needed for the subsequent analyses.
+This script automatically launch `run_models.R`, where the used can choose between different options:
+| mode | description |
+| --- | --- |
+| CLASSIC |  |
+| NO_SEGMENT_SPECIFIC or NSS | |
+| ONLY_OCCURRENCE or OO |  |
+| LOCO | Leave-One-Chromosome-Out |
+| PROXIMITY or PROXY |  |
+| LOCO_NSS |  |
+| LOFO | |
+| PROXY |  |
+| LOFO_PROXY |  |
+| NO_OG |  |
+| LOCTO |  |
+| LAFO_PROXY |  |
+
 #### Compute the SHAP-based CNA Annotation
 ```bash
 cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
