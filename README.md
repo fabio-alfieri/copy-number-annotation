@@ -20,11 +20,11 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 
 ## Reproduce the Analyses 
 
-### Clone the repository
+### Clone GitHub repository and download the data
 ```bash
 git clone https://github.com/fabio-alfieri/copy-number-annotation.git
 ```
-#### Download data from Zenodo
+
 **(change Zenodo link with final after publishing repo)**
 
 Download [here](https://zenodo.org/api/records/17737479/draft/files/data.zip/content) (Zenodo) the data.zip folder (required), move the data.zip in the cloned GitHub folder and unzip it.
@@ -34,7 +34,7 @@ wget -O data.zip https://zenodo.org/api/records/17737479/draft/files/data.zip/co
 unzip data.zip
 ```
 
-#### Train the XGBoost Models
+### Train the XGBoost Models
 The R scripts needed to train the ML models and the subsequent analyses are located at
 ```bash
 path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
