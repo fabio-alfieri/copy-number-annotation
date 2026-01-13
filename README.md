@@ -58,7 +58,7 @@ unzip annotation-matrix.zip
 
 ### Supplementary 
 #### Reproduce the Feature Matrix
-Pre-built feature matrix are available in .tsv on Zenodo ([here](https://zenodo.org/api/records/17737479/draft/files/feature-matrix.zip/content)), or as follows:
+Pre-built feature matrix are available in .tsv on Zenodo [here](https://zenodo.org/api/records/17737479/draft/files/feature-matrix.zip/content), or as follows:
 ```bash
 cd path/to/GitHub/copy-number-annotation/
 wget -O feature-matrix.zip https://zenodo.org/api/records/17737479/draft/files/feature-matrix.zip/content
