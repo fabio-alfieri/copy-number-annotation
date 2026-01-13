@@ -47,7 +47,7 @@ for(file in output.files){
     
     clusters <- names(ML.Tables[["ampl_or_del"]])
     
-  } else if (clus.group == "Length_Location") {
+  } else if (clus.group == "Length_Location") {   
     
     clusters <- names(ML.Tables[["ampl_or_del"]])
     
