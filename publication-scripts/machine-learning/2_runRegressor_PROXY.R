@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 # 1. Initialization
 nrounds <- 10 # Number of iterations for model averaging
 cores <- 15
@@ -126,7 +128,7 @@ for(j in 1:nrounds){
   Output.regressor[[label]][[j]] <- Output.regressor.sub
 }
 
-output_regressor_path <- paste0("../Data/results_regressor/",
+output_regressor_path <- paste0(wd, "data/results_regressor/",
                                 folder,"/",
                                 "Output.regressor_PROXY_",
                                 clus.group,"_",
