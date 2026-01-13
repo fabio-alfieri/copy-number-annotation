@@ -25,7 +25,8 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 git clone https://github.com/fabio-alfieri/copy-number-annotation.git
 ```
 #### Download data from Zenodo
-(change Zenodo link with final after publishing repo)
+**(change Zenodo link with final after publishing repo)**
+
 Download [here](https://zenodo.org/api/records/17737479/draft/files/data.zip/content) (Zenodo) the data.zip folder (required), move the data.zip in the cloned GitHub folder and unzip it.
 ```bash
 cd path/to/GitHub/copy-number-annotation/
