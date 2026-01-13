@@ -1,3 +1,6 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
+
 # 1. Initialization
 
 nrounds <- 10 # Number of iterations for model averaging
@@ -120,7 +123,7 @@ for(j in 1:nrounds){
   Output.regressor[[label]][[ct]][[j]] <- Output.regressor.sub
 }
 
-output_regressor_path <- paste0("../Data/results_regressor/",
+output_regressor_path <- paste0(wd, "data/results_regressor/",
                                 folder,"/",
                                 "Output.regressor_LOCTO_",
                                 ct, "_",
