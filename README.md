@@ -21,6 +21,7 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 ## Reproduce the Analyses 
 
 ### Clone GitHub Repository and Download the Data
+Clone the GitHub repository on your local machine.
 ```bash
 git clone https://github.com/fabio-alfieri/copy-number-annotation.git
 ```
@@ -36,10 +37,7 @@ unzip data.zip
 
 ### Train the XGBoost Models
 The R scripts needed to train the ML models and the subsequent analyses are located at `path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/`
-```bash
-path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
-```
-Please run *main_workflow.R* ad follows:
+Please run `main_workflow.R` ad follows:
 ```bash
 cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 Rscript main_workflow.R
@@ -62,7 +60,7 @@ wget -O annotation-matrix.zip https://zenodo.org/api/records/17737479/draft/file
 unzip annotation-matrix.zip
 ```
 
-### Supplementary
+### Supplementary 
 #### Reproduce the Feature Matrix
 Pre-built feature matrix are available in Zenodo as follows (as .tsv).
 ```bash
@@ -81,8 +79,8 @@ Scripts are numbered in execution order.
 
 
 
-### System requirements
+## System requirements
 Analyses were run on Linux:
 R version: 
-Required R packages (supplementary file with packages link here)
+Required R packages (supplementary file with packages link here): R-packages.yaml
 
