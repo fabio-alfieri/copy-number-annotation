@@ -1,6 +1,8 @@
 rm(list=ls())
 gc(full=T)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c("stringr", "reshape2", "tidyr", "tidyverse")
 
 installed <- rownames(installed.packages())
@@ -12,7 +14,7 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-annots <- list.files("../Data/annotation/", pattern = "res_ratio_with")
+annots <- list.files(paste0(wd, "data/annotation/"), pattern = "res_ratio_with")
 
 patterns <- c("Arm-level",
               "Chromosome-level",
@@ -55,14 +57,14 @@ annot_statistics <- lapply(X = annots,
 summary_statistics <- Reduce(function(x, y) merge(x, y, by = c("type","annot_final"), all = TRUE), annot_statistics)
 summary_statistics[is.na(summary_statistics)] <- 0
 
-write.table(x = summary_statistics, file = "../Data/annotation/summary_statistics.tsv", quote = F, col.names = T)
+write.table(x = summary_statistics, file = paste0(wd, "data/annotation/summary_statistics.tsv"), quote = F, col.names = T)
 
 rownames(summary_statistics) <- paste0(summary_statistics$type, "_", summary_statistics$annot_final)
 summary_statistics$type <- NULL
 summary_statistics$annot_final <- NULL
 
 
-pdf("../Data/plots/heatmap.pdf", width = 20, height = 20) 
+pdf(paste0(wd, "data/plots/heatmap.pdf"), width = 20, height = 20) 
 pheatmap(summary_statistics, 
          cluster_rows = FALSE,
          cluster_cols = FALSE,

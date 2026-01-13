@@ -2,6 +2,8 @@
 rm(list=ls())
 gc(full=T)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c(
   "stringr", "reshape2", "tidyr",
   "ggplot2","fastcluster", "tidyverse"
@@ -16,10 +18,10 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-model.outputs <- list.files(path = "../Data/InteractomeINSIDER/", full.names = TRUE)
+model.outputs <- list.files(path = paste0(wd, "data/InteractomeINSIDER/"), full.names = TRUE)
 patterns <- c('Arm-level','Chromosome-level','Mid-length','Small-scale','no_cluster')
 
-shap.outputs <- list.files(path = "../Data/SHAP/", full.names = TRUE)
+shap.outputs <- list.files(path = "../data/SHAP/", full.names = TRUE)
 shap.outputs <- grep("::", shap.outputs, value = TRUE)
 
 for(i in patterns){
@@ -59,6 +61,6 @@ for(i in patterns){
   feature_and_shap <- list(models.X,models.shap.df)
   names(feature_and_shap) <- c('models.X','models.shap.df')
   
-  write_rds(feature_and_shap, file = paste0("../Data/merged/SHAP_and_FeatureMatrix_",i,"_AmplDel.rds"))
+  write_rds(feature_and_shap, file = paste0(wd, "data/merged/SHAP_and_FeatureMatrix_",i,"_AmplDel.rds"))
   
 }

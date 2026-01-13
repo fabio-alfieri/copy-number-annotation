@@ -1,30 +1,32 @@
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 mode <- "CLASSIC"
 
 if(mode == "LOCO"){
-  script <- './0_prepareRegressor_LOCO.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOCO.R')
 } else if(mode == "CLASSIC"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor.R')
 } else if(mode == "NO_SEGMENT_SPECIFIC"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_NSS.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_NSS.R')
 } else if(mode == "ONLY_OCCURRENCE"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_OO.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_OO.R')
 } else if(mode == "PROXIMITY"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_PRO.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_PRO.R')
 } else if(mode == "LOCO_NSS"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOCO_NSS.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOCO_NSS.R')
 } else if(mode == "LOFO"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOFO.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOFO.R')
 } else if(mode == "PROXY"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_PROXY.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_PROXY.R')
 } else if(mode == "LOFO_PROXY"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOFO_PROXY.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOFO_PROXY.R')
 } else if(mode == "NO_OG"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_NO_OG.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_NO_OG.R')
 } else if(mode == "LOCTO"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LOCTO.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LOCTO.R')
 } else if(mode == "LAFO_PROXY"){
-  script <- '/home/ieo7429/Scrivania/scripts/0_prepareRegressor_LAFO_PROXY.R'
+  script <- paste0(wd, 'publication-scripts/machine-learning/0_prepareRegressor_LAFO_PROXY.R')
 }
 
 packages <- c(

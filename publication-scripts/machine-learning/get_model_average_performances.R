@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 rm(list=ls())
 gc(full=T)
 
@@ -12,7 +14,7 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-model.outputs <- list.files(path = "..Data/InteractomeINSIDER/", full.names = TRUE)
+model.outputs <- list.files(path = paste0(wd, "data/InteractomeINSIDER/"), full.names = TRUE)
 
 patterns <- c("Arm-level",
               "Chromosome-level",
@@ -100,7 +102,7 @@ avg_performance_table <- do.call(what = rbind,
 
 avg_performance_table <- avg_performance_table[!(rownames(avg_performance_table) %in% to.discard),]
 
-avg_performance_path <- "../Data/results_regressor/avg_performances_complete.tsv"
+avg_performance_path <- paste0(wd, "data/results_regressor/avg_performances_complete.tsv")
 
 write.table(x = avg_performance_table, 
             file = avg_performance_path,

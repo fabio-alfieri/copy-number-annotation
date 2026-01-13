@@ -4,6 +4,8 @@ gc(full=T) # garbage collector
 
 #######################  import libraries #######################
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c(
   "stringr", "colorspace", "reshape2", "tidyr",
   "ggplot2", "dplyr", "caret", "ggsignif",
@@ -22,8 +24,10 @@ lapply(packages, library, character.only = TRUE)
 
 #######################  load helpers ####################### 
 
-source("./get_residuals.R")
-source("./change_distance.R")
+wd.ml <- paste0(wd, "publication-scripts/machine-learning/")
+
+source(paste0(wd.ml, "get_residuals.R"))
+source(paste0(wd.ml, "change_distance.R"))
 
 ####################### 
 
@@ -35,9 +39,9 @@ cor.final <- data.frame()
 
 for(model_class in model_classes){
   
-  shap_and_feature_path <- paste0("../Data/merged/SHAP_and_FeatureMatrix_",model_class,"_AmplDel.rds")
-  pred_ampl_path <- paste0("..Data/InteractomeINSIDER/",model_class,"-pred_ampl.rds")
-  pred_del_path <- paste0("..Data/InteractomeINSIDER/",model_class,"-pred_del.rds")
+  shap_and_feature_path <- paste0(wd, "data/merged/SHAP_and_FeatureMatrix_",model_class,"_AmplDel.rds")
+  pred_ampl_path <- paste0(wd, "data/InteractomeINSIDER/",model_class,"-pred_ampl.rds")
+  pred_del_path <- paste0(wd, "data/InteractomeINSIDER/",model_class,"-pred_del.rds")
   
   df <- readRDS(file = shap_and_feature_path)
   pred_ampl <- readRDS(file = pred_ampl_path) 
@@ -188,4 +192,4 @@ for(model_class in model_classes){
   }
 
   
-write.table(file = paste0("..Data/results_regressor/cor_final.tsv"), x = cor.final, sep = "\t", quote = F, row.names = F, col.names = T)
+write.table(file = paste0(wd, "data/results_regressor/cor_final.tsv"), x = cor.final, sep = "\t", quote = F, row.names = F, col.names = T)

@@ -1,6 +1,8 @@
 rm(list=ls())
 gc(full=T)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c(
   "stringr", "tidyr", "reshape2", "dplyr",
   "ggplot2", "colorspace", "ggsignif",
@@ -18,20 +20,21 @@ for (pkg in packages) {
 lapply(packages, library, character.only = TRUE)
 
 #######################  load helpers ####################### 
+wd.ml <- paste0(wd, "publication-scripts/machine-learning/")
 
-source("./get_residuals.R")
-source("./change_distance.R")
-source("./define_annotation_rules_correlation_based.R")
-source("./do_pancancer_barplots_and_boxplots.R")
-source("./do_tumor_specific_barplots_and_boxplots.R")
-source("./do_do_tumor_specific_barplots_and_boxplots.R")
-source("./do_top1_annotation.R")
-source("./do_plot_grouped_by_chr_type.R")
-source("./do_plot_grouped_by_chr.R")
-source("./do_plot_grouped_by_type.R")
-source("./plotting_helpers.R")
-source("./landscape_plot_observed_prediction.R")
-source("./do_plot_residuals.R")
+source(paste0(wd.ml, "get_residuals.R"))
+source(paste0(wd.ml, "change_distance.R"))
+source(paste0(wd.ml, "define_annotation_rules_correlation_based.R"))
+source(paste0(wd.ml, "do_pancancer_barplots_and_boxplots.R"))
+source(paste0(wd.ml, "do_tumor_specific_barplots_and_boxplots.R"))
+source(paste0(wd.ml, "do_do_tumor_specific_barplots_and_boxplots.R"))
+source(paste0(wd.ml, "do_top1_annotation.R"))
+source(paste0(wd.ml, "do_plot_grouped_by_chr_type.R"))
+source(paste0(wd.ml, "do_plot_grouped_by_chr.R"))
+source(paste0(wd.ml, "do_plot_grouped_by_type.R"))
+source(paste0(wd.ml, "plotting_helpers.R"))
+source(paste0(wd.ml, "landscape_plot_observed_prediction.R"))
+source(paste0(wd.ml, "do_plot_residuals.R"))
 
 ####################### 
 
@@ -41,10 +44,10 @@ model_classes <- c('Mid-length', 'Arm-level', 'Chromosome-level', 'Small-scale')
 
 for (model_class in model_classes) {
   
-shap_and_feature_path <- paste0("../Data/merged/SHAP_and_FeatureMatrix_",model_class,"_AmplDel.rds")
-pred_ampl_path <- paste0("../Data/InteractomeINSIDER/",model_class,"-pred_ampl.rds")
-pred_del_path <- paste0("../Data/InteractomeINSIDER/",model_class,"-pred_del.rds")
-correlations_table_path <- paste0("../Data/results_regressor/final_verdict.tsv")
+shap_and_feature_path <- paste0(wd, "data/merged/SHAP_and_FeatureMatrix_",model_class,"_AmplDel.rds")
+pred_ampl_path <- paste0(wd, "data/InteractomeINSIDER/",model_class,"-pred_ampl.rds")
+pred_del_path <- paste0(wd, "data/InteractomeINSIDER/",model_class,"-pred_del.rds")
+correlations_table_path <- paste0(wd, "data/results_regressor/final_verdict.tsv")
 
 df <- readRDS(file = shap_and_feature_path)
 pred_ampl <- readRDS(file = pred_ampl_path) 
@@ -364,20 +367,7 @@ if(as.logical(sum(bool7))){
 
 merged_res_annot$chr <- sapply(X = strsplit(x = merged_res_annot$labels, split = "[_-]"), FUN = `[`, 1)
 
-filename_annot <- paste0("../Data/annotation/merged_res_annot_", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, ".tsv")
+filename_annot <- paste0(wd, "data/annotation/merged_res_annot_", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, ".tsv")
 write.table(x = merged_res_annot, file = filename_annot, quote = F, sep = "\t", row.names = F, col.names = T)
-      
 
-
-
-
-
-
-
-
-
-
-
-    
-    
-    
+}}

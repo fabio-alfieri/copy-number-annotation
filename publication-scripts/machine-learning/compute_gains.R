@@ -1,4 +1,6 @@
-gains <- read.table("../Data/gain/gain_table.tsv", header = T, sep = "\t")
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
+gains <- read.table(wd, "data/gain/gain_table.tsv", header = T, sep = "\t")
 gains <- gains[gains$model != "Output.regressor_NoCluster_no_cluster",]
 
 gains_ampl <- gains[gains$scna == "Amplification model",]
@@ -26,7 +28,7 @@ p1 <- ggplot(gains_ampl_sel, aes(x = model, y = Gain, color = Feature, group = F
   scale_x_discrete(drop = FALSE) +
   theme_minimal()
 
-ggsave("..Data/plots/gains_ampl_sel.pdf", p1, width = 7, height = 5)
+ggsave(paste0(wd, "data/plots/gains_ampl_sel.pdf"), p1, width = 7, height = 5)
 
 
 p2 <- ggplot(gains_del_occ, aes(x = model, y = Gain, color = Feature, group = Feature)) +
@@ -35,7 +37,7 @@ p2 <- ggplot(gains_del_occ, aes(x = model, y = Gain, color = Feature, group = Fe
   scale_x_discrete(drop = FALSE) +
   theme_minimal()
 
-ggsave("..Data/plots/gains_del_occ.pdf", p2, width = 7, height = 5)
+ggsave(paste0(wd, "data/plots/gains_del_occ.pdf"), p2, width = 7, height = 5)
 
 
 p3 <- ggplot(gains_del_sel, aes(x = model, y = Gain, color = Feature, group = Feature)) +
@@ -44,7 +46,7 @@ p3 <- ggplot(gains_del_sel, aes(x = model, y = Gain, color = Feature, group = Fe
   scale_x_discrete(drop = FALSE) +
   theme_minimal()
 
-ggsave("..Data/plots/gains_del_sel.pdf", p3, width = 7, height = 5)
+ggsave(paste0(wd, "data/plots/gains_del_sel.pdf"), p3, width = 7, height = 5)
 
 
 p4 <- ggplot(gains_ampl_occ, aes(x = model, y = Gain, color = Feature, group = Feature)) +
@@ -53,6 +55,6 @@ p4 <- ggplot(gains_ampl_occ, aes(x = model, y = Gain, color = Feature, group = F
   scale_x_discrete(drop = FALSE) +
   theme_minimal()
 
-ggsave("..Data/plots/gains_ampl_occ.pdf", p4, width = 7, height = 5)
+ggsave(paste0(wd, "data/plots/gains_ampl_occ.pdf"), p4, width = 7, height = 5)
 
 

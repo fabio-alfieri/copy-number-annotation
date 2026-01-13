@@ -1,6 +1,8 @@
 rm(list=ls())
 gc(full=T)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c(
   "stringr", "parallel", "reshape2", "dplyr",
   "ggplot2", "tidyr", "caret", "colorspace",
@@ -21,24 +23,25 @@ lapply(packages, library, character.only = TRUE)
 #######################
 
 #######################  load helpers ####################### 
+wd.ml <- paste0(wd, "publication-scripts/machine-learning/")
 
-source("./get_residuals.R")
-source("./compute_ratios.R")
-source("./change_distance.R")
-source("./aggregate_chromatin_states.R")
-source("./define_annotation_rules.R")
-source("./define_annotation_rules_correlation_based.R")
-source("./do_pancancer_barplots_and_boxplots.R")
-source("./do_tumor_specific_barplots_and_boxplots.R")
-source("./do_do_tumor_specific_barplots_and_boxplots.R")
-source("./do_top1_annotation.R")
-source("./compare_ratio_based_top1.R")
-source("./do_plot_grouped_by_chr_type.R")
-source("./do_plot_grouped_by_chr.R")
-source("./do_plot_grouped_by_type.R")
-source("./plotting_helpers.R")
-source("./landscape_plot_observed_prediction.R")
-source("./do_plot_residuals.R")
+source(paste0(wd.ml, "get_residuals.R"))
+source(paste0(wd.ml, "compute_ratios.R"))
+source(paste0(wd.ml, "aggregate_chromatin_states.R"))
+source(paste0(wd.ml, "define_annotation_rules.R"))
+source(paste0(wd.ml, "compare_ratio_based_top1.R"))
+source(paste0(wd.ml, "change_distance.R"))
+source(paste0(wd.ml, "define_annotation_rules_correlation_based.R"))
+source(paste0(wd.ml, "do_pancancer_barplots_and_boxplots.R"))
+source(paste0(wd.ml, "do_tumor_specific_barplots_and_boxplots.R"))
+source(paste0(wd.ml, "do_do_tumor_specific_barplots_and_boxplots.R"))
+source(paste0(wd.ml, "do_top1_annotation.R"))
+source(paste0(wd.ml, "do_plot_grouped_by_chr_type.R"))
+source(paste0(wd.ml, "do_plot_grouped_by_chr.R"))
+source(paste0(wd.ml, "do_plot_grouped_by_type.R"))
+source(paste0(wd.ml, "plotting_helpers.R"))
+source(paste0(wd.ml, "landscape_plot_observed_prediction.R"))
+source(paste0(wd.ml, "do_plot_residuals.R"))
 
 ####################### 
 
@@ -50,9 +53,9 @@ model_classes <- c("Mid-length", "Arm-level", 'Chromosome-level', 'Small-scale',
 
 for (model_class in model_classes) {
 
-shap_and_feature_path <- paste0("../Data/merged/SHAP_and_FeatureMatrix_",model_class,"_AmplDel.rds")
-pred_ampl_path <- paste0("..Data/InteractomeINSIDER/",model_class,"-pred_ampl.rds")
-pred_del_path <- paste0("..Data/InteractomeINSIDER/",model_class,"-pred_del.rds")
+shap_and_feature_path <- paste0(wd, "data/merged/SHAP_and_FeatureMatrix_",model_class,"_AmplDel.rds")
+pred_ampl_path <- paste0(wd, "data/InteractomeINSIDER/",model_class,"-pred_ampl.rds")
+pred_del_path <- paste0(wd, "data/InteractomeINSIDER/",model_class,"-pred_del.rds")
 
 df <- readRDS(file = shap_and_feature_path)
 pred_ampl <- readRDS(file = pred_ampl_path) 
@@ -213,7 +216,7 @@ gene_free_test <- cor.test(genes_free_segments$observed, genes_free_segments$pre
 gene_populated_test <- cor.test(genes_populated_segments$observed, genes_populated_segments$prediction, method = "spearman", exact = F)
 global_performances <- cor.test(res$observed, res$prediction, method = "spearman", exact = F)
 
-p1_name <- paste0("../Data/plots/", model_class, "_", i, "_genes_free_scatterplot.pdf")
+p1_name <- paste0(wd, "data/plots/", model_class, "_", i, "_genes_free_scatterplot.pdf")
 pdf(p1_name)
 plot(genes_free_segments$observed,
      genes_free_segments$prediction,
@@ -222,7 +225,7 @@ plot(genes_free_segments$observed,
      ylab = "Predicted")
 dev.off()
 
-p2_name <- paste0("../Data/plots/", model_class, "_", i, "_genes_populated_scatterplot.pdf")
+p2_name <- paste0(wd, "data/plots/", model_class, "_", i, "_genes_populated_scatterplot.pdf")
 pdf(p2_name)
 plot(genes_populated_segments$observed,
      genes_populated_segments$prediction,
@@ -231,7 +234,7 @@ plot(genes_populated_segments$observed,
      ylab = "Predicted")
 dev.off()
 
-p3_name <- paste0("../Data/plots/", model_class, "_", i, "_all_regions_scatterplot.pdf")
+p3_name <- paste0(wd, "data/plots/", model_class, "_", i, "_all_regions_scatterplot.pdf")
 pdf(p3_name)
 plot(res$observed,
      res$prediction,
@@ -260,7 +263,7 @@ output <- c(output, row)
 output <- do.call(rbind, output)
 
 write.table(x = output, 
-            file = "../Data/segment_specific/segment_specific_performances.tsv", 
+            file = paste0(wd, "data/segment_specific/segment_specific_performances.tsv"), 
             quote = F, sep = "\t", row.names = T, col.names = T)
 
 df_long <- output %>%
@@ -281,7 +284,7 @@ p <- ggplot(df_long, aes(x = category, y = value, fill = metric)) +
     title = "Performance metrics per model category"
   )
 
-ggsave("..Data/plots/CNA_performance_grouped_barplot.pdf", plot = p,
+ggsave(paste0(wd, "data/plots/CNA_performance_grouped_barplot.pdf"), plot = p,
        width = 10, height = 6, dpi = 300)
 
 

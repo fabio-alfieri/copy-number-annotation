@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 do_plot_residuals <- function(input_df, save = TRUE){
   
 df <- input_df %>%
@@ -46,8 +48,8 @@ tumor_specific_residuals <- ggplot(df, aes(x = residual, fill = prediction_statu
 
 if (save) {
   
-  ggsave(filename = paste0("../Data/plots/", i, "_pancancer_residuals.pdf"), plot = pancancer_residuals, width = 15, height = 14, dpi = 300)
-  ggsave(filename = paste0("../Data/plots/", i, "_tumor_specific_residuals.pdf"), plot = tumor_specific_residuals , width = 15, height = 14, dpi = 300)
+  ggsave(filename = paste0(wd, "data/plots/", i, "_pancancer_residuals.pdf"), plot = pancancer_residuals, width = 15, height = 14, dpi = 300)
+  ggsave(filename = paste0(wd, "data/plots/", i, "_tumor_specific_residuals.pdf"), plot = tumor_specific_residuals , width = 15, height = 14, dpi = 300)
   
 }
 

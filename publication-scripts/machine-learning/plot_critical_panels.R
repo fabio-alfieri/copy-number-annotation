@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c("ggplot2", "tidyverse")
 
 installed <- rownames(installed.packages())
@@ -9,7 +11,7 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-model_performances <- read.delim(file = "../Data/results_regressor/avg_performances_final.tsv")
+model_performances <- read.delim(file = "data/results_regressor/avg_performances_final.tsv")
 
 PRO_idxs <- grep(pattern = "PRO_[0-9]+_[0-9]+_[0-9]+", x = rownames(model_performances))
 LOCO_idxs <- grep(pattern = "LOCO_[0-9]+", x = rownames(model_performances))
@@ -65,7 +67,7 @@ p1 <- ggplot(df_long[df_long$metric == "avg_r2",], aes(x = model, y = value, gro
     title = "Performance Metrics by Model"
   )
 
-ggsave(filename = "../Data/plots/perf_decay.pdf", plot = p1, width = 20, height = 10)
+ggsave(filename = paste0(wd, "data/plots/perf_decay.pdf"), plot = p1, width = 20, height = 10)
 
 
 ##################### LOCO PLOTS
@@ -113,7 +115,7 @@ p2 <- ggplot(df_stats_loco[df_stats_loco$metric == "avg_r2",], aes(x = "value", 
     title = "Average LOCO Performance Metrics with Error Bars"
   )
 
-ggsave(filename = "../Data/plots/avg_LOCO.pdf", plot = p2, width = 5, height = 8)
+ggsave(filename = paste0(wd, "data/plots/avg_LOCO.pdf"), plot = p2, width = 5, height = 8)
 
 LOCO_performances$chr <- rownames(LOCO_performances)
 
@@ -147,7 +149,7 @@ p5 <- ggplot(rbind(avg_loco, LOCO_performances), aes(x = factor(chr, levels = ch
     title = "Average R2 by LOCO Model"
   )
 
-ggsave(filename = "../Data/plots/all_LOCOs.pdf", plot = p5, width = 20, height = 10)
+ggsave(filename = paste0(wd, "data/plots/all_LOCOs.pdf"), plot = p5, width = 20, height = 10)
 
 
 ##################### LOTO PLOTS
@@ -195,7 +197,7 @@ p3 <- ggplot(df_stats_loto[df_stats_loto$metric == "avg_r2",], aes(x = "value", 
     title = "Average LOTO Performance Metrics with Error Bars"
   )
 
-ggsave(filename = "../Data/plots/avg_LOTO.pdf", plot = p3, width = 5, height = 8)
+ggsave(filename = paste0(wd, "data/plots/avg_LOTO.pdf"), plot = p3, width = 5, height = 8)
 
 LOTO_performances$type <- unlist(lapply(X = rownames(LOTO_performances), FUN = function(x){strsplit(x, split = "_")[[1]][[2]]}))
 
@@ -229,7 +231,7 @@ p6 <- ggplot(rbind(avg_loto, LOTO_performances), aes(x = factor(type, levels = t
     title = "Average R2 by LOTO Model"
   )
 
-ggsave(filename = "../Data/plots/all_LOTOs.pdf", plot = p6, width = 20, height = 10)
+ggsave(filename = paste0(wd, "data/plots/all_LOTOs.pdf"), plot = p6, width = 20, height = 10)
 
 
 
@@ -268,7 +270,7 @@ p4 <- ggplot(plot_df[plot_df$metric == "avg_r2",], aes(x = model, y = value)) +
     title = "Performance Metrics (All Models Together)"
   )
 
-ggsave(filename = "../Data/plots/all_models_performances.pdf", plot = p4, width = 10, height = 7)
+ggsave(filename = paste0(wd, "data/plots/all_models_performances.pdf"), plot = p4, width = 10, height = 7)
 
 #################################
 
@@ -291,7 +293,7 @@ p8 <- ggplot(df, aes(x = value, y = model)) +
     title = "Model with only occurrence features"
   )
 
-ggsave(filename = "../Data/plots/OO_performances.pdf", plot = p8, width = 10, height = 7)
+ggsave(filename = paste0(wd, "data/plots/OO_performances.pdf"), plot = p8, width = 10, height = 7)
 
 
 

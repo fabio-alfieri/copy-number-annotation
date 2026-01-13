@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 do_do_tumor_specific_barplots_and_boxplots <- function(ct,
                                                        comparisons_to_plot, 
                                                        input_df, 
@@ -36,8 +38,8 @@ do_do_tumor_specific_barplots_and_boxplots <- function(ct,
 
   if (save) {
     
-    ggsave(filename = paste0("../Data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_", ct, "_boxplot_final.pdf"), plot = p_boxplot, width = 14, height = 6, dpi = 300)
-    ggsave(filename = paste0("../Data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_", ct, "_barplot_final.pdf"), plot = p_barplot, width = 14, height = 6, dpi = 300)
+    ggsave(filename = paste0(wd, "data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_", ct, "_boxplot_final.pdf"), plot = p_boxplot, width = 14, height = 6, dpi = 300)
+    ggsave(filename = paste0(wd, "data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_", ct, "_barplot_final.pdf"), plot = p_barplot, width = 14, height = 6, dpi = 300)
     
   }
   

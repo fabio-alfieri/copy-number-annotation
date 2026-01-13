@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 do_plot_grouped_by_chr <- function(input_df, tot_chrom_bins, col.to.group, distinct_colors, save = TRUE){
   
   num_per_chr <- input_df %>% group_by(chr, !!sym(col.to.group)) %>% summarise(count_annots = n())
@@ -26,9 +28,9 @@ do_plot_grouped_by_chr <- function(input_df, tot_chrom_bins, col.to.group, disti
   if (save) {
     
     if ("top1" %in% col.to.group) {
-      filename <- paste0("../Data/plots/", i, "_annot_grouped_by_chr_detailed.pdf")
+      filename <- paste0(wd, "data/plots/", i, "_annot_grouped_by_chr_detailed.pdf")
     } else {
-      filename <- paste0("../Data/plots/", i, "_", model_class, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_grouped_by_chr.pdf")
+      filename <- paste0(wd, "data/plots/", i, "_", model_class, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_grouped_by_chr.pdf")
     }
     
     ggsave(filename = filename, plot = perc_grouped_by_chr, width = 12, height = 6, dpi = 300)

@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 do_plot_grouped_by_type <- function(input_df, tot_type_bins, col.to.group, distinct_colors, save = TRUE) {
   
   num_per_type <- input_df %>% group_by(type, !!sym(col.to.group)) %>% summarise(count_annots = n())
@@ -30,9 +32,9 @@ do_plot_grouped_by_type <- function(input_df, tot_type_bins, col.to.group, disti
   if (save) {
     
     if ("top1" %in% col.to.group) {
-      filename <- paste0("../Data/plots/", i, "_annot_grouped_by_tt_detailed.pdf")
+      filename <- paste0(wd, "data/plots/", i, "_annot_grouped_by_tt_detailed.pdf")
     } else {
-      filename <- paste0("../Data/plots/", i, "_", model_class, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_grouped_by_tt.pdf")
+      filename <- paste0(wd, "data/plots/", i, "_", model_class, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_grouped_by_tt.pdf")
     }
     
     ggsave(filename = filename, plot = perc_grouped_by_type, width = 12, height = 6, dpi = 300)

@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 do_pancancer_barplots_and_boxplots <- function(input_df, save = TRUE){
   
   clean_theme <- theme_classic() +
@@ -30,8 +32,8 @@ do_pancancer_barplots_and_boxplots <- function(input_df, save = TRUE){
   
   if (save) {
     
-    ggsave(filename = paste0("../Data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_pancancer_boxplot_final.pdf"), plot = pancancer_boxplot_3, width = 14, height = 6, dpi = 300)
-    ggsave(filename = paste0("../Data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_pancancer_barplot_final.pdf"), plot = pancancer_barplot_3, width = 14, height = 6, dpi = 300)
+    ggsave(filename = paste0(wd, "data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_pancancer_boxplot_final.pdf"), plot = pancancer_boxplot_3, width = 14, height = 6, dpi = 300)
+    ggsave(filename = paste0(wd, "data/plots/", model_class, "_", i, "_", pval_thr, "_", diploidy_threshold, "_", ns_threshold, "_pancancer_barplot_final.pdf"), plot = pancancer_barplot_3, width = 14, height = 6, dpi = 300)
 
   }
 

@@ -13,7 +13,7 @@ for (pkg in packages) {
 lapply(packages, library, character.only = TRUE)
 
 #Interactome INSIDER (alternative to HIPPIE)
-model.outputs <- list.files(path = "../Data/InteractomeINSIDER/", full.names = TRUE)
+model.outputs <- list.files(path = paste0(wd, "data/InteractomeINSIDER/"), full.names = TRUE)
 model.outputs <- model.outputs[grep('Output.regressor',model.outputs)]
 
 for(file in model.outputs){
@@ -49,7 +49,7 @@ for(file in model.outputs){
   models.Gain[[paste(class,model,sep = "::")]] <- model.Gain %>% group_by(Feature) %>% summarise(mean(Gain, na.rm = TRUE))
   
   save(models.Gain,
-       file = paste0("../Data/SHAP/",class,"::",model,"_Avg_Gain.RData") # remember here it's related to last trained model. Improve
+       file = paste0(wd, "data/SHAP/",class,"::",model,"_Avg_Gain.RData") # remember here it's related to last trained model. Improve
   )
   
 }
@@ -82,18 +82,18 @@ gains %>% filter(Feature %in% important_features) %>%
 
 small_features <- c(grep('Length_',important_features, value = T), 'genes.bin', 'Ess.distance_pancancer', 'mutations_norm', 'partners.trans')
 
-pdf('../Data/plots/feature_Gain_big_features.pdf', width = 10, height = 6)
+pdf(paste0(wd, 'data/plots/feature_Gain_big_features.pdf'), width = 10, height = 6)
 gains %>% filter(Feature %in% important_features[!important_features %in% small_features]) %>%
   ggplot(aes(x = Gain, y = Feature)) +
   geom_col(aes(fill = model)) +
   facet_wrap(~scna)
 dev.off()
 
-pdf('../Data/plots/feature_Gain_small_features.pdf', width = 10, height = 6)
+pdf(paste0(wd, 'data/plots/feature_Gain_small_features.pdf'), width = 10, height = 6)
 gains %>% filter(Feature %in% small_features) %>%
   ggplot(aes(x = Gain, y = Feature)) +
   geom_col(aes(fill = model)) +
   facet_wrap(~scna)
 dev.off()
 
-write.table("../Data/gain/gain_table.tsv", x = gains, sep = "\t", quote = F, row.names = T, col.names = T)
+write.table(paste0(wd, 'data/gain/gain_table.tsv'), x = gains, sep = "\t", quote = F, row.names = T, col.names = T)

@@ -12,7 +12,7 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-interactome_insider_path <- "../Data/InteractomeINSIDER/"
+interactome_insider_path <- paste0(wd, "data/InteractomeINSIDER/")
 model.outputs <- list.files(path = interactome_insider_path, full.names = TRUE)
 
 for(file in model.outputs){
@@ -85,7 +85,7 @@ for(file in model.outputs){
  
   # major edit here, shifted this inside loop and sourcing next code
   
-  models_shap_path <- paste0("../Data/SHAP/",class,"::",model,"_Avg_shap_values_InteractomeINSIDER.RData")
+  models_shap_path <- paste0(wd, "data/SHAP/",class,"::",model,"_Avg_shap_values_InteractomeINSIDER.RData")
   
   save(models.shap.df,
         models.shap.values,

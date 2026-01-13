@@ -1,6 +1,9 @@
 rm(list=ls())
 gc(full=T)
 
+
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c("stringr", "ggplot2", "tidyr", "tidyverse")
 
 installed <- rownames(installed.packages())
@@ -12,7 +15,7 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-annots <- list.files("../Data/annotation/", pattern = "res_ratio_with")
+annots <- list.files(paste0(wd, "data/annotation/"), pattern = "res_ratio_with")
 
 patterns <- c("Arm-level",
               "Chromosome-level",
@@ -44,5 +47,5 @@ summary_statistics[is.na(summary_statistics)] <- 0
 
 summary_statistics$avg <- (summary_statistics$`ampl_Mid-length_perc` + summary_statistics$`del_Mid-length_perc`) / 2
 
-write.table(x = summary_statistics, file = "..Data/annotation/summary_statistics_conditional.tsv", quote = F, col.names = T)
+write.table(x = summary_statistics, file = paste0(wd, "data/annotation/summary_statistics_conditional.tsv"), quote = F, col.names = T)
 

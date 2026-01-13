@@ -1,6 +1,8 @@
 rm(list=ls())
 gc(full=T)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 packages <- c(
   "stringr", "tidyr", "ggplot2", "fastcluster", "tidyverse"
 )
@@ -14,7 +16,7 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-model.outputs <- list.files(path = "../Data/InteractomeINSIDER/", full.names = TRUE)
+model.outputs <- list.files(path = paste0(wd, "data/InteractomeINSIDER/"), full.names = TRUE)
 patterns <- c('Arm-level','Chromosome-level','Mid-length','Small-scale','NoCluster')
 
 for(i in patterns){
@@ -51,18 +53,10 @@ for(i in patterns){
                           prediction = mean(prediction)) %>% 
                           ungroup()
   
-  pred_ampl_path <- paste0("..Data/InteractomeINSIDER/",i,"-pred_ampl.rds")
-  pred_del_path <- paste0("..Data/InteractomeINSIDER/",i,"-pred_del.rds")
+  pred_ampl_path <- paste0(wd, "data/InteractomeINSIDER/",i,"-pred_ampl.rds")
+  pred_del_path <- paste0(wd, "data/InteractomeINSIDER/",i,"-pred_del.rds")
     
   saveRDS(object = mean_preds_ampl, file = pred_ampl_path)
   saveRDS(object = mean_preds_del, file = pred_del_path)
 
 }
-
-
-
-
-
-
-
-
