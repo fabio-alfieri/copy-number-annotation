@@ -53,7 +53,7 @@ This script automatically launch `run_models.R`, where the used can choose betwe
 | "LOFO" | Leave-One-Feature-Out |
 | "LOTO" | Leave-One-Tumor-Type-Out |
 
-After choosing the desired mode and launch `run_models.R`, it launches the `0_prepare_regressor.R` which sets the environment for `1_hyperTuning.R` and `2_runRegressor.R`, which tunes the hyperparameters and train the models.
+After choosing the desired mode and launch `run_models.R`, it launches the `0_prepare_regressor.R` which sets the environment for `1_hyperTuning.R` and `2_runRegressor.R`, which tunes the hyperparameters and train the models, respectively.
 
 #### Compute the SHAP-based CNA Annotation
 ```bash
