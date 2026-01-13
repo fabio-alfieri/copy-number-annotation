@@ -2,6 +2,8 @@
 ## Explainable machine learning reveals drivers of amplifications and deletions across cancer genomes
 Fabio Alfieri, Gökçe Senger, Gabriele Oliveto, Manjunatha Kogenaru, Teresa Davoli, Martin Schaefer
 
+This manuscript also presents PENNE (Prediction & Explanation of Non-neutral copy Number Events), a publicly accessible web platform that supports interactive, pan-cancer exploration of curated copy-number annotation profiles.
+
 For any questions regarding the code and/or data, please contact with Fabio Alfieri (fabio.alfieri@nyulangone.org) or Gabriele Oliveto (gabriele.oliveto@ieo.it).
 
 ### Abstract
