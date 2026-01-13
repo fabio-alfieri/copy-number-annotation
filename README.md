@@ -48,12 +48,8 @@ Rscript main_workflow.R
 cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 Rscript compute_sum_abs_SHAPs.R
 ```
-Annotation matrices and plots are stored at
-```bash
-data/annotation/merged_res_annot_*
-data/plots/
-```
-Annotation matrices are also available on Zenodo
+Annotation matrices and plots are stored at `data/annotation/merged_res_annot_*` and `data/plots/`, respectively.
+Annotation matrices are also available on Zenodo [here](https://zenodo.org/api/records/17737479/draft/files/annotation-matrix.zip/content) or:
 ```bash
 cd path/to/GitHub/copy-number-annotation/
 wget -O annotation-matrix.zip https://zenodo.org/api/records/17737479/draft/files/annotation-matrix.zip/content
