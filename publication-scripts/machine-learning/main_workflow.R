@@ -16,10 +16,12 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-datasets_path <- '../Data/InteractomeINSIDER/'
-chromosome_path <- '../Data/centromeres_and_chromosomes/chromosome.tsv'
-centromere_path <- '../Data/centromeres_and_chromosomes/centomere.tsv'
-run_models_script <- './run_models.R'
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
+datasets_path <- paste0(wd, 'data/InteractomeINSIDER/')
+chromosome_path <- paste0(wd, 'data/centromeres_and_chromosomes/chromosome.tsv')
+centromere_path <- paste0(wd, 'data/centromeres_and_chromosomes/centomere.tsv')
+run_models_script <- paste0(wd, 'publication-scripts/machine-learning/run_models.R')
 
 output.files <- list.files(path = datasets_path, full.names = TRUE, recursive = FALSE, pattern = "ampl_or_del_0.1Mbp_covThr_zero")
 
