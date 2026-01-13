@@ -1,3 +1,5 @@
+wd <- 'path/to/GitHub/copy-number-annotation/'
+
 # Extract features
 X_data <- ml_table[,!colnames(ml_table) %in% c('bin','Type','ampl_score', 'del_score', feature_to_exclude)]
 features <- colnames(X_data)
@@ -50,7 +52,7 @@ xgb_tune <- caret::train(
 # Print the best parameters
 print(xgb_tune$bestTune)
 
-hyperTuning_path <- paste0('../Data/hyperparam_tuning/', classS, '_hyper_tuning_LOFO_', feature_to_exclude,'.rds')
+hyperTuning_path <- paste0(wd, 'data/hyperparam_tuning/', classS, '_hyper_tuning_LOFO_', feature_to_exclude,'.rds')
 
 saveRDS(xgb_tune, file = hyperTuning_path)
 
