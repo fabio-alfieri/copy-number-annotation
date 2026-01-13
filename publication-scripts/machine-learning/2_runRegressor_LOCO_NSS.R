@@ -122,7 +122,7 @@ for(j in 1:nrounds){
   Output.regressor[[label]][[chromosome]][[j]] <- Output.regressor.sub
 }
 
-output_regressor_path <- paste0("../Data/results_regressor/",
+output_regressor_path <- paste0(wd, "data/results_regressor/",
                                 folder,"/",
                                 "Output.regressor_LOCO_NSS_",
                                 chromosome, "_",
