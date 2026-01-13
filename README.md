@@ -44,7 +44,7 @@ Rscript main_workflow.R
 ```
 
 The `main_workflow.R` script sets the general variables in the R environment needed for the subsequent analyses.
-This script automatically launch `run_models.R`, where the used can choose between different options:
+This script automatically launch `run_models.R`, where the used can choose between different ML training options as follows:
 | mode | description |
 | --- | --- |
 | "CLASSIC" (*default*) | Models used in the manuscript trained with the entire feature matrix |
