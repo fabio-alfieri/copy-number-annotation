@@ -2,6 +2,7 @@ rm(list = ls())
 gc(full=T)
 
 packages <- c("reshape2", "tidyverse")
+wd <- 'path/to/GitHub/copy-number-annotation/'
 
 installed <- rownames(installed.packages())
 for (pkg in packages) {
