@@ -1,14 +1,24 @@
-# rm(list=ls())
 gc(full=T)
 
-library(parallel)
+packages <- c("parallel")
 
-# chr_backbone df generation
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
+
+chr_info_path <- "/mnt/fabiogokce/fabiohd/mutation_compensation/data/misc/chr_info_h19.txt"
+path_previous_backbone_small <- "/mnt/fabiogokce/fabiohd/ml_models/data/misc/chr_backbone_wSmallerBins.rds"
+backbone_outpath_small <- '/mnt/fabiogokce/fabiohd/ml_models/data/misc/chr_backbone_wSmallerBins.rds'
+backbone_outpath <- '/home/ieo5099/mountHD/ml_models/data/chr_backbone.rds'
 
 chr_info <-
-  read.table("/mnt/fabiogokce/fabiohd/mutation_compensation/data/misc/chr_info_h19.txt", header = TRUE)
+  read.table(chr_info_path, header = TRUE)
 
-# fixed_bin_length <- 1000000
 fixed_bin_length <- 100000
 
 chr_backbone_1mbp <- mclapply(1:22, mc.cores = 4, function(chr){
@@ -37,14 +47,14 @@ chr_backbone_1mbp <- mclapply(1:22, mc.cores = 4, function(chr){
 })
 
 if(fixed_bin_length != 1000000){
-  chr_backbone <- readRDS("/mnt/fabiogokce/fabiohd/ml_models/data/misc/chr_backbone_wSmallerBins.rds")
+  
+  chr_backbone <- readRDS(path_previous_backbone_small)
   chr_backbone[[paste0(fixed_bin_length/1000000,'Mbp')]] <- chr_backbone_1mbp
   
-  saveRDS(chr_backbone, '/mnt/fabiogokce/fabiohd/ml_models/data/misc/chr_backbone_wSmallerBins.rds')
+  saveRDS(chr_backbone, backbone_outpath_small)
 }
 
 add.col <- function(df, segment_length) {
-  # df <- df[df$gene_count != 0, ]
   df <- cbind(df,
               resize = rep(
                 1:round(dim(df)[1] / segment_length + 0.5),
@@ -57,7 +67,6 @@ add.col <- function(df, segment_length) {
 merge.bins <- function(df) {
   df2 <- data.frame()
   for (i in levels(factor(df$resize))) {
-    # df <- df[!(df$gene_count <= 1 & df$length_perc <= 0.05), ]
     start <- df[df$resize == i, ]$start_bin[1]
     end <-
       df[df$resize == i, ]$end_bin[length(df[df$resize == i, ]$start_bin)]
@@ -87,24 +96,13 @@ chr_backbone[[paste0(1,'Mbp')]] <- chr_backbone_1mbp
 
 for(chr in 1:22){
   bin_gene <- chr_backbone[['1Mbp']][[chr]]
-  # chr_backbone[[paste0('chr',chr)]][['1Mbp']] <- cbind(bin_gene)
   
   for(segment_length in 2:50){
     bin_gene_sg <- add.col(bin_gene, segment_length)
     bin_gene_merged <- merge.bins(bin_gene_sg)
     chr_backbone[[paste0(segment_length,'Mbp')]][[chr]] <- cbind(chr = chr,bin_gene_merged)
     
-    # write.table(cbind(chr = chr,
-    #                   bin_gene_merged[,1:3]),
-    #   paste0(
-    #     "data/ChromosomeGeneStructure/chr_",
-    #     chr,
-    #     "_binSize_",
-    #     segment_length,
-    #     "Mbp.txt"
-    #   )
-    # )
   }
 }
 
-saveRDS(chr_backbone, file = '/home/ieo5099/mountHD/ml_models/data/chr_backbone.rds')
+saveRDS(chr_backbone, file = backbone_outpath)
