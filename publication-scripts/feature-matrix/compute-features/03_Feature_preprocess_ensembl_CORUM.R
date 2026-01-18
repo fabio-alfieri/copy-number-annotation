@@ -1,20 +1,33 @@
-
 #Pre-processing of feature data
 #Ensembl Biomart and CORUM features
 #Tissue-general
 
 rm(list = ls())
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce")
+packages <- c(
+  "stringr", "tidyr"
+)
 
-#Required libraries
-library(tidyr)
-library(stringr)
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
 
 #Data from Ensembl Biomart (downloaded on 14 February 2024 - Genome assembly GRCh37.p13)
 #List of genes with the largest transcript (autosomal protein coding genes)
-hg19 <- read.delim("./Downloads/hg19_14022024.txt") # 215404
+
+ensembl_biomart_path <- "./Downloads/hg19_14022024.txt"
+ccds_path <- "./Downloads/backbone_tables/CCDS.current_hg19.txt"
+subunits_path <- "./Data/FromPrevWorks/HumanPCgenes_Subunits_allchr.RData"
+PPIs_intINSIDER <- "./Data/FromPrevWorks/H_sapiens_interfacesHQ_genename.RData"
+hippie_tissue_general_path <- "./Data/HIPPIE_PPIs_tissue_general.RData"
+ensembl_corum_path <- "./Data/Ensembl_CORUM_features_tissue_general.RData" 
+
+hg19 <- read.delim(ensembl_biomart_path) # 215404
 genes <- unique(hg19$Gene.name)
 hg19 <- hg19[hg19$Gene.type == "protein_coding",] # 160238
 hg19 <- hg19[hg19$Chromosome.scaffold.name %in% as.character(seq(1,22,1)),] # 141152 
@@ -24,7 +37,7 @@ hg19$Gene.length <- hg19$Gene.end..bp. - hg19$Gene.start..bp.
 hg19 <- hg19[,c(1,9,3,8,10,11,14,15)]
 
 #Data from CCDC - Keep the one with the longest CCDS
-ccds <- read.delim("./Downloads/backbone_tables/CCDS.current_hg19.txt") #27809 genes
+ccds <- read.delim(ccds_path) #27809 genes
 ccds <- ccds[ccds$chromosome %in% as.character(seq(1,22,1)),] #26473 genes
 ccds$CCDS.ID <- gsub("\\..*","",ccds$ccds_id)
 ccds <- ccds[ccds$ccds_status == "Public",]
@@ -41,7 +54,7 @@ rm(list = setdiff(ls(),"gene.table"))
 
 #Adding if a gene is subunit or not, and if so, the number of partners & partners
 #CORUM complexes 
-load("./Data/FromPrevWorks/HumanPCgenes_Subunits_allchr.RData") #partner info for subunits
+load(subunits_path) #partner info for subunits
 rm(list = setdiff(ls(),c("human_proteincomplex","gene.table")))
 extended.complexes <- separate_rows(human_proteincomplex,subunits.Gene.name.,sep = ";")
 extended.complexes <- extended.complexes[extended.complexes$subunits.Gene.name. != "",]
@@ -67,7 +80,7 @@ gc()
 
 #Adding PPIs interactions from Interactome INSIDER
 #Curated PPIs from Interactome INSIDER
-load("./Data/FromPrevWorks/H_sapiens_interfacesHQ_genename.RData")
+load(PPIs_intINSIDER)
 HS_interfaces_genenames$Homodimer <- ifelse(HS_interfaces_genenames$P1 == HS_interfaces_genenames$P2, "Yes","No")
 HS_interfaces_genenames <- HS_interfaces_genenames[HS_interfaces_genenames$Homodimer != "Yes",] #114287
 interactome.proteins <- union(HS_interfaces_genenames$P1, HS_interfaces_genenames$P2)
@@ -126,9 +139,8 @@ gc()
 # 
 # save(gene.table.hippie, file = "./Data/HIPPIE_PPIs_tissue_general.RData") # Updated on October 2, 2024
 
-load("./Data/HIPPIE_PPIs_tissue_general.RData")
+load(hippie_tissue_general_path)
 colnames(gene.table.hippie)[2:7] <- paste(colnames(gene.table.hippie)[2:7],"HIPPIE",sep = "_")
 gene.table <- merge(gene.table, gene.table.hippie, by.x = "Gene.name", by.y = "Gene", all.x = TRUE)
 
-
-save(gene.table, file = "./Data/Ensembl_CORUM_features_tissue_general.RData")
+save(gene.table, file = ensembl_corum_path)
