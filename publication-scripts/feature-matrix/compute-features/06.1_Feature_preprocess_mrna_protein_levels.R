@@ -5,15 +5,30 @@
 
 rm(list = ls())
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce")
+packages <- c(
+  "stringr", "parallel"
+)
 
-# Required libraries
-library(parallel)
-library(stringr)
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
+
+gtex_path <- "./Data/GTEx_different_versions_TCGA_cohort_map.RData"
+gtex_additional_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData" 
+backbone_table <- "./Data/Backbone_tables_with_non_tissue_specific_features.RData"
+gtex_output_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData"
+gtex_v8_path <- "./Data/Tissue_specific_genes_based_on_GTEx_v8.RData"
+tissue_specific_proteins_path <- "./Data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
+gtex_tissue_specific <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific.RData"
+
 
 #GTEx data
-load("./Data/GTEx_different_versions_TCGA_cohort_map.RData")
+load(gtex_path)
 common.tissues <- setdiff(colnames(datasets$eGTEX.rna),c("Gene.stable.ID","Gene.name"))
 for(name in names(datasets)[-1]){
   common.tissues <- intersect(common.tissues,
@@ -48,7 +63,7 @@ expression.scores <- function(genes){
   return(res)}
 
 # Backbone tables
-load("./Data/Backbone_tables_with_non_tissue_specific_features.RData")
+load(backbone_table)
 # Columns needed
 selected.columns <- c("bin","chr","start_bin","end_bin",
                       "genes","n_genes","Partners.trans","PPIs.trans")
@@ -57,7 +72,7 @@ levels <- names(backbone_tables_w_features_non_tissue_specific)
 
 #-----Additional part start-----
 # This part was added on September 16, 2024 to calculate the expression-related features for the other available datasets in GTEx v6 and v8
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData") # Results
+load(gtex_additional_path) # Results
 datasets <- datasets[3:5]
 common.tissues <- setdiff(colnames(datasets$GTEx.v6.RPKM),c("Gene.stable.ID","Gene.name"))
 for(name in names(datasets)[-1]){
@@ -100,7 +115,7 @@ for(level in levels){
 
   print(level)}
 
-save(Results, file = "./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData")
+save(Results, file = gtex_output_path)
 
 
 # 2. For Tissue-specific genes & proteins
@@ -110,13 +125,13 @@ rm(list = setdiff(ls(),c("backbone_tables_w_features_non_tissue_specific",
                          "common.tissues",
                          "levels",
                          "selected.columns")))
-
-load("./Data/Tissue_specific_genes_based_on_GTEx_v8.RData") #Tissue-specific genes defined based on RNA level data
-load("./Data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData") #Tissue-specific proteins defined based on eGTEx paper TS score
+                                        
+load(gtex_v8_path) #Tissue-specific genes defined based on RNA level data
+load(tissue_specific_proteins_path) #Tissue-specific proteins defined based on eGTEx paper TS score
 
 #-----Additional part start-----
 # This part was added on September 16, 2024 to calculate the expression-related features for the other available datasets in GTEx v6 and v8
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific.RData")
+load(gtex_tissue_specific)
 #-----Additional part end-----
 
 # Functions
@@ -190,4 +205,4 @@ for(level in levels){
   print(level)
 }
 
-save(Results.TS, file = "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific.RData")
+save(Results.TS, file = gtex_tissue_specific)
