@@ -6,15 +6,28 @@
 
 rm(list = ls())
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce")
+packages <- c(
+  "stringr", "parallel"
+)
 
-# Required libraries
-library(parallel)
-library(stringr)
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
+
+gtex_cohort_map_path <- "./Data/GTEx_different_versions_TCGA_cohort_map.RData"
+backbone_tables_path <- "./Data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData"
+gtex_hippie <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE.RData"
+tissue_specific_genes_path <- "./Data/Tissue_specific_genes_based_on_GTEx_v8.RData"
+tissue_specific_proteins_path <- "./Data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
+output_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific_HIPPIE.RData"
 
 #GTEx data
-load("./Data/GTEx_different_versions_TCGA_cohort_map.RData")
+load(gtex_cohort_map_path)
 common.tissues <- setdiff(colnames(datasets$eGTEX.rna),c("Gene.stable.ID","Gene.name"))
 for(name in names(datasets)[-1]){
   common.tissues <- intersect(common.tissues,
@@ -47,7 +60,7 @@ expression.scores <- function(genes){
   return(res)}
 
 # Backbone tables
-load("./Data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData")
+load(backbone_tables_path)
 # Columns needed
 selected.columns <- c("bin","chr","start_bin","end_bin",
                       "genes","n_genes","Partners.trans","PPIs.trans-HIPPIE")
@@ -56,7 +69,7 @@ levels <- names(backbone_tables_w_features)
 
 #-----Additional part start-----
 # This part was added on September 16, 2024 to calculate the expression-related features for the other available datasets in GTEx v6 and v8
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE.RData") # Results
+load(gtex_hippie) # Results
 datasets <- datasets[3:5]
 common.tissues <- setdiff(colnames(datasets$GTEx.v6.RPKM),c("Gene.stable.ID","Gene.name"))
 for(name in names(datasets)[-1]){
@@ -99,8 +112,7 @@ for(level in levels){
   
   print(level)}
 
-save(Results, file = "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE.RData")
-
+save(Results, file = gtex_hippie
 
 # 2. For Tissue-specific genes & proteins
 
@@ -110,8 +122,8 @@ rm(list = setdiff(ls(),c("backbone_tables_w_features",
                          "levels",
                          "selected.columns")))
 
-load("./Data/Tissue_specific_genes_based_on_GTEx_v8.RData") #Tissue-specific genes defined based on RNA level data
-load("./Data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData") #Tissue-specific proteins defined based on eGTEx paper TS score
+load(tissue_specific_genes_path) #Tissue-specific genes defined based on RNA level data
+load(tissue_specific_proteins_path) #Tissue-specific proteins defined based on eGTEx paper TS score
 
 # Functions
 # Function to find gene groups for a bin
@@ -182,4 +194,4 @@ for(level in levels){
   print(level)
 }
 
-save(Results.TS, file = "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific_HIPPIE.RData")
+save(Results.TS, file = output_path)
