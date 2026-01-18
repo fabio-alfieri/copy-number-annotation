@@ -1,28 +1,41 @@
-
 # Tumour suppressors and oncogenes
 
 rm(list = ls())
 
-# Date: September 17, 2024
+packages <- c(
+  "dplyr", "openxlsx", "ggplot2", "parallel"
+)
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce")
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
 
-# Required libraries
-library(dplyr)
-library(ggplot2)
-library(openxlsx)
-library(parallel)
+lapply(packages, library, character.only = TRUE)
+
+cancer_drivers_path <- "./Downloads/2023-05-31_IntOGen-Drivers/Compendium_Cancer_Genes.tsv"
+cohorts_path <- "./Downloads/2023-05-31_IntOGen-Cohorts/cohorts.tsv"
+tcga_cohort_path <- "./Plots/Features/intOGen/Number_drivers_TCGA_cohorts.pdf"
+tcga_cohort_xlsx <- "./Data/IntOGen_tcga_cohorts.xlsx"
+ensembl_path <- "./Downloads/hg19_14022024.txt"
+ccds_path <- "./Downloads/backbone_tables/CCDS.current_hg19.txt"
+drivers_list_path <- "./Data/IntOGen_cancer_drivers_tissue-specific.RData"
+genes_per_bins_path <- "./Data/All_levels_genes_per_bins.RData"
+density_drivers_path <- "./Data/Density_cancer-drivers_intogen.RData"
+backbone_path <- "./Data/All_levels_backbonetables.RData"
+distance_weighted_path <- "./Data/Distance_to_cancer-drivers_intogen_weighted.RData"
 
 # Cancer drivers from intOGen (release date 2023.05.31)
-cancer.drivers <- read.delim("./Downloads/2023-05-31_IntOGen-Drivers/Compendium_Cancer_Genes.tsv")
+cancer.drivers <- read.delim(cancer_drivers_path)
 
 # 1. Some info about the cohorts and drivers
 unique(cancer.drivers$CANCER_TYPE)
 unique(cancer.drivers$ROLE) # "Act", "LoF", "ambiguous"
 info <- cancer.drivers %>% group_by(COHORT) %>% summarise(n = n())
 
-cohorts <- read.delim("./Downloads/2023-05-31_IntOGen-Cohorts/cohorts.tsv") 
+cohorts <- read.delim(cohorts_path) 
 setdiff(cohorts$COHORT,info$COHORT)
 diff <- cohorts[cohorts$COHORT %in% setdiff(cohorts$COHORT,info$COHORT),] # Note: there are 12 cohorts that are not in the drivers list because there is no driver detected in those cohorts
 merged.df <- merge(info, cohorts, by = "COHORT")
@@ -42,7 +55,7 @@ p <- ggplot(info, aes(x=CANCER_TYPE, y=n, fill=ROLE)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   ylab("Number of genes")
 
-pdf("./Plots/Features/intOGen/Number_drivers_TCGA_cohorts.pdf",width = 9, height = 4)
+pdf(tcga_cohort_path,width = 9, height = 4)
 p
 dev.off()
 
@@ -52,7 +65,7 @@ rm(list = ls())
 # 2.1. Adding gene coordinates
 #Data from Ensembl Biomart (downloaded on 14 February 2024 - Genome assembly GRCh37.p13)
 #List of genes with the largest transcript (autosomal protein coding genes)
-hg19 <- read.delim("./Downloads/hg19_14022024.txt") # 215404
+hg19 <- read.delim(ensembl_path) # 215404
 genes <- unique(hg19$Gene.name)
 hg19 <- hg19[hg19$Gene.type == "protein_coding",] # 160238
 hg19 <- hg19[hg19$Chromosome.scaffold.name %in% as.character(seq(1,22,1)),] # 141152 
@@ -60,8 +73,9 @@ hg19 <- hg19[order(hg19$Transcript.length..including.UTRs.and.CDS.,decreasing = 
 hg19 <- hg19[!duplicated(hg19$Gene.name),] #19349 - The unique gene set with the longest transcript
 hg19$Gene.length <- hg19$Gene.end..bp. - hg19$Gene.start..bp.
 hg19 <- hg19[,c(1,9,3,4,5,8,10,11,14,15)]
+
 #Data from CCDC - Keep the one with the longest CCDS
-ccds <- read.delim("./Downloads/backbone_tables/CCDS.current_hg19.txt") #27809 genes
+ccds <- read.delim(ccds_path) #27809 genes
 ccds <- ccds[ccds$chromosome %in% as.character(seq(1,22,1)),] #26473 genes
 ccds$CCDS.ID <- gsub("\\..*","",ccds$ccds_id)
 ccds <- ccds[ccds$ccds_status == "Public",]
@@ -78,12 +92,12 @@ colnames(gene.table) <- c("SYMBOL","chrom","start","end")
 
 rm(list = setdiff(ls(),"gene.table"))
 
-cancer.drivers <- read.delim("./Downloads/2023-05-31_IntOGen-Drivers/Compendium_Cancer_Genes.tsv") #4360
+cancer.drivers <- read.delim(cancer_drivers_path) #4360
 cancer.drivers <- merge(cancer.drivers,gene.table, by = "SYMBOL") #4048
 # 574 drivers out of 619 left after merging. 
 
 # 2.2. Tissue-specific driver lists
-mapping <- read.xlsx("./Data/IntOGen_tcga_cohorts.xlsx")
+mapping <- read.xlsx(tcga_cohort_xlsx)
 cancer.drivers <- cancer.drivers[cancer.drivers$COHORT %in% mapping$COHORT,]
 
 cancer.types <- unique(mapping$Mapping) # Based on the naming in our previous data
@@ -101,14 +115,14 @@ for(type in cancer.types){
   drivers.list[[type]] <- cohort.l
 }
 
-save(drivers.list, file = "./Data/IntOGen_cancer_drivers_tissue-specific.RData")
+save(drivers.list, file = drivers_list_path)
 
 # 3. Calculating features
 rm(list = ls())
 
 # 3.1. Density of cancer drivers (Number of genes) -  Weighted scores
-load("./Data/IntOGen_cancer_drivers_tissue-specific.RData") # Tissue-specific cancer drivers final list
-load("./Data/All_levels_genes_per_bins.RData") # Genes on the bins
+load(drivers_list_path) # Tissue-specific cancer drivers final list
+load(genes_per_bins_path) # Genes on the bins
 
 # Function for density calculation 
 
@@ -150,11 +164,11 @@ for(level in names(genes_on_bins)){
 }
 
 save(Density.drivers,
-     file = "./Data/Density_cancer-drivers_intogen.RData")
+     file = density_drivers_path)
 
 # 3.2. Distance to closest TSG/OG
-load("./Data/IntOGen_cancer_drivers_tissue-specific.RData")
-load("./Data/All_levels_backbonetables.RData")
+load(drivers_list_path)
+load(backbone_path)
 
 # Oncogenes
 Dist.oncogenes <- list()
@@ -245,8 +259,8 @@ save(Dist.oncogenes,Dist.tumoursupp,
 
 rm(list = ls())
 
-load("./Data/IntOGen_cancer_drivers_tissue-specific.RData")
-load("./Data/All_levels_backbonetables.RData")
+load(drivers_list_path)
+load(backbone_path)
 
 # Oncogenes
 Dist.oncogenes.weighted <- list()
@@ -342,4 +356,4 @@ for(cohort in names(drivers.list)){
 }
 
 save(Dist.oncogenes.weighted,Dist.tumoursupp.weighted,
-     file = "./Data/Distance_to_cancer-drivers_intogen_weighted.RData")
+     file = distance_weighted_path)
