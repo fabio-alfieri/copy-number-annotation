@@ -1,11 +1,19 @@
 # rm(list=ls())
 gc(full=T)
 
-ml_merged <- readRDS("/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged.rds")
+ml_merged_path <- "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged.rds"
+chr_info_path <- '/mnt/fabiogokce/fabiohd/ml_models/data/misc/cytoBand.txt'
+chr_coverage_path <- '/mnt/fabiogokce/fabiohd/ml_models/data/misc/averageChrCoverage.txt'
+ml_merged_tel_centr_path <- "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel.rds"
+ampl_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_ampl_freq.pdf'
+del_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_del_freq.pdf'
+all_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_all_freq.pdf'
+
+ml_merged <- readRDS(ml_merged_path)
 
 # add genomic locations ----
-chr_info <- read.table('/mnt/fabiogokce/fabiohd/ml_models/data/misc/cytoBand.txt', header = T)
-chr_info_seq <- read.table('/mnt/fabiogokce/fabiohd/ml_models/data/misc/averageChrCoverage.txt', header = T)
+chr_info <- read.table(chr_info_path, header = T)
+chr_info_seq <- read.table(chr_coverage_path, header = T)
 # chr_info_seq <- chr_info_seq[!duplicated(chr_info_seq$chr),]
 
 bins <- c(0.1,0.25,0.5,1,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48)
@@ -51,7 +59,7 @@ for(bin in bins){
   ml_merged_tel_centr[[paste0(bin,'Mbp')]] <- x
 }
 
-saveRDS(ml_merged_tel_centr, "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel.rds")
+saveRDS(ml_merged_tel_centr, ml_merged_tel_centr_path)
 
 
 if(F){
@@ -96,15 +104,15 @@ if(F){
     }
   }
   
-  pdf(file = '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_ampl_freq.pdf', width = 20, height = 20)
+  pdf(file = ampl_freq_path, width = 20, height = 20)
   ggpubr::ggarrange(plotlist = plots_ampl)
   dev.off()
   
-  pdf(file = '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_del_freq.pdf', width = 20, height = 20)
+  pdf(file = del_freq_path, width = 20, height = 20)
   ggarrange(plotlist = plots_del)
   dev.off()
   
-  pdf(file = '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_all_freq.pdf', width = 20, height = 20)
+  pdf(file = all_freq_path, width = 20, height = 20)
   ggarrange(plotlist = plots_all)
   dev.off()
 }
