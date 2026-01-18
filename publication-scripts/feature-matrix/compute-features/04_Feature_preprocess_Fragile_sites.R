@@ -1,15 +1,24 @@
-
 #Fragile sites
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce") #If working on workstation
+packages <- c("openxlsx")
 
-#Required libraries
-library(openxlsx)
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
 
-fragile.sites <- read.xlsx("./Downloads/fragile_sites_li_2020.xlsx", startRow = 3)
+lapply(packages, library, character.only = TRUE)
 
-load("./Data/All_levels_backbonetables.RData")
+fragile_sites_path <- "./Downloads/fragile_sites_li_2020.xlsx"
+fragile_sites_outpath <- "./Data/Distance_to_closest_fragile_site.RData"
+fragile_sites_weighted_outpath <- "./Data/FeatureOptimization_Fragile_sites_weighted_distance_scores.RData"
+backbone_path <- "./Data/All_levels_backbonetables.RData"
+
+fragile.sites <- read.xlsx(fragile_sites_path, startRow = 3)
+
+load(backbone_path)
 Dist.fragile.sites <- list()
 for(level in names(chr_backbone_namesfixed)){
   if(level %in% c("Arm","Chromosome"))next
@@ -46,22 +55,16 @@ for(level in names(chr_backbone_namesfixed)){
 }
 
 save(Dist.fragile.sites,
-     file = "./Data/Distance_to_closest_fragile_site.RData")
+     file = fragile_sites_outpath)
 
 # Feature optimization
 
 #Feature optimization
 #Fragile sites
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce") #If working on workstation
+fragile.sites <- read.xlsx(fragile_sites_path, startRow = 3)
 
-#Required libraries
-library(openxlsx)
-
-fragile.sites <- read.xlsx("./Downloads/fragile_sites_li_2020.xlsx", startRow = 3)
-
-load("/mnt/fabiogokce/gokce/Data/All_levels_backbonetables.RData")
+load(backbone_path)
 Dist.fragile.sites <- list()
 
 for(level in names(chr_backbone_namesfixed)){
@@ -108,7 +111,7 @@ for(level in names(Dist.fragile.sites)){
   Weighted.dist.scores[[level]] <- df.weight}
 
 save(Weighted.dist.scores,
-     file = "./Data/FeatureOptimization_Fragile_sites_weighted_distance_scores.RData")
+     file = fragile_sites_weighted_outpath)
 
 
 
