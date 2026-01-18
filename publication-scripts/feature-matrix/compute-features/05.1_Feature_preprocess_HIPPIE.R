@@ -1,33 +1,44 @@
-
-
-
 # Date: August 8, 2024 - Updated on October 3, 2024
 # Adding PPI related features based on PPIs from HIPPIE to backbone files
 
 rm(list = ls())
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce") 
+packages <- c(
+  "ggplot2", "ggpubr"
+)
 
-#Required libraries
-library(ggplot2)
-library(ggpubr)
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
 
 # 1. Calculate new features 
 
 #Most of the non Tissue-specific features are gene based. Therefore, we need genes located on the corresponding bin.
 #Genes per bins for focal CNA
-load("./Data/All_levels_genes_per_bins.RData")
+
+backbone_path <- "./Data/All_levels_backbonetables.RData"
+genes_per_bins_table <- "./Data/All_levels_genes_per_bins.RData"
+ensembl_corum_path <- "./Data/Ensembl_CORUM_features_tissue_general.RData"
+hippie_path <- "./Data/HIPPIE_PPIs_tissue_general.RData"
+output_path <- "./Data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData"
+
+load(genes_per_bins_table)
 
 #All backbone tables for focal CNAs and aneuploidies
-load("./Data/All_levels_backbonetables.RData")
+load(backbone_path)
 
 #Features: Ensembl and CORUM related features (Just to use CORUM)
-load("./Data/Ensembl_CORUM_features_tissue_general.RData")
+load(ensembl_corum_path)
+
 gene.table <- gene.table[,c(1,2,17:21)]
 
 #Features: PPIs from HIPPIE
-load("./Data/HIPPIE_PPIs_tissue_general.RData")
+load(hippie_path)
 colnames(gene.table.hippie) <- c("Gene.name","PPIs-HIPPIE","n_PPIs-HIPPIE",
                                  "PPIs_063-HIPPIE","n_PPIs_063-HIPPIE",
                                  "PPIs_073-HIPPIE","n_PPIs_073-HIPPIE")
@@ -126,7 +137,7 @@ for(level in levels){
   backbone <- merge(backbone,features.df, by="bin")
   backbone_tables_w_features[[level]] <- backbone}
 
-save(backbone_tables_w_features, file = "./Data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData")
+save(backbone_tables_w_features, file = output_path)
 
 # After this, use the output to calculate mRNA and protein mean/medians in 03.1_Feature_preprocess_mrna_protein_levels.R
 
