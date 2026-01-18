@@ -1,7 +1,13 @@
 # rm(list=ls())
 gc(full=T)
 
-ml_merged <- readRDS("/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel.rds")
+ml_merged_tel_path <- "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel.rds"
+ml_merged_tel_cg_outpath <- "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel_cg.rds"
+ampl_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_ampl_freq.pdf'
+del_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_del_freq.pdf'
+all_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_all_freq.pdf'
+
+ml_merged <- readRDS(ml_merged_path)
 
 ml_merged_tel_centr <- list()
 for(bin in names(ml_merged)){
@@ -119,7 +125,7 @@ for(bin in names(ml_merged)){
   ml_merged_tel_centr[[bin]] <- df
 }
 
-saveRDS(ml_merged_tel_centr, "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel_cg.rds")
+saveRDS(ml_merged_tel_centr, ml_merged_tel_cg_outpath)
 
 if(F){
   # control the tables making plots ----
@@ -166,15 +172,15 @@ if(F){
     }
   }
   
-  pdf(file = '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_ampl_freq.pdf', width = 20, height = 20)
+  pdf(file = ampl_freq_path, width = 20, height = 20)
   ggpubr::ggarrange(plotlist = plots_ampl)
   dev.off()
   
-  pdf(file = '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_del_freq.pdf', width = 20, height = 20)
+  pdf(file = del_freq_path, width = 20, height = 20)
   ggarrange(plotlist = plots_del)
   dev.off()
   
-  pdf(file = '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_all_freq.pdf', width = 20, height = 20)
+  pdf(file = all_freq_path, width = 20, height = 20)
   ggarrange(plotlist = plots_all)
   dev.off()
 }
