@@ -1,11 +1,14 @@
 # rm(list=ls())
 gc(full=T)
 
-ml_merged_tel_path <- "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel.rds"
-ml_merged_tel_cg_outpath <- "/mnt/fabiogokce/fabiohd/ml_models/data/ml_merged_tel_cg.rds"
-ampl_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_ampl_freq.pdf'
-del_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_del_freq.pdf'
-all_freq_path <- '/home/ieo5099/Desktop_linux/aneuploidy_determinants/data/tables_for_ml/00_all_freq.pdf'
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
+ml_merged_tel_path <- "./feature_matrix_data/ml_merged_tel.rds"
+ml_merged_tel_cg_outpath <- "./feature_matrix_data/ml_merged_tel_cg.rds"
+ampl_freq_path <- './plots/00_ampl_freq.pdf'
+del_freq_path <- './plots/00_del_freq.pdf'
+all_freq_path <- '/plots/00_all_freq.pdf'
 
 ml_merged <- readRDS(ml_merged_path)
 
