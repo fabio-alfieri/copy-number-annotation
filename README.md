@@ -88,7 +88,6 @@ Scripts are numbered in execution order.
 
 
 ## System requirements
-Analyses were run on Linux:
-R version: 
+Analyses were run on Linux (version 24.04.3) using R (version 4.2.3): 
 Required R packages (supplementary file with packages link here): R-packages.yaml
 
