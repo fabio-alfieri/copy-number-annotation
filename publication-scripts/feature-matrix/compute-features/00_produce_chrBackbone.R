@@ -11,10 +11,11 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-chr_info_path <- "/mnt/fabiogokce/fabiohd/mutation_compensation/data/misc/chr_info_h19.txt"
-path_previous_backbone_small <- "/mnt/fabiogokce/fabiohd/ml_models/data/misc/chr_backbone_wSmallerBins.rds"
-backbone_outpath_small <- '/mnt/fabiogokce/fabiohd/ml_models/data/misc/chr_backbone_wSmallerBins.rds'
-backbone_outpath <- '/home/ieo5099/mountHD/ml_models/data/chr_backbone.rds'
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
+chr_info_path <- "data/centromeres_and_chromosomes/chr_info_h19.txt"
+backbone_outpath <- 'data/centromeres_and_chromosomes/chr_backbone.rds'
 
 chr_info <-
   read.table(chr_info_path, header = TRUE)
@@ -46,13 +47,6 @@ chr_backbone_1mbp <- mclapply(1:22, mc.cores = 4, function(chr){
   return(chr_backbone)
 })
 
-if(fixed_bin_length != 1000000){
-  
-  chr_backbone <- readRDS(path_previous_backbone_small)
-  chr_backbone[[paste0(fixed_bin_length/1000000,'Mbp')]] <- chr_backbone_1mbp
-  
-  saveRDS(chr_backbone, backbone_outpath_small)
-}
 
 add.col <- function(df, segment_length) {
   df <- cbind(df,
