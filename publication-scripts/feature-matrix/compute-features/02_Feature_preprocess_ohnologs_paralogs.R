@@ -15,6 +15,9 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
 ohnologs_path_makino <- "feature_matrix_data/Ohnologs/st01.xls"
 ohnologs_path_ensembl <- "feature_matrix_data/ensembl_release56.txt"
 ohnolog_database_path <- "feature_matrix_data/Ohnologs"

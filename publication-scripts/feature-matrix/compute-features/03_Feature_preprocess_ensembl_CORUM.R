@@ -1,6 +1,6 @@
-#Pre-processing of feature data
-#Ensembl Biomart and CORUM features
-#Tissue-general
+# Pre-processing of feature data
+# Ensembl Biomart and CORUM features
+# Tissue-general
 
 rm(list = ls())
 
@@ -17,15 +17,18 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-#Data from Ensembl Biomart (downloaded on 14 February 2024 - Genome assembly GRCh37.p13)
-#List of genes with the largest transcript (autosomal protein coding genes)
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
 
-ensembl_biomart_path <- "./Downloads/hg19_14022024.txt"
-ccds_path <- "./Downloads/backbone_tables/CCDS.current_hg19.txt"
-subunits_path <- "./Data/FromPrevWorks/HumanPCgenes_Subunits_allchr.RData"
-PPIs_intINSIDER <- "./Data/FromPrevWorks/H_sapiens_interfacesHQ_genename.RData"
-hippie_tissue_general_path <- "./Data/HIPPIE_PPIs_tissue_general.RData"
-ensembl_corum_path <- "./Data/Ensembl_CORUM_features_tissue_general.RData" 
+# Data from Ensembl Biomart (downloaded on 14 February 2024 - Genome assembly GRCh37.p13)
+# List of genes with the largest transcript (autosomal protein coding genes)
+
+ensembl_biomart_path <- "feature_matrix_data/hg19_14022024.txt"
+ccds_path <- "feature_matrix_data/CCDS.current_hg19.txt"
+subunits_path <- ".feature_matrix_data/HumanPCgenes_Subunits_allchr.RData"
+PPIs_intINSIDER <- "feature_matrix_data/H_sapiens_interfacesHQ_genename.RData"
+hippie_tissue_general_path <- "feature_matrix_data/HIPPIE_PPIs_tissue_general.RData"
+ensembl_corum_path <- "feature_matrix_data/Ensembl_CORUM_features_tissue_general.RData" 
 
 hg19 <- read.delim(ensembl_biomart_path) # 215404
 genes <- unique(hg19$Gene.name)
