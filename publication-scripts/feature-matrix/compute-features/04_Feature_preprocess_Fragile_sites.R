@@ -1,4 +1,4 @@
-#Fragile sites
+# Fragile sites
 
 packages <- c("openxlsx")
 
@@ -14,10 +14,10 @@ lapply(packages, library, character.only = TRUE)
 wd <- 'path/to/GitHub/copy-number-annotation/'
 setwd(wd)
 
-fragile_sites_path <- "./Downloads/fragile_sites_li_2020.xlsx"
-fragile_sites_outpath <- "./Data/Distance_to_closest_fragile_site.RData"
-fragile_sites_weighted_outpath <- "./Data/FeatureOptimization_Fragile_sites_weighted_distance_scores.RData"
-backbone_path <- "./Data/All_levels_backbonetables.RData"
+fragile_sites_path <- "feature_matrix_data/fragile_sites_li_2020.xlsx"
+fragile_sites_outpath <- "feature_matrix_data//Distance_to_closest_fragile_site.RData"
+fragile_sites_weighted_outpath <- "feature_matrix_data/FeatureOptimization_Fragile_sites_weighted_distance_scores.RData"
+backbone_path <- "feature_matrix_data/All_levels_backbonetables.RData"
 
 fragile.sites <- read.xlsx(fragile_sites_path, startRow = 3)
 
