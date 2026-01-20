@@ -1,28 +1,35 @@
 
-#Preprocessing of feature data
-#Chromatin states from RoadmapEpigenome
+# Preprocessing of feature data
+# Chromatin states from RoadmapEpigenome
+
+rm(list=ls())
+gc(full=T)
+
+packages <- c("openxlsx", "dplyr", 
+              "ggplot2", "ggpubr", 
+              "tidyr", "maditr", 
+              'reshape2', "factoextra")
+
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
 
 # Set working directory 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
 
-setwd("/mnt/fabiogokce/gokce") #If working on workstation
+# Annotation table for chromatin states was prepared based on the table on RoadmapEpigenome
+# Path to the annotation file "./Data/ChromatinStates_Info.xlsx"
 
-#Required libraries
-library(openxlsx)
-library(dplyr)
-library(ggplot2)
-library(ggpubr)
-library(tidyr)
-library(maditr)
-library(reshape2)
-library(factoextra)
-
-#Annotation table for chromatin states was prepared based on the table on RoadmapEpigenome
-#Path to the annotation file "./Data/ChromatinStates_Info.xlsx"
-
-#Downloading chromatin state files from RoadmapEpigenome
-#Metadata for Reprocessed data from 127 Consolidated Epigenomes (111 Roadmap + 16 ENCODE) and 
-#Unconsolidated Epigenomes were download from RoadmapEpigenome (https://egg2.wustl.edu/roadmap/web_portal/meta.html)
-#Then chromatin state files were downloaded for the cells retrieved from the metadata
+# Downloading chromatin state files from RoadmapEpigenome
+# Metadata for Reprocessed data from 127 Consolidated Epigenomes (111 Roadmap + 16 ENCODE) and 
+# Unconsolidated Epigenomes were download from RoadmapEpigenome (https://egg2.wustl.edu/roadmap/web_portal/meta.html)
+# Then chromatin state files were downloaded for the cells retrieved from the metadata
 
 # metadata <- read.xlsx("./Downloads/Roadmap.metadata.qc.jul2013.xlsx", startRow = 4, sheet = 1, colNames = F)
 # cells <- unique(metadata$X2)
@@ -32,8 +39,8 @@ library(factoextra)
 #   dir <- paste0("./Downloads/ChmmModels/",gsub(".gz","",basename(url)))
 #   download.file(url,dir)}
 
-#Optional part I
-#Getting general info about chromatin states - Their distribution through the genome
+# Optional part I
+# Getting general info about chromatin states - Their distribution through the genome
 # bed.files <- list.files("./Downloads/ChmmModels", recursive = F, full.names = T)
 # final.df <- c()
 # for(file in bed.files){
@@ -67,64 +74,31 @@ library(factoextra)
 # barplot
 # dev.off()
 
-# Optional Part II - Date: July 31, 2024
-# Visualization in IGV
-bed.files <- list.files("./Downloads/ChmmModels", recursive = F, full.names = T)
-# files we are interested in
-#Retrieving TCGA names for each cell
-#roadmap_metadata_with_tcga_projects.tsv (Table from Richard)
-roadmap.tcga.map <- read.delim("./Downloads/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
+# Method I: For each cell: Calculate the total number of bases for each state in bins at different levels
+# Retrieving TCGA names for each cell
+# roadmap_metadata_with_tcga_projects.tsv (Table from Richard)
+roadmap.tcga.map <- read.delim("feature_matrix_data/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
 mapped.tcga.cohorts <- setdiff(unique(roadmap.tcga.map$V12),c("stem_cell","muscle","FAT","vascular","small_intestine","placenta","spleen",""))
 roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$V12 %in% mapped.tcga.cohorts,c(1,12)]
 colnames(roadmap.tcga.map) <- c("Cell.ID","TCGA.name")
-#TCGA cohort naming conversion so the cohort names will match with the bin data
-roadmap.tcga.map$TCGA.nameII <- ifelse(roadmap.tcga.map$TCGA.name == "COAD; READ","COADREAD",
-                                       ifelse(roadmap.tcga.map$TCGA.name == "GBM; LGG","GBMLGG",roadmap.tcga.map$TCGA.name))
-roadmap.tcga.map <- separate_rows(roadmap.tcga.map,3, sep = "; ")
-roadmap.tcga.map <- as.data.frame(roadmap.tcga.map)
-roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$TCGA.nameII %in% 
-                                       c("BRCA","COADREAD","PAAD","GBMLGG","LUSC","LUAD"),]
-cells <- unique(roadmap.tcga.map$Cell.ID) # same cells for LUAD and LUSC
-
-for(file in bed.files){
-  cell <- strsplit(basename(file),"_")[[1]][1]
-  if(!cell %in% cells)next
-  chmm <- read.delim(file, header = F)
-  for(state in unique(chmm$V4)){
-    chmm.state <- chmm[chmm$V4 == state,]
-    write.table(chmm.state[,1:3], 
-                file = paste0("./IGV_Chmm_inputs/",cell,"_",state,".bed"), 
-                col.names = F, row.names = F, sep = "\t", quote = F)
-  }
-  
-}
-  
-
-#Method I: For each cell: Calculate the total number of bases for each state in bins at different levels
-#Retrieving TCGA names for each cell
-#roadmap_metadata_with_tcga_projects.tsv (Table from Richard)
-roadmap.tcga.map <- read.delim("./Downloads/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
-mapped.tcga.cohorts <- setdiff(unique(roadmap.tcga.map$V12),c("stem_cell","muscle","FAT","vascular","small_intestine","placenta","spleen",""))
-roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$V12 %in% mapped.tcga.cohorts,c(1,12)]
-colnames(roadmap.tcga.map) <- c("Cell.ID","TCGA.name")
-#TCGA cohort naming conversion so the cohort names will match with the bin data
+# TCGA cohort naming conversion so the cohort names will match with the bin data
 roadmap.tcga.map$TCGA.nameII <- ifelse(roadmap.tcga.map$TCGA.name == "COAD; READ","COADREAD",
                                        ifelse(roadmap.tcga.map$TCGA.name == "GBM; LGG","GBMLGG",roadmap.tcga.map$TCGA.name))
 roadmap.tcga.map <- separate_rows(roadmap.tcga.map,3, sep = "; ")
 roadmap.tcga.map <- as.data.frame(roadmap.tcga.map)
 
-#Backbone dataset: Start and end positions of bins at all levels 
-load("./Data/All_levels_backbonetables.RData")
+# Backbone dataset: Start and end positions of bins at all levels 
+load("feature_matrix_data/All_levels_backbonetables.RData")
 cohorts <- c("BRCA","LUAD","LUSC","CESC","THCA","HNSC","PAAD","COADREAD","GBMLGG",
              "SKCM","BLCA","PCPG","PRAD","KIRC","MESO","TGCT","KIRP","SARC",    
              "LIHC","ESCA","STAD","UCS","OV") # 23 cohorts
 cells <- unique(roadmap.tcga.map[roadmap.tcga.map$TCGA.nameII %in% cohorts,]$Cell.ID)
-#levels <- names(chr_backbone_namesfixed) # To run for all the levels
+# levels <- names(chr_backbone_namesfixed) # To run for all the levels
 levels <- c("2Mbp", "4Mbp","6Mbp","8Mbp","10Mbp", "12Mbp","14Mbp","16Mbp","18Mbp","20Mbp","22Mbp","24Mbp",
             "26Mbp","28Mbp","30Mbp","32Mbp","34Mbp","36Mbp","38Mbp","40Mbp","42Mbp","44Mbp", "46Mbp", "48Mbp",
             "1Mbp","Chromosome","Arm","0.5Mbp","0.1Mbp","0.25Mbp","3Mbp") #Levels we are interested
 
-#Function to calculate length for each chromatin state in bp
+# Function to calculate length for each chromatin state in bp
 chmm.state.length <- function(coordinates.l){
   # Number of bases for states in the ith bin
   chr <- coordinates.l$chr
@@ -146,7 +120,7 @@ for(level in levels){
   # Bin, start and end locations
   coordinates <- do.call(rbind,chr_backbone_namesfixed[[level]])
   
-  #Make a list for each bin to call function
+  # Make a list for each bin to call function
   coord.list <- list()
   for(i in 1:nrow(coordinates)){
     coord.list[[i]] <- list("chr" = paste0("chr",coordinates$chr[i]),
@@ -156,10 +130,10 @@ for(level in levels){
   
   level.list <- list()
   for(cell in cells){
-    cell.file <- paste0("./Downloads/ChmmModels/",cell,"_25_imputed12marks_segments.bed")
+    cell.file <- paste0("feature_matrix_data/",cell,"_25_imputed12marks_segments.bed")
     chmm <- read.delim(cell.file, header = F)
     chmm$index <- as.numeric(rownames(chmm)) # Function will use this from the global environment
-    #Call the function 
+    # Call the function 
     res <- mclapply(coord.list, chmm.state.length, mc.cores = 20)
     chrstate.m <- do.call(rbind,res)
     # Sum the number of bases for each state and for each bin
@@ -167,12 +141,12 @@ for(level in levels){
     level.list[[cell]] <- chrstate.m}
   print(level)
   ChrStates.bins[[level]] <- level.list
-  #save(ChrStates.bins,file = "./Data/ChromatinStates_all_levels_cells.RData")
-  save(ChrStates.bins,file = "./Data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
+  # save(ChrStates.bins,file = "./Data/ChromatinStates_all_levels_cells.RData")
+  save(ChrStates.bins,file = "feature_matrix_data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
 }
 
-#Fixing bin names for Arm and chromosome levels
-load("./Data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
+# Fixing bin names for Arm and chromosome levels
+load("feature_matrix_data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
 
 for(level in c("Arm","Chromosome")){
   for(cell in names(ChrStates.bins[[level]])){
@@ -181,35 +155,35 @@ for(level in c("Arm","Chromosome")){
     else{df$bin <- unlist(lapply(df$bin, function(x) paste(strsplit(x,"_")[[1]][2],strsplit(x,"_")[[1]][3],sep = "_")))}
     ChrStates.bins[[level]][[cell]] <- df}}
 
-save(ChrStates.bins, file = "./Data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
+save(ChrStates.bins, file = "feature_matrix_data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
 
 rm(list = ls())
 
-#Method II: For each cell: Count the abundance for each state in bins at different levels
-#Retrieving TCGA names for each cell
-#roadmap_metadata_with_tcga_projects.tsv (Table from Richard)
-roadmap.tcga.map <- read.delim("./Downloads/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
+# Method II: For each cell: Count the abundance for each state in bins at different levels
+# Retrieving TCGA names for each cell
+# roadmap_metadata_with_tcga_projects.tsv (Table from Richard)
+roadmap.tcga.map <- read.delim("feature_matrix_data/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
 mapped.tcga.cohorts <- setdiff(unique(roadmap.tcga.map$V12),c("stem_cell","muscle","FAT","vascular","small_intestine","placenta","spleen",""))
 roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$V12 %in% mapped.tcga.cohorts,c(1,12)]
 colnames(roadmap.tcga.map) <- c("Cell.ID","TCGA.name")
-#TCGA cohort naming conversion so the cohort names will match with the bin data
+# TCGA cohort naming conversion so the cohort names will match with the bin data
 roadmap.tcga.map$TCGA.nameII <- ifelse(roadmap.tcga.map$TCGA.name == "COAD; READ","COADREAD",
                                        ifelse(roadmap.tcga.map$TCGA.name == "GBM; LGG","GBMLGG",roadmap.tcga.map$TCGA.name))
 roadmap.tcga.map <- separate_rows(roadmap.tcga.map,3, sep = "; ")
 roadmap.tcga.map <- as.data.frame(roadmap.tcga.map)
 
-#Backbone dataset: Start and end positions of bins at all levels 
-load("./Data/All_levels_backbonetables.RData")
+# Backbone dataset: Start and end positions of bins at all levels 
+load("feature_matrix_data/All_levels_backbonetables.RData")
 cohorts <- c("BRCA","LUAD","LUSC","CESC","THCA","HNSC","PAAD","COADREAD","GBMLGG",
              "SKCM","BLCA","PCPG","PRAD","KIRC","MESO","TGCT","KIRP","SARC",    
              "LIHC","ESCA","STAD","UCS","OV") # 23 cohorts
 cells <- unique(roadmap.tcga.map[roadmap.tcga.map$TCGA.nameII %in% cohorts,]$Cell.ID)
-#levels <- names(chr_backbone_namesfixed) # To run for all the levels
+# levels <- names(chr_backbone_namesfixed) # To run for all the levels
 levels <- c("2Mbp", "4Mbp","6Mbp","8Mbp","10Mbp", "12Mbp","14Mbp","16Mbp","18Mbp","20Mbp","22Mbp","24Mbp",
             "26Mbp","28Mbp","30Mbp","32Mbp","34Mbp","36Mbp","38Mbp","40Mbp","42Mbp","44Mbp", "46Mbp", "48Mbp",
             "1Mbp","Chromosome","Arm","0.5Mbp","0.1Mbp","0.25Mbp","3Mbp") #Levels we are interested
 
-#Function to calculate length for each chromatin state in bp
+# Function to calculate length for each chromatin state in bp
 chmm.state.length <- function(coordinates.l){
   # Number of bases for states in the ith bin
   chr <- coordinates.l$chr
@@ -239,7 +213,7 @@ for(level in levels){
   
   level.list <- list()
   for(cell in cells){
-    cell.file <- paste0("./Downloads/ChmmModels/",cell,"_25_imputed12marks_segments.bed")
+    cell.file <- paste0("feature_matrix_data/",cell,"_25_imputed12marks_segments.bed")
     chmm <- read.delim(cell.file, header = F)
     chmm$index <- as.numeric(rownames(chmm)) # Function will use this from the global environment
     #Call the function 
@@ -249,7 +223,7 @@ for(level in levels){
     level.list[[cell]] <- chrstate.m}
   print(level)
   ChrStates.bins[[level]] <- level.list
-  save(ChrStates.bins,file = "./Data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
+  save(ChrStates.bins,file = "feature_matrix_data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
 }
 
 #Fixing bin names for Arm and chromosome levels
@@ -262,12 +236,12 @@ for(level in c("Arm","Chromosome")){
     else{df$bin <- unlist(lapply(df$bin, function(x) paste(strsplit(x,"_")[[1]][2],strsplit(x,"_")[[1]][3],sep = "_")))}
     ChrStates.bins[[level]][[cell]] <- df}}
 
-save(ChrStates.bins, file = "./Data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
+save(ChrStates.bins, file = "feature_matrix_data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
 
 #Optional part II - Visualization - PCA and correlations between chromatin states - Method I
 #PCA for cells and correlation between different states at different levels
 #PCA - 1Mbp 
-load("./Data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
+load("feature_matrix_data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
 level <- ChrStates.bins[["1Mbp"]]
 m <- c()
 for(cell in names(level)){
@@ -278,7 +252,7 @@ for(cell in names(level)){
 df <- m %>% reshape2::dcast(cell~column, value.var = "total_bases")
 df <- as.data.frame(df)
 #Table for Cell-Tissue name matching (Supplementary column)
-roadmap.tcga.map <- read.delim("./Downloads/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
+roadmap.tcga.map <- read.delim("feature_matrix_data/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
 mapped.tcga.cohorts <- setdiff(unique(roadmap.tcga.map$V12),c("stem_cell","muscle","FAT","vascular","small_intestine","placenta","spleen",""))
 roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$V12 %in% mapped.tcga.cohorts,c(1,12)]
 colnames(roadmap.tcga.map) <- c("Cell.ID","TCGA.name")
@@ -303,11 +277,11 @@ fviz_pca_ind(res.pca,
              repel = TRUE,
              title = "1Mbp - All bins")
 
-#Comparing the number of bases across chromosomes
+# Comparing the number of bases across chromosomes
 rm(list = ls())
-load("./Data/All_levels_backbonetables.RData") # For chromosome length
-load("./Data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
-#Chromosome level
+load("feature_matrix_data/All_levels_backbonetables.RData") # For chromosome length
+load("feature_matrix_data/ChromatinStates_all_levels_cells_binnamesfixed.RData")
+# Chromosome level
 coordinates <- do.call(rbind,chr_backbone_namesfixed[["Chromosome"]])
 coordinates$length <- coordinates$end_bin - coordinates$start_bin
 cell.l <- ChrStates.bins[["Chromosome"]] #Number of bases for chromosomes
@@ -328,15 +302,15 @@ chr.plot <- ggplot(final.m, aes(x = ChrState, y = Rho)) + geom_boxplot() +
   geom_point(size = .5) + theme_bw() + 
   labs(title = "Chromosome level") + xlab("Chromatin states") +
   ylab("Correlation between number of bases of Chr.State\nand chromosome length within a cell")
-pdf("./Plots/Features/Chromatin_states/Correlation_btw_ChromatinStates_chromosomeLength.pdf", 
+pdf("plots/Correlation_btw_ChromatinStates_chromosomeLength.pdf", 
     width = 9, height = 5)
 chr.plot
 dev.off()
 
-#Optional part II - Visualization - PCA and correlations between chromatin states - Method II
-#PCA for cells and correlation between different states at different levels
-#PCA - 1Mbp 
-load("./Data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
+# Optional part II - Visualization - PCA and correlations between chromatin states - Method II
+# PCA for cells and correlation between different states at different levels
+# PCA - 1Mbp 
+load("feature_matrix_data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
 level <- ChrStates.bins[["1Mbp"]]
 m <- c()
 for(cell in names(level)){
@@ -346,8 +320,8 @@ for(cell in names(level)){
   m <- rbind(m,df)}
 df <- m %>% reshape2::dcast(cell~column, value.var = "Abundance")
 df <- as.data.frame(df)
-#Table for Cell-Tissue name matching (Supplementary column)
-roadmap.tcga.map <- read.delim("./Downloads/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
+# Table for Cell-Tissue name matching (Supplementary column)
+roadmap.tcga.map <- read.delim("feature_matrix_data/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
 mapped.tcga.cohorts <- setdiff(unique(roadmap.tcga.map$V12),c("stem_cell","muscle","FAT","vascular","small_intestine","placenta","spleen",""))
 roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$V12 %in% mapped.tcga.cohorts,c(1,12)]
 colnames(roadmap.tcga.map) <- c("Cell.ID","TCGA.name")
@@ -371,11 +345,11 @@ fviz_pca_ind(res.pca,
              repel = TRUE,
              title = "1Mbp - All bins")
 
-#Comparing the number of bases across chromosomes
+# Comparing the number of bases across chromosomes
 rm(list = ls())
-load("./Data/All_levels_backbonetables.RData") # For chromosome length
-load("./Data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
-#Chromosome level
+load("feature_matrix_data/All_levels_backbonetables.RData") # For chromosome length
+load("feature_matrix_data/ChromatinStates_all_levels_cells_abundance_methodII.RData")
+# Chromosome level
 coordinates <- do.call(rbind,chr_backbone_namesfixed[["Chromosome"]])
 coordinates$length <- coordinates$end_bin - coordinates$start_bin
 cell.l <- ChrStates.bins[["Chromosome"]] #Number of bases for chromosomes
@@ -396,23 +370,24 @@ chr.plot <- ggplot(final.m, aes(x = ChrState, y = Rho)) + geom_boxplot() +
   geom_point(size = .5) + theme_bw() + 
   labs(title = "Chromosome level") + xlab("Chromatin states") +
   ylab("Correlation between abundance of Chr.State\nand chromosome length within a cell")
-pdf("./Plots/Features/Chromatin_states/Correlation_btw_ChromatinStates_abundance_chromosomeLength.pdf", 
+pdf("plots/Correlation_btw_ChromatinStates_abundance_chromosomeLength.pdf", 
     width = 9, height = 5)
 chr.plot
 dev.off()
 
-#----------------------------Tissue-level
+
+# ----------------------------Tissue-level
 
 rm(list = ls())
 
-#METHOD I
-#Chromatin states per tissue: Averaging the number of bases across cells, 
-#and then scaling within the tissue table for Cell-Tissue name matching
-roadmap.tcga.map <- read.delim("./Downloads/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
+# METHOD I
+# Chromatin states per tissue: Averaging the number of bases across cells, 
+# and then scaling within the tissue table for Cell-Tissue name matching
+roadmap.tcga.map <- read.delim("feature_matrix_data/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
 mapped.tcga.cohorts <- setdiff(unique(roadmap.tcga.map$V12),c("stem_cell","muscle","FAT","vascular","small_intestine","placenta","spleen",""))
 roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$V12 %in% mapped.tcga.cohorts,c(1,12)]
 colnames(roadmap.tcga.map) <- c("Cell.ID","TCGA.name")
-#TCGA cohort naming conversion so the cohort names will match with the bin data
+# TCGA cohort naming conversion so the cohort names will match with the bin data
 roadmap.tcga.map$TCGA.nameII <- ifelse(roadmap.tcga.map$TCGA.name == "COAD; READ","COADREAD",
                                        ifelse(roadmap.tcga.map$TCGA.name == "GBM; LGG","GBMLGG",roadmap.tcga.map$TCGA.name))
 roadmap.tcga.map <- separate_rows(roadmap.tcga.map,3, sep = "; ")
@@ -422,7 +397,7 @@ cohorts <- c("BRCA","LUAD","LUSC","CESC","THCA","HNSC","PAAD","COADREAD","GBMLGG
              "LIHC","ESCA","STAD","UCS","OV")
 tissues <- unique(intersect(roadmap.tcga.map$TCGA.nameII,cohorts))
 
-load("./Data/ChromatinStates_all_levels_cells_binnamesfixed.RData") #Chromatin states per cells
+load("feature_matrix_data/ChromatinStates_all_levels_cells_binnamesfixed.RData") #Chromatin states per cells
 levels <- names(ChrStates.bins)
 ChrStates.tissues <- list()
 for(level in levels){
@@ -437,13 +412,13 @@ for(level in levels){
       df.cell <- level.data[[cell]]
       df.cell$Cell <- cell
       tissue.df <- rbind(tissue.df,df.cell)
-      #Normalization by the total identified bases per chromosome
+      # Normalization by the total identified bases per chromosome
       df.cell$chr <- unlist(lapply(df.cell$bin, function(x) strsplit(x,"_")[[1]][1]))
       bases.per.chr <- df.cell %>% group_by(chr) %>% summarise("Sum" = sum(total_bases))
       df.cell <- merge(df.cell, bases.per.chr, by = "chr")
       df.cell$Per.per.chr <- (df.cell$total_bases / df.cell$Sum)*100
       tissue.df.norm <- rbind(tissue.df.norm,df.cell)}
-    #Take average of the cells
+    # Take average of the cells
     df <- tissue.df %>% group_by(bin,V4) %>% summarise("Mean"=mean(total_bases))
     df <- df %>% dcast(bin~V4, value.var = "Mean")
     df <- as.data.frame(df)
@@ -454,7 +429,7 @@ for(level in levels){
     rownames(m.scaled) <- rownames(df)
     tissue.set[["Scaled"]] <- m.scaled
     tissue.set[["Counts"]] <- df
-    #Normalized counts
+    # Normalized counts
     df.norm <- tissue.df.norm %>% group_by(bin,V4) %>% summarise("Mean"=mean(Per.per.chr))
     df.norm <- df.norm %>% reshape2::dcast(bin~V4, value.var = "Mean")
     df.norm <- as.data.frame(df.norm)
@@ -464,19 +439,19 @@ for(level in levels){
     tissue.set[["Normalised.by.chr.coverage"]] <- df.norm
     level.set[[tissue]] <- tissue.set}
   ChrStates.tissues[[level]] <- level.set}
-save(ChrStates.tissues,file = "./Data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount.RData")
+save(ChrStates.tissues,file = "feature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount.RData")
 
-#METHOD II
+
 
 rm(list = ls())
-
-#Chromatin states per tissue: Averaging the abundance of chromatin states across cells, 
-#and then scaling within the tissue table for Cell-Tissue name matching
-roadmap.tcga.map <- read.delim("./Downloads/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
+# METHOD II
+# Chromatin states per tissue: Averaging the abundance of chromatin states across cells, 
+# and then scaling within the tissue table for Cell-Tissue name matching
+roadmap.tcga.map <- read.delim("feature_matrix_data/roadmap_metadata_with_tcga_projects.tsv",header = F) #there is no E001 but it is stem cell no TCGA matching. 
 mapped.tcga.cohorts <- setdiff(unique(roadmap.tcga.map$V12),c("stem_cell","muscle","FAT","vascular","small_intestine","placenta","spleen",""))
 roadmap.tcga.map <- roadmap.tcga.map[roadmap.tcga.map$V12 %in% mapped.tcga.cohorts,c(1,12)]
 colnames(roadmap.tcga.map) <- c("Cell.ID","TCGA.name")
-#TCGA cohort naming conversion so the cohort names will match with the bin data
+# TCGA cohort naming conversion so the cohort names will match with the bin data
 roadmap.tcga.map$TCGA.nameII <- ifelse(roadmap.tcga.map$TCGA.name == "COAD; READ","COADREAD",
                                        ifelse(roadmap.tcga.map$TCGA.name == "GBM; LGG","GBMLGG",roadmap.tcga.map$TCGA.name))
 roadmap.tcga.map <- separate_rows(roadmap.tcga.map,3, sep = "; ")
@@ -486,7 +461,7 @@ cohorts <- c("BRCA","LUAD","LUSC","CESC","THCA","HNSC","PAAD","COADREAD","GBMLGG
              "LIHC","ESCA","STAD","UCS","OV")
 tissues <- unique(intersect(roadmap.tcga.map$TCGA.nameII,cohorts))
 
-load("./Data/ChromatinStates_all_levels_cells_abundance_methodII.RData")#Chromatin states per cells
+load("feature_matrix_data/ChromatinStates_all_levels_cells_abundance_methodII.RData")#Chromatin states per cells
 levels <- names(ChrStates.bins)
 ChrStates.tissues <- list()
 for(level in levels){
@@ -501,13 +476,13 @@ for(level in levels){
       df.cell <- level.data[[cell]]
       df.cell$Cell <- cell
       tissue.df <- rbind(tissue.df,df.cell)
-      #Normalization by the total identified abundance per chromosome
+      # Normalization by the total identified abundance per chromosome
       df.cell$chr <- unlist(lapply(df.cell$bin, function(x) strsplit(x,"_")[[1]][1]))
       bases.per.chr <- df.cell %>% group_by(chr) %>% summarise("Sum" = sum(Abundance))
       df.cell <- merge(df.cell, bases.per.chr, by = "chr")
       df.cell$Per.per.chr <- (df.cell$Abundance / df.cell$Sum)*100
       tissue.df.norm <- rbind(tissue.df.norm,df.cell)}
-    #Take average of the cells
+    # Take average of the cells
     df <- tissue.df %>% group_by(bin,Chmm.state) %>% summarise("Mean"=mean(Abundance))
     df <- df %>% dcast(bin~Chmm.state, value.var = "Mean")
     df <- as.data.frame(df)
@@ -518,7 +493,7 @@ for(level in levels){
     rownames(m.scaled) <- rownames(df)
     tissue.set[["Scaled"]] <- m.scaled
     tissue.set[["Counts"]] <- df
-    #Normalized counts
+    # Normalized counts
     df.norm <- tissue.df.norm %>% group_by(bin,Chmm.state) %>% summarise("Mean"=mean(Per.per.chr))
     df.norm <- df.norm %>% reshape2::dcast(bin~Chmm.state, value.var = "Mean")
     df.norm <- as.data.frame(df.norm)
@@ -528,17 +503,17 @@ for(level in levels){
     tissue.set[["Normalised.by.chr.coverage"]] <- df.norm
     level.set[[tissue]] <- tissue.set}
   ChrStates.tissues[[level]] <- level.set}
-save(ChrStates.tissues,file = "./Data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")
+save(ChrStates.tissues,file = "feature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")
 
 #-------------------------------------
 
-#Correlations between different states
-#Get upper triangle of the correlation matrix
+# Correlations between different states
+# Get upper triangle of the correlation matrix
 get_upper_tri <- function(cormat){
   cormat[lower.tri(cormat)]<- NA
   return(cormat)}
-#load("./Data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount.RData")
-load("./Data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")
+# load("feature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount.RData")
+load("feature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")
 tissues <- names(ChrStates.tissues[[1]]) # 14 tissues
 levels <- names(ChrStates.tissues) # 31 levels
 correlation.plots<-list()
@@ -562,39 +537,38 @@ for(level in levels){
   all <- ggarrange(plotlist = level.plots, common.legend = TRUE, legend = "bottom")
   correlation.plots[[level]] <- all}
 
-# pdf("./Plots/Features/Chromatin_states/Correlations_among_chrstates_length_0.1mbp.pdf",width = 20,height = 15)
+# pdf("plots/Correlations_among_chrstates_length_0.1mbp.pdf",width = 20,height = 15)
 # correlation.plots[["0.1Mbp"]]
 # dev.off()
 # 
-# pdf("./Plots/Features/Chromatin_states/Correlations_among_chrstates_length_10mbp.pdf",width = 20,height = 15)
+# pdf("plots/Correlations_among_chrstates_length_10mbp.pdf",width = 20,height = 15)
 # correlation.plots[["10Mbp"]]
 # dev.off()
 # 
-# pdf("./Plots/Features/Chromatin_states/Correlations_among_chrstates_length_Armp.pdf",width = 20,height = 15)
+# pdf("plots/Correlations_among_chrstates_length_Armp.pdf",width = 20,height = 15)
 # correlation.plots[["Arm"]]
 # dev.off()
 
-pdf("./Plots/Features/Chromatin_states/Correlations_among_chrstates_abundance_0.1mbp.pdf",width = 20,height = 15)
+pdf("plots/Correlations_among_chrstates_abundance_0.1mbp.pdf",width = 20,height = 15)
 correlation.plots[["0.1Mbp"]]
 dev.off()
 
-pdf("./Plots/Features/Chromatin_states/Correlations_among_chrstates_abundance_10mbp.pdf",width = 20,height = 15)
+pdf("plots/Correlations_among_chrstates_abundance_10mbp.pdf",width = 20,height = 15)
 correlation.plots[["10Mbp"]]
 dev.off()
 
-pdf("./Plots/Features/Chromatin_states/Correlations_among_chrstates_abundance_Armp.pdf",width = 20,height = 15)
+pdf("plots/Correlations_among_chrstates_abundance_Armp.pdf",width = 20,height = 15)
 correlation.plots[["Arm"]]
 dev.off()
 
 
-# Date: May 31, 2024
-#Prepare one final matrix with different calculations
+# Prepare one final matrix with different calculations
 
 rm(list = ls())
 library(rlist)
 
-assign("Length",get(load("./Data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount.RData")))
-assign("Abundance",get(load("./Data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")))
+assign("Length",get(load("feature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount.RData")))
+assign("Abundance",get(load("eature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")))
 rm("ChrStates.tissues")
 
 data.list <- list("Abundance" = Abundance,
@@ -613,11 +587,11 @@ for(level in levels){
       new.names <- paste(name,names(res.l),sep = "_")
       names(res.l) <- new.names
       tissue.l <- append(tissue.l,res.l)}
-    #Abundance binary matrix
+    # Abundance binary matrix
     abundance.df <- tissue.l$Abundance_Counts
     abundance.df[abundance.df > 0] <- 1
     tissue.l[["Abundance_binary"]] <- abundance.df
     Chromatin.States[[level]][[tissue]] <- tissue.l}}
 
-# Counts, scaled, normalised for length and abundance methods (with an binary abundance matrix)
-save(Chromatin.States, file = "./Data/Chromatin_states_all_levels_tissues_all_methods.RData")
+# Counts, scaled, normalized for length and abundance methods (with an binary abundance matrix)
+save(Chromatin.States, file = "eature_matrix_data/Chromatin_states_all_levels_tissues_all_methods.RData")

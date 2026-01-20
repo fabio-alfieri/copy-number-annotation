@@ -1,3 +1,5 @@
+
+rm(list=ls())
 gc(full=T)
 
 packages <- c("parallel")
