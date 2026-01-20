@@ -15,17 +15,20 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-cancer_drivers_path <- "./Downloads/2023-05-31_IntOGen-Drivers/Compendium_Cancer_Genes.tsv"
-cohorts_path <- "./Downloads/2023-05-31_IntOGen-Cohorts/cohorts.tsv"
-tcga_cohort_path <- "./Plots/Features/intOGen/Number_drivers_TCGA_cohorts.pdf"
-tcga_cohort_xlsx <- "./Data/IntOGen_tcga_cohorts.xlsx"
-ensembl_path <- "./Downloads/hg19_14022024.txt"
-ccds_path <- "./Downloads/backbone_tables/CCDS.current_hg19.txt"
-drivers_list_path <- "./Data/IntOGen_cancer_drivers_tissue-specific.RData"
-genes_per_bins_path <- "./Data/All_levels_genes_per_bins.RData"
-density_drivers_path <- "./Data/Density_cancer-drivers_intogen.RData"
-backbone_path <- "./Data/All_levels_backbonetables.RData"
-distance_weighted_path <- "./Data/Distance_to_cancer-drivers_intogen_weighted.RData"
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
+cancer_drivers_path <- "feature_matrix_data/2023-05-31_IntOGen-Drivers/Compendium_Cancer_Genes.tsv"
+cohorts_path <- "feature_matrix_data/2023-05-31_IntOGen-Cohorts/cohorts.tsv"
+tcga_cohort_path <- "plots/Number_drivers_TCGA_cohorts.pdf"
+tcga_cohort_xlsx <- ".feature_matrix_data/IntOGen_tcga_cohorts.xlsx"
+ensembl_path <- "feature_matrix_data/hg19_14022024.txt"
+ccds_path <- "feature_matrix_data/CCDS.current_hg19.txt"
+drivers_list_path <- "feature_matrix_data/IntOGen_cancer_drivers_tissue-specific.RData"
+genes_per_bins_path <- ".feature_matrix_data/All_levels_genes_per_bins.RData"
+density_drivers_path <- "feature_matrix_data/Density_cancer-drivers_intogen.RData"
+backbone_path <- "feature_matrix_data/All_levels_backbonetables.RData"
+distance_weighted_path <- "feature_matrix_data/Distance_to_cancer-drivers_intogen_weighted.RData"
 
 # Cancer drivers from intOGen (release date 2023.05.31)
 cancer.drivers <- read.delim(cancer_drivers_path)
