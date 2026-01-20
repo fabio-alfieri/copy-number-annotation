@@ -1,7 +1,6 @@
 
 # Feature optimization
 # GTEx mRNA and protein levels
-# Date: April 15, 2024
 
 rm(list = ls())
 
@@ -18,13 +17,16 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-gtex_path <- "./Data/GTEx_different_versions_TCGA_cohort_map.RData"
-gtex_additional_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData" 
-backbone_table <- "./Data/Backbone_tables_with_non_tissue_specific_features.RData"
-gtex_output_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData"
-gtex_v8_path <- "./Data/Tissue_specific_genes_based_on_GTEx_v8.RData"
-tissue_specific_proteins_path <- "./Data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
-gtex_tissue_specific <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific.RData"
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
+gtex_path <- "./feature_matrix_data/GTEx_different_versions_TCGA_cohort_map.RData"
+gtex_additional_path <- "./feature_matrix_data/GTEx_rna_protein_level_differentdatasets_per_bins.RData" 
+backbone_table <- "./feature_matrix_data/Backbone_tables_with_non_tissue_specific_features.RData"
+gtex_output_path <- "./feature_matrix_data/GTEx_rna_protein_level_differentdatasets_per_bins.RData"
+gtex_v8_path <- "./feature_matrix_data/Tissue_specific_genes_based_on_GTEx_v8.RData"
+tissue_specific_proteins_path <- "./feature_matrix_data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
+gtex_tissue_specific <- "./feature_matrix_data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific.RData"
 
 
 #GTEx data
