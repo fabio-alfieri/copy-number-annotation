@@ -15,24 +15,24 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
-ohnologs_path_makino <- "./Downloads/Ohnologs/st01.xls"
-ohnologs_path_ensembl <- "./Downloads/ensembl_release56.txt"
-ohnolog_database_path <- "./Downloads/Ohnologs"
-ohnolog_list_path <- "./Data/OhnologList.RData"
+ohnologs_path_makino <- "feature_matrix_data/Ohnologs/st01.xls"
+ohnologs_path_ensembl <- "feature_matrix_data/ensembl_release56.txt"
+ohnolog_database_path <- "feature_matrix_data/Ohnologs"
+ohnolog_list_path <- ".feature_matrix_data/OhnologList.RData"
 
-paralogs_path <- "./Downloads/Table_S8.csv"
-paralog_outpath <- "./Data/ParalogList.RData"
+paralogs_path <- ".feature_matrix_dataTable_S8.csv"
+paralog_outpath <- "feature_matrix_data/ParalogList.RData"
 
 ohnologs <- list()
 
-#Ohnologs from different datasets
-#1. From Makino and Mclysaght paper
+# Ohnologs from different datasets
+# 1. From Makino and Mclysaght paper
 makino_mclysaght <- read_excel(ohnologs_path_makino, sheet = 5, skip = 1, col_types = "text")
 makino_mclysaght <- makino_mclysaght[-c(9058:9060),]
 
-#The ohnologs are provided with their ensembl gene IDs, and ensembl release 52 was used on the paper.
-#However, that version is not available anymore. 
-#Therefore, Ensembl release 54 was used to convert IDs to symbols. 
+# The ohnologs are provided with their ensembl gene IDs, and ensembl release 52 was used on the paper.
+# However, that version is not available anymore. 
+# Therefore, Ensembl release 54 was used to convert IDs to symbols. 
 ensembl_release56 <- read.delim(ohnologs_path_ensembl)
 makino_mclysaght <- merge(makino_mclysaght,ensembl_release56,by.x = "Ohnolog1",by.y="Ensembl.Gene.ID")
 colnames(makino_mclysaght)[13] <- "Associated.Gene.Name1"
@@ -52,10 +52,10 @@ ohno <- rbind(ohno1,ohno2)
 ohno <- ohno %>% group_by(Symbol) %>% 
   summarise("ohnologs_mmpaper" = paste(ohnologs_mmpaper,collapse = "::"),
             "n_ohnolog_mmpaper" = sum(n_ohnolog_mmpaper)) #7290
-#Add the data to the final list
+# Add the data to the final list
 ohnologs[["mmpaper"]] <- ohno
 
-#2. From Ohnolog database (different cutoffs)
+# 2. From Ohnolog database (different cutoffs)
 files <- list.files(path = ohnolog_database_path, pattern = "^hsapiens.Pairs*", full.names = T, recursive = F)
 for(file in files){
   cutoff <- strsplit(basename(file),"\\.")[[1]][3]
@@ -77,11 +77,11 @@ for(file in files){
   ohnologs[[paste("OhnoDatabase",cutoff,sep = "_")]] <- ohno}
 save(ohnologs, file = ohnolog_list_path)
 
-#Paralogs
-#1. Colm' data
-#paralogs <- read.csv("./Downloads/all_paralog_genes_min20.csv") #Paralogs
+# Paralogs
+# 1. Colm' data
+# paralogs <- read.csv("./Downloads/all_paralog_genes_min20.csv") #Paralogs
 paralog.features <- read.csv(paralogs_path) #Detailed features for paralogs
-#Colm's cut-off for sequence identity (reciprocal, at least 20%)
+# Colm's cut-off for sequence identity (reciprocal, at least 20%)
 paralog.features <- paralog.features[paralog.features$min_sequence_identity >= 0.20,3:5]
 paralog.genes <- union(paralog.features$A1, paralog.features$A2)
 paralogs <- c()
