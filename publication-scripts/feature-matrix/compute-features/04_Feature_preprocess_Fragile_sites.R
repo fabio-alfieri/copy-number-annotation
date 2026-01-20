@@ -11,6 +11,9 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
 fragile_sites_path <- "./Downloads/fragile_sites_li_2020.xlsx"
 fragile_sites_outpath <- "./Data/Distance_to_closest_fragile_site.RData"
 fragile_sites_weighted_outpath <- "./Data/FeatureOptimization_Fragile_sites_weighted_distance_scores.RData"
@@ -59,8 +62,8 @@ save(Dist.fragile.sites,
 
 # Feature optimization
 
-#Feature optimization
-#Fragile sites
+# Feature optimization
+# Fragile sites
 
 fragile.sites <- read.xlsx(fragile_sites_path, startRow = 3)
 
@@ -97,7 +100,7 @@ for(level in names(chr_backbone_namesfixed)){
 
 rm(list = setdiff(ls(),"Dist.fragile.sites"))
 
-#Weighted distance scores to the fragile sites
+# Weighted distance scores to the fragile sites
 Weighted.dist.scores <- list()
 for(level in names(Dist.fragile.sites)){
   df <- Dist.fragile.sites[[level]]
