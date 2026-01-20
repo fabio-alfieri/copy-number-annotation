@@ -22,21 +22,21 @@ lapply(packages, library, character.only = TRUE)
 wd <- 'path/to/GitHub/copy-number-annotation/'
 setwd(wd)
 
-info_path <- "./Data/GTEX_tissuenames_tcganames.xlsx"
-gtex_protein_path <- "./Downloads/Table_S1_gene_info_at_protein_level.xlsx"
-gtex_mrna_path <- "./Downloads/Table_S2_gene_info_at_RNA_level.xlsx"
-gene_ID_name_path <- "./Downloads/Table_S1_gene_info_at_protein_level.xlsx"
-tissuenames_tcganames_path <- "./Data/eGTEX_tissuenames_tcganames.xlsx"
-gtex_protein_tissue_median_path <- "./Data/eGTEX_mrna_protein_tissue_median.RData"
-gene_info_protein_level <- "./Downloads/Table_S1_gene_info_at_protein_level.xlsx"
-gtex_v6_RNA_median_path <- "./Downloads/GTEx_Analysis_v6p_RNA-seq_RNA-SeQCv1.1.8_gene_median_rpkm.gct"
-mrna_v8_path <- "./Downloads/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct"
-gtex_outpath <- "./Data/GTEx_different_versions_TCGA_cohort_map.RData"
-tissue_specific_genes_v8 <- "./Data/Tissue_specific_genes_based_on_GTEx_v8.RData"
-tissue_specific_proteins_path <- "./Downloads/Table_S1_gene_info_at_protein_level.xlsx"
-tissuespec_proteins <- "./Data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
-gtex_adult_v8_path <- "./Downloads/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct"
-CORUM_feat_tissue_general_path <- "./Data/Ensembl_CORUM_features_tissue_general.RData"
+info_path <- "./feature_matrix_data/GTEX_tissuenames_tcganames.xlsx"
+gtex_protein_path <- "./feature_matrix_data/Table_S1_gene_info_at_protein_level.xlsx"
+gtex_mrna_path <- "./feature_matrix_data/Table_S2_gene_info_at_RNA_level.xlsx"
+gene_ID_name_path <- "./feature_matrix_data/Table_S1_gene_info_at_protein_level.xlsx"
+tissuenames_tcganames_path <- "./feature_matrix_data/eGTEX_tissuenames_tcganames.xlsx"
+gtex_protein_tissue_median_path <- "./feature_matrix_data/eGTEX_mrna_protein_tissue_median.RData"
+gene_info_protein_level <- "./feature_matrix_data/Table_S1_gene_info_at_protein_level.xlsx"
+gtex_v6_RNA_median_path <- "./feature_matrix_data/GTEx_Analysis_v6p_RNA-seq_RNA-SeQCv1.1.8_gene_median_rpkm.gct"
+mrna_v8_path <- "./feature_matrix_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct"
+gtex_outpath <- "./feature_matrix_data/GTEx_different_versions_TCGA_cohort_map.RData"
+tissue_specific_genes_v8 <- "./feature_matrix_data/Tissue_specific_genes_based_on_GTEx_v8.RData"
+tissue_specific_proteins_path <- "./feature_matrix_data/Table_S1_gene_info_at_protein_level.xlsx"
+tissuespec_proteins <- "./feature_matrix_data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
+gtex_adult_v8_path <- "./feature_matrix_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct"
+CORUM_feat_tissue_general_path <- "./feature_matrix_data/Ensembl_CORUM_features_tissue_general.RData"
 
 
 #GTEx-TCGA tissue mapping for all versions of GTEx
