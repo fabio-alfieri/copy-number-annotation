@@ -19,6 +19,9 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
 info_path <- "./Data/GTEX_tissuenames_tcganames.xlsx"
 gtex_protein_path <- "./Downloads/Table_S1_gene_info_at_protein_level.xlsx"
 gtex_mrna_path <- "./Downloads/Table_S2_gene_info_at_RNA_level.xlsx"

@@ -16,16 +16,19 @@ for (pkg in packages) {
 
 lapply(packages, library, character.only = TRUE)
 
+wd <- 'path/to/GitHub/copy-number-annotation/'
+setwd(wd)
+
 # 1. Calculate new features 
 
 #Most of the non Tissue-specific features are gene based. Therefore, we need genes located on the corresponding bin.
 #Genes per bins for focal CNA
 
-backbone_path <- "./Data/All_levels_backbonetables.RData"
-genes_per_bins_table <- "./Data/All_levels_genes_per_bins.RData"
-ensembl_corum_path <- "./Data/Ensembl_CORUM_features_tissue_general.RData"
-hippie_path <- "./Data/HIPPIE_PPIs_tissue_general.RData"
-output_path <- "./Data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData"
+backbone_path <- "feature_matrix_data/All_levels_backbonetables.RData"
+genes_per_bins_table <- "feature_matrix_data/All_levels_genes_per_bins.RData"
+ensembl_corum_path <- "feature_matrix_data/Ensembl_CORUM_features_tissue_general.RData"
+hippie_path <- "feature_matrix_data/HIPPIE_PPIs_tissue_general.RData"
+output_path <- "feature_matrix_data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData"
 
 load(genes_per_bins_table)
 
