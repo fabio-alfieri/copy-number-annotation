@@ -133,9 +133,10 @@ for(level in levels){
       #      file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/CNA_fractions_per_sample_per_bin/Length_Location/",
       #                    tumor_type,"_",level,"_class_",segment_class,"_Armfraction_",armf,"_segMean_",segMean,".RData"))
       #If consider segment clusters based on length only
+      fraction_per_sample_per_bin_path <- paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/CNA_fractions_per_sample_per_bin/Length/",
+                                                   tumor_type,"_",level,"_class_",segment_class,"_Armfraction_",armf,"_segMean_",segMean,".RData")
       save(scores_final, 
-           file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/CNA_fractions_per_sample_per_bin/Length/",
-                         tumor_type,"_",level,"_class_",segment_class,"_Armfraction_",armf,"_segMean_",segMean,".RData"))
+           file = fraction_per_sample_per_bin_path)
       
       # Remove from memory and trigger garbage collection
       rm(scores_final)
