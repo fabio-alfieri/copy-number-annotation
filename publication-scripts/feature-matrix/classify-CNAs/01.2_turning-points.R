@@ -6,18 +6,28 @@
 
 rm(list=ls())
 
-setwd("/mnt/fabiogokce/gokce")
+centromere_path <- "./Data/hg19_centromere.txt"
+telomere_path <- "./Data/hg19_telomere.txt"
+chr_arms_path <- "./Data/ChrArmCoverage.txt"
+segments_path <- "./Data/Mapping_SCNAs/temp4"
+dist_centr_tel_outpath <- "./Data/Segments_distance_to_telomere_centromere.RData"
+distribution_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Data_and_plots_dist_centromere_telomere_armratio.RData"
+centromere_turningpoints_outpath <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Centromere-turningpoints.RData"
+centromere_turningpoints_plot <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/TurningPoints_centromere.pdf"
+telomere_turningpoints_outpath <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Telomere-turningpoints.RData"
+telomere_turningpoints_plot <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/TurningPoints_telomere.pdf"
+dist_breakpoints_cent_tel <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Distance_breakpoints_cent_tel.pdf"
 
 # Centromere and telomere positions (UCSC)
-hg19_centromere <- read.table(file = "./Data/hg19_centromere.txt",skip = 2)
+hg19_centromere <- read.table(file = centromere_path,skip = 2)
 hg19_centromere <- hg19_centromere[!hg19_centromere$V1 %in% c("chrX","chrY"),]
 colnames(hg19_centromere) <- c("Chromosome","start.pos","end.pos")
 
-hg19_telomere <- read.table(file = "./Data/hg19_telomere.txt",skip = 2)
+hg19_telomere <- read.table(file = telomere_path,skip = 2)
 hg19_telomere <- hg19_telomere[!hg19_telomere$V1 %in% c("chrX","chrY"),]
 colnames(hg19_telomere) <- c("Chromosome","start.pos","end.pos")
 # In the UCSC table, chr17 is missing, add the telomere position for that (10000 distance from both ends)
-chr_arms <- read.delim("./Data/ChrArmCoverage.txt")
+chr_arms <- read.delim(chr_arms_path)
 chr17 <- data.frame("Chromosome" = c("chr17","chr17"),
                     "start.pos" = c(0,81195210-10000),
                     "end.pos" = c(10000,81195210))
@@ -26,7 +36,7 @@ hg19_telomere <- rbind(hg19_telomere,chr17)
 rm(list = setdiff(ls(),c("hg19_centromere","hg19_telomere")))
 
 # Segments files with arm location
-segment.files <- list.files(path = "./Data/Mapping_SCNAs/temp4", full.names = T, recursive = F)
+segment.files <- list.files(path = segments_path, full.names = T, recursive = F)
 
 Dist.centromere <- list()
 for(file in segment.files){
@@ -74,7 +84,7 @@ for(tumor_type in names(Dist.centromere)){
   print(tumor_type)
 }
 
-save(Dist.telomere.centromere, file = "./Data/Segments_distance_to_telomere_centromere.RData")
+save(Dist.telomere.centromere, file = dist_centr_tel_outpath)
 
 # # Distribution of absolute distances and arm-ratio
 # 
@@ -154,7 +164,7 @@ save(Dist.telomere.centromere, file = "./Data/Segments_distance_to_telomere_cent
 
 
 # Find distribution peak to define cutoff
-load("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Data_and_plots_dist_centromere_telomere_armratio.RData")
+load(distribution_path)
 rm(list = setdiff(ls(),"Data"))
 
 # Centromere
@@ -201,7 +211,7 @@ for(cohort in names(Data)){
 stat <- as.data.frame(stat)
 colnames(stat) <- c("Cohort","Chromosome","TP1","TP2","Value")
 stat[,3:4] <- sapply(stat[,3:4],as.numeric)
-save(stat,plots, file = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Centromere-turningpoints.RData")
+save(stat,plots, file = centromere_turningpoints_outpath)
 
 # Telomere
 rm(list = setdiff(ls(),"Data"))
@@ -248,7 +258,7 @@ for(cohort in names(Data)){
 stat <- as.data.frame(stat)
 colnames(stat) <- c("Cohort","Chromosome","TP1","TP2","Value")
 stat[,3:4] <- sapply(stat[,3:4],as.numeric)
-save(stat,plots,file = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Telomere-turningpoints.RData")
+save(stat,plots,file = telomere_turningpoints_outpath)
 
 # Date: October 28, 2024
 # Visualization of peak points
@@ -258,8 +268,8 @@ rm(list=ls())
 setwd("/mnt/fabiogokce/gokce")
 
 # 1. Centromere
-load("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Centromere-turningpoints.RData")
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/TurningPoints_centromere.pdf",width = 15, height = 9)
+load(centromere_turningpoints_outpath)
+pdf(centromere_turningpoints_plot,width = 15, height = 9)
 plots$Centromere$Absolute$BRCA
 plots$Centromere$Absolute$COADREAD
 plots$Centromere$Absolute$ESCA
@@ -286,8 +296,8 @@ p1<-ggplot(m[m$variable == "TP1",], aes(x = Chromosome, y = Mb)) +
   theme_bw() + labs(title = "Distance to centromere")
 
 # 2. Telomere
-load("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Telomere-turningpoints.RData")
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/TurningPoints_telomere.pdf",width = 15, height = 9)
+load(telomere_turningpoints_outpath)
+pdf(telomere_turningpoints_plot,width = 15, height = 9)
 plots$Telomere$Absolute$BRCA
 plots$Telomere$Absolute$COADREAD
 plots$Telomere$Absolute$ESCA
@@ -313,10 +323,9 @@ p2<-ggplot(m[m$variable == "TP1",], aes(x = Chromosome, y = Mb)) +
   theme_bw() + labs(title = "Distance to telomere")
 
 p <- ggarrange(p1,p2, nrow = 2)
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Distance_breakpoints_cent_tel.pdf", width = 10)
+pdf(dist_breakpoints_cent_tel, width = 10)
 p
 dev.off()
-
 # # Decision: Mean of first turning point for each chromosome (among the set of cohorts)
 # 
 # # Date: October 29, 2024
