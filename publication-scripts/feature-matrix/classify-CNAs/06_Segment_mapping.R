@@ -56,9 +56,9 @@ for(level in levels){
   # Find segments in each bin
   # Call the function to find scnas within/intersecting with the corresponding bin and to calculate their length 
   res <- mclapply(coord.list, scna.int.bins, mc.cores = 15)
+  outpath <- paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Segments_mapped_to_bins/", tumor_type,"_",level,".RData")
   save(res,
-       file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Segments_mapped_to_bins/",
-                       tumor_type,"_",level,".RData"))
+       file = outpath)
       
   # Remove from memory and trigger garbage collection
   rm(res)
