@@ -3,24 +3,29 @@
 # Outputs from Pipeline.R
 # Arm fraction cutoff is 90%
 
-# Set working directory
-setwd("/mnt/fabiogokce/gokce")
-
 # Clean the environment
 rm(list = ls())
 gc()
 
-# Required libraries
-library(dplyr)
-library(ggplot2)
-library(ggpubr)
-library(mclust)
-library(openxlsx)
+packages <- c(
+  "openxlsx", "dplyr", "ggplot2", "ggpubr", "mclust"
+)
+
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
 
 # A. Statistical Analysis: The cases in segments files when they are grouped by length and centromere-telomere location
 #-----
-file <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/ClusterII/armfraction_0.9.RData"
-load(file) # Output.List.new
+cluster_2_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/ClusterII/armfraction_0.9.RData"
+cluster2_outpath <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Segment_cluster_cases.xlsx"
+
+load(cluster_2_path) # Output.List.new
 all.data <- c()
 for(cohort in names(Output.List.new)){
   scna <- Output.List.new[[cohort]]
@@ -34,7 +39,7 @@ for(cohort in names(Output.List.new)){
 
 stat <- all.data %>% group_by(CLUSTER1,Centromere.class,Telomere.class) %>% summarise("Freq" = n())
 stat.cohort <- all.data %>% group_by(CLUSTER1,Centromere.class,Telomere.class,cohort) %>% summarise("Freq" = n())
-write.xlsx(stat, file = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Segment_cluster_cases.xlsx")
+write.xlsx(stat, file = cluster2_outpath)
 #-----
 
 # B. Segments after the clustering - Final clusters and number of segments in each cluster
