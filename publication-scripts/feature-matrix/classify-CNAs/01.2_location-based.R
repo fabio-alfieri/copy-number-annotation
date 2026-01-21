@@ -1,6 +1,8 @@
 
 # Classification of segments - Location based
 
+outpath <- paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/ClusterII/","armfraction_",as.character(armf),".RData")
+
 Output.List.new <- list()
 
 for(cohort in cohorts){
@@ -27,4 +29,4 @@ for(cohort in cohorts){
 }
 
 save(Output.List.new,
-     file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/ClusterII/","armfraction_",as.character(armf),".RData"))
+     file = outpath)
