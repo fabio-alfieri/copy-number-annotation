@@ -1,4 +1,6 @@
 
+final_clustering_outpath <- paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Final_clustering/","armfraction_",armf,".RData")
+
 Cluster.data <- list()
 Info <- c()
 for(cohort in names(Output.List.new)){
@@ -33,9 +35,8 @@ for(cohort in names(Output.List.new)){
   m$Cohort <- cohort
   Info <- rbind(Info,m)
 }
-
 save(Cluster.data,Info,
-     file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Final_clustering/","armfraction_",armf,".RData"))
+     file = final_clustering_outpath)
 
 
 # To visualize cluster in IGV (Needs to be modified)
