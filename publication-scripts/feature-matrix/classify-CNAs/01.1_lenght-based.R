@@ -1,6 +1,8 @@
 
 # Classification of segments - Length based
 
+outpath <- paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/ClusterI","armfraction_",as.character(armf),".RData")
+
 Output.List <- list() # Output file
 
 for(tumor_type in cohorts){
@@ -53,4 +55,4 @@ for(tumor_type in cohorts){
 }
 
 save(Output.List,
-     file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/ClusterI","armfraction_",as.character(armf),".RData"))
+     file = outpath)
