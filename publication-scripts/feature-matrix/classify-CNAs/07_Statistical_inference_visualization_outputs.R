@@ -34,6 +34,10 @@ freq_of_top5_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plot
 backbone_path <- "./Data/All_levels_backbonetables.RData"
 totalCNA_biosamples <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero__TotalCNA_divided_binsamples.pdf"
 CNA_scores_cohorts <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero_Arm_Chr_levels_TotalCNA_divided_binsamples.pdf"
+chr9_divided_biosamples_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero__TotalCNA_chr9_divided_binsamples.pdf"
+armfraction_90percent_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/NumSegments_armfraction_90percent.pdf"
+CNA_scores_11_cohorts_05_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_0.5.pdf"
+CNA_scores_11_cohorts_binsamples_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero_divided_binsamples.pdf"
 
 
 load(cluster_2_path) # Output.List.new
@@ -457,7 +461,7 @@ for(covThr in names(plot.datasets)){
   
 }
 
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero__TotalCNA_chr9_divided_binsamples.pdf",width = 20, height = 7)
+pdf(chr9_divided_biosamples_path,width = 20, height = 7)
 plots$covThr_zero$`0.1Mbp`$BRCA
 plots$covThr_zero$`0.1Mbp`$COADREAD
 plots$covThr_zero$`0.1Mbp`$ESCA
@@ -587,8 +591,7 @@ p1 <- ggplot(Info, aes(x = Cohort, y = Size)) +  geom_bar(stat="identity") +
     geom_text(aes(label=Text), vjust=0)
   p <- ggarrange(p1, p2)
 
-
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/NumSegments_armfraction_90percent.pdf", width = 18, height = 10)
+pdf(armfraction_90percent_path, width = 18, height = 10)
 num.segments$`0.9`
 dev.off()
 
@@ -700,8 +703,7 @@ for(covThr in names(plot.datasets)){
   
 }
 
-
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_0.5.pdf",width = 20, height = 7)
+pdf(CNA_scores_11_cohorts_05_path,width = 20, height = 7)
 plots$covThr_0.5.RData$`0.1Mbp`$BRCA
 plots$covThr_0.5.RData$`0.1Mbp`$COADREAD
 plots$covThr_0.5.RData$`0.1Mbp`$ESCA
@@ -715,7 +717,7 @@ plots$covThr_0.5.RData$`0.1Mbp`$PAAD
 plots$covThr_0.5.RData$`0.1Mbp`$STAD
 dev.off()
 
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero_divided_binsamples.pdf",width = 20, height = 7)
+pdf(CNA_scores_11_cohorts_binsamples_path,width = 20, height = 7)
 plots$covThr_zero$`0.1Mbp`$BRCA
 plots$covThr_zero$`0.1Mbp`$COADREAD
 plots$covThr_zero$`0.1Mbp`$ESCA
