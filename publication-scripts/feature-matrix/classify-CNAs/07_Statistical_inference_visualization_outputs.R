@@ -8,7 +8,7 @@ rm(list = ls())
 gc()
 
 packages <- c(
-  "openxlsx", "dplyr", "ggplot2", "ggpubr", "mclust"
+  "openxlsx", "dplyr", "ggplot2", "ggpubr", "mclust", "ComplexHeatmap"
 )
 
 installed <- rownames(installed.packages())
@@ -24,6 +24,17 @@ lapply(packages, library, character.only = TRUE)
 #-----
 cluster_2_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/ClusterII/armfraction_0.9.RData"
 cluster2_outpath <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Segment_cluster_cases.xlsx"
+final_cluster_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Final_clustering/armfraction_0.9.RData"
+final_cluster_outpath <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts.pdf"
+final_cluster_outpath_2 <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts_perchr.pdf"
+percentage_CNAsegments_across_cohorts_ampl_del_plot <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts_amp_del.pdf"
+percentage_CNAsegments_across_cohorts_perchr_ampl_del_plot <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts_perchr_amp_del.pdf"
+heatmap_per_segmentcluster <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Heatmap_scaled_per_segmentclusters.pdf"
+freq_of_top5_path <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Freq_of_top5_in_segmentclusters_chromosomes.pdf"
+backbone_path <- "./Data/All_levels_backbonetables.RData"
+totalCNA_biosamples <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero__TotalCNA_divided_binsamples.pdf"
+CNA_scores_cohorts <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero_Arm_Chr_levels_TotalCNA_divided_binsamples.pdf"
+
 
 load(cluster_2_path) # Output.List.new
 all.data <- c()
@@ -46,8 +57,8 @@ write.xlsx(stat, file = cluster2_outpath)
 # B.1. Cluster I
 # B.1.1 ignore the chromosome information
 #-----
-file <- "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/Final_clustering/armfraction_0.9.RData" # where arm fraction to separate mid-length and arm/chromosome-level segments is 90%
-load(file)
+  
+load(final_cluster_path) # where arm fraction to separate mid-length and arm/chromosome-level segments is 90%
 
 Info <- c() # Ignore the Info loaded with the datasets - make new one where you remove the diploid segments!
 for(cohort in names(Cluster.data)){
@@ -84,7 +95,7 @@ for(clus in unique(data$CLUSTER1)){
 final.p <- ggarrange(plotlist = plots)
 final.p <- annotate_figure(final.p,top = text_grob("Percentage: Number of amp and del segments in a class / Total number of amp and del segments\nArm fraction - 0.9",
                                             color = "red", face = "bold", size = 10))
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts.pdf",
+pdf(final_cluster_outpath,
     width = 13, height = 8)
 final.p
 dev.off()
@@ -119,7 +130,7 @@ for(clus in unique(data$CLUSTER1)){
   plots[[clus]] <- clus.p
 }
 
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts_perchr.pdf",
+pdf(final_cluster_outpath_2,
     width = 18, height = 7)
 plots$`Arm-level`
 plots$`Chromosome-level`
@@ -157,7 +168,8 @@ for(clus in unique(data$CLUSTER1)){
 final.p <- ggarrange(plotlist = plots, common.legend = TRUE)
 final.p <- annotate_figure(final.p,top = text_grob("Percentage: Number of amp(del) segments in a class / Total number of amp and del segments\nArm fraction - 0.9",
                                                    color = "red", face = "bold", size = 10))
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts_amp_del.pdf",
+
+pdf(percentage_CNAsegments_across_cohorts_ampl_del_plot,
     width = 13, height = 8)
 final.p
 dev.off()
@@ -194,7 +206,7 @@ for(clus in unique(data$CLUSTER1)){
   plots[[clus]] <- clus.p
 }
 
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Percentage_of_CNAsegments_cluster1_across_cohorts_perchr_amp_del.pdf",
+pdf(percentage_CNAsegments_across_cohorts_perchr_ampl_del_plot,
     width = 18, height = 7)
 plots$`Arm-level`
 plots$`Chromosome-level`
@@ -221,15 +233,14 @@ counts.scaled <- as.data.frame(apply(counts, 2, scale))
 rownames(counts.scaled) <- rownames(counts)
 
 # Heatmap
-library(ComplexHeatmap)
 m <- as.matrix(counts.scaled)
 ht <- Heatmap(m, rect_gp = gpar(col = "white", lwd = 0.5),
         row_names_gp = gpar(fontsize = 3), 
         name = "Scaled percentage",
         heatmap_width = unit(50,"mm"),
         heatmap_height = unit(300,"mm"))
-  
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Heatmap_scaled_per_segmentclusters.pdf", height = 15)
+
+pdf(heatmap_per_segmentcluster, height = 15)
 ht
 dev.off()
 #-----
@@ -265,7 +276,7 @@ p<- ggplot(freq.m, aes(x=Chromosome, y=Freq, fill=CLUSTER1, label = label)) +
   scale_fill_manual(values = c("#c8553d","#f28f3b","#ffd5c2","#588b8b")) + 
   theme_classic()
 
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/Freq_of_top5_in_segmentclusters_chromosomes.pdf", 
+pdf(freq_of_top5_path, 
     width = 15, height = 6)
 p
 dev.off()
@@ -285,7 +296,7 @@ gc()
 vline <- "#d6ccc2"
 
 # Bins
-load("./Data/All_levels_backbonetables.RData")
+load(backbone_path)
 
 # CNA scores
 output.files <- list.files(path = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/CNA_frequencies",
@@ -368,7 +379,7 @@ for(covThr in names(plot.datasets)){
   
 }
 
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero__TotalCNA_divided_binsamples.pdf",width = 20, height = 7)
+pdf(totalCNA_biosamples,width = 20, height = 7)
 plots$covThr_zero$`0.1Mbp`$BRCA
 plots$covThr_zero$`0.1Mbp`$COADREAD
 plots$covThr_zero$`0.1Mbp`$ESCA
@@ -382,7 +393,7 @@ plots$covThr_zero$`0.1Mbp`$PAAD
 plots$covThr_zero$`0.1Mbp`$STAD
 dev.off()
 
-pdf("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Plots/CNA_scores_11cohorts_interstitial_cov_zero_Arm_Chr_levels_TotalCNA_divided_binsamples.pdf",width = 20, height = 7)
+pdf(CNA_scores_cohorts,width = 20, height = 7)
 plots$covThr_zero$`0.1Mbp`$BRCA
 plots$covThr_zero$`0.1Mbp`$COADREAD
 plots$covThr_zero$`0.1Mbp`$ESCA
@@ -467,7 +478,7 @@ dev.off()
 rm(list = ls())
 gc()
 
-load("./Data/All_levels_backbonetables.RData")
+load(backbone_path)
 
 # CNA scores
 output.files <- list.files(path = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/CNA_frequencies",
@@ -592,7 +603,7 @@ gc()
 vline <- "#d6ccc2"
 
 # Bins
-load("./Data/All_levels_backbonetables.RData")
+load(backbone_path)
 
 # CNA scores
 # output.files <- list.files(path = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/CNA_frequencies",
