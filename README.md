@@ -43,7 +43,7 @@ unzip data.zip
 
 ### Train the XGBoost Models
 
-(Estimated time of download: 2 hours for canonical models.)
+(Estimated time of execution: 2 hours for canonical models.)
 
 The R scripts needed to train the ML models and the subsequent analyses are located at `path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/`
 Please run `main_workflow.R` ad follows:
