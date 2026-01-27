@@ -23,6 +23,7 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 ### Clone GitHub Repository and Download the Data
 
 (Estimated time of download: 2 minutes.)
+
 Clone the GitHub repository on your local machine.
 ```bash
 git clone https://github.com/fabio-alfieri/copy-number-annotation.git
@@ -33,6 +34,7 @@ git clone https://github.com/fabio-alfieri/copy-number-annotation.git
 Download [here](https://zenodo.org/api/records/17737479/draft/files/data.zip/content) (Zenodo) the data.zip folder (required), move the data.zip in the cloned GitHub folder and unzip it.
 
 (Estimated time of download: 30 minutes.)
+
 ```bash
 cd path/to/GitHub/copy-number-annotation/
 wget -O data.zip https://zenodo.org/api/records/17737479/draft/files/data.zip/content
@@ -42,6 +44,7 @@ unzip data.zip
 ### Train the XGBoost Models
 
 (Estimated time of download: 2 hours for canonical models.)
+
 The R scripts needed to train the ML models and the subsequent analyses are located at `path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/`
 Please run `main_workflow.R` ad follows:
 ```bash
