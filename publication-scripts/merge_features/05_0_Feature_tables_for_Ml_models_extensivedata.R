@@ -4,15 +4,24 @@
 
 rm(list = ls())
 
-# Set working directory
-setwd("/mnt/fabiogokce/gokce")
+packages <- c("maditr")
 
-# Required libraries
-library(maditr)
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
+
+backbone_path <- "./Data/Backbone_tables_with_all_features_GS.RData"
+backbone_path_FA <- "./Data/Backbone_tables_with_features_FA.RData"
+outpath <- "./Data/Feature_tables_different_feature_combn_updated_cancer_drivers_and_HIPPIE.RData"
 
 # A. Availability of features
-load("./Data/Backbone_tables_with_all_features_GS.RData")
-load("./Data/Backbone_tables_with_features_FA.RData") # No 3Mbp, that is why it is not in the common levels, and I did not run the ML Models
+load(backbone_path)
+load(backbone_path_FA) # No 3Mbp, that is why it is not in the common levels, and I did not run the ML Models
 
 # For an example focal level 
 #data <- Features.FA[["1Mbp"]]
@@ -109,8 +118,8 @@ for(name1 in names(dist.FGS)){
 }
 
 
-load("./Data/Backbone_tables_with_all_features_GS.RData")
-load("./Data/Backbone_tables_with_features_FA.RData")
+load(backbone_path)
+load(backbone_path_FA)
 
 common.levels <- intersect(names(backbone_tables_w_all_features_GS_updated),
                            names(Features.FA))
@@ -209,4 +218,4 @@ for(level in names(Feature.tables)){
 }
 
 save(Final.feature.tables, 
-     file = "./Data/Feature_tables_different_feature_combn_updated_cancer_drivers_and_HIPPIE.RData")
+     file = outpath)
