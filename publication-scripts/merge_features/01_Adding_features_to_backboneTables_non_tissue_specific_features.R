@@ -9,24 +9,38 @@
 rm(list = ls())
 gc()
 
-# Set working directory 
+packages <- c("dplyr")
 
-setwd("/mnt/fabiogokce/gokce")
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
 
-#Required libraries
-library(dplyr)
+lapply(packages, library, character.only = TRUE)
 
 #1.Non Tissue-specific features
 
+genes_per_bins_path <- "./Data/All_levels_genes_per_bins.RData"
+backbone_path <- "./Data/All_levels_backbonetables.RData"
+corum_features_path <- "./Data/Ensembl_CORUM_features_tissue_general.RData"
+
+table_with_non_tissue_specific_features_path <- "./Data/Backbone_tables_with_non_tissue_specific_features.RData"
+ohnolog_path <- "./Data/OhnologList.RData"
+paralog_path <- "./Data/ParalogList.RData"
+fragile_sites_path <- "./Data/Distance_to_closest_fragile_site.RData"
+fragile_sites_weighted_path <- "./Data/FeatureOptimization_Fragile_sites_weighted_distance_scores.RData"
+
 #Most of the non Tissue-specific features are gene based. Therefore, we need genes located on the corresponding bin.
 #Genes per bins for focal CNA
-load("./Data/All_levels_genes_per_bins.RData")
+load(genes_per_bins_path)
 
 #All backbone tables for focal CNAs and aneuploidies
-load("./Data/All_levels_backbonetables.RData")
+load(backbone_path)
 
 #Features: 2. Ensembl and CORUM related features
-load("./Data/Ensembl_CORUM_features_tissue_general.RData")
+load(corum_features_path)
 
 levels <- names(chr_backbone_namesfixed)
 backbone_tables_w_features <- list()
@@ -132,7 +146,7 @@ for(level in levels){
   backbone <- merge(backbone,features.df, by="bin")
   backbone_tables_w_features[[level]] <- backbone}
 
-save(backbone_tables_w_features, file = "./Data/Backbone_tables_with_non_tissue_specific_features.RData")
+save(backbone_tables_w_features, file = table_with_non_tissue_specific_features_path)
 
 #Features: 1. Ohnologs and Paralogs
 
@@ -140,8 +154,8 @@ rm(list = ls())
 gc()
 
 # Ohnologs
-load("./Data/Backbone_tables_with_non_tissue_specific_features.RData")
-load("./Data/OhnologList.RData")
+load(table_with_non_tissue_specific_features_path)
+load(ohnolog_path)
 backbone_tables_w_features_added <- list()
 for(level in names(backbone_tables_w_features)){
   df <- backbone_tables_w_features[[level]]
@@ -180,13 +194,13 @@ for(level in names(backbone_tables_w_features)){
   features.df[,2:6] <- sapply(features.df[,2:6], as.numeric)
   df <- merge(df,features.df, by="bin")
   backbone_tables_w_features_added[[level]] <- df}
-save(backbone_tables_w_features_added, file = "./Data/Backbone_tables_with_non_tissue_specific_features.RData")
+save(backbone_tables_w_features_added, file = table_with_non_tissue_specific_features_path)
 
 # Paralogs
 
 rm(list = ls())
-load("./Data/Backbone_tables_with_non_tissue_specific_features.RData")
-load("./Data/ParalogList.RData")
+load(table_with_non_tissue_specific_features_path)
+load(paralog_path)
 paralogs$n_paralogs <- as.numeric(paralogs$n_paralogs)
 backbone_tables_w_features_added_new <- list()
 for(level in names(backbone_tables_w_features_added)){
@@ -224,14 +238,14 @@ for(level in names(backbone_tables_w_features_added)){
   features.df[,2:6] <- sapply(features.df[,2:6], as.numeric)
   df <- merge(df,features.df, by="bin")
   backbone_tables_w_features_added_new[[level]] <- df}
-save(backbone_tables_w_features_added_new, file = "./Data/Backbone_tables_with_non_tissue_specific_features.RData")
+save(backbone_tables_w_features_added_new, file = table_with_non_tissue_specific_features_path)
 
 #Features: 3. Distance to fragile sites
 
 rm(list = ls())
-load("./Data/Backbone_tables_with_non_tissue_specific_features.RData")
-load("./Data/Distance_to_closest_fragile_site.RData")
-load("./Data/FeatureOptimization_Fragile_sites_weighted_distance_scores.RData")
+load(table_with_non_tissue_specific_features_path)
+load(fragile_sites_path)
+load(fragile_sites_weighted_path)
 
 backbone_tables_w_features_non_tissue_specific <- list()
 for(level in names(backbone_tables_w_features_added_new)){
@@ -247,4 +261,4 @@ for(level in names(backbone_tables_w_features_added_new)){
 }
 
 save(backbone_tables_w_features_non_tissue_specific,
-     file =  "./Data/Backbone_tables_with_non_tissue_specific_features.RData") 
+     file =  table_with_non_tissue_specific_features_path) 
