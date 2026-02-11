@@ -19,7 +19,7 @@ library(ggpubr)
 rm(list=ls())
 
 # Set here the working directory
-knitr::opts_knit$set(root.dir = "/Volumes/Crucial X9/gukguk/old_WS/gokce")
+knitr::opts_knit$set(root.dir = "path/to/GitHub/")
 
 gc()
 ```
