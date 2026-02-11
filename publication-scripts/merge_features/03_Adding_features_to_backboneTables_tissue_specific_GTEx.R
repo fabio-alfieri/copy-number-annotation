@@ -7,17 +7,30 @@ gc()
 # Tissue specific features (from GS)
 # 2. GTEx mRNA and protein levels
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce")
+packages <- c("maditr")
 
-# Required libraries
-library(maditr) # for dcast
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
+
+GTEx_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData"
+GTEx_ts_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific.RData"
+backbone_path_with_features <- "./Data/Backbone_tables_with_all_features_GS_except_GTEx.RData"
+backbone_outpath <- "./Data/Backbone_tables_with_all_features_GS.RData"
+protein_levels_per_bins_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE.RData"
+protein_levels_per_bins_ts_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific_HIPPIE.RData"
+protein_levels_cutoff_073_path <- "./Data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE_cutoff_073.RData"
 
 # PART B
 # GTEx data (Calculated based on Interactome INSIDER interactions)
 
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins.RData") # Results
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific.RData") # Results.TS
+load(GTEx_path) # Results
+load(GTEx_ts_path) # Results.TS
 
 # Cohorts that GTEx data is available - Skip this part (update on September 18, 2024)
 #gtex.cohorts <- unique(Results$`1Mbp`$eGTEX.rna$Cohorts) # Since the data prepared for the cohorts common in all the different datasets
@@ -27,7 +40,7 @@ dataset <- "scaled.GTEx.v8.TPM"
 gtex.cohorts <- unique(Results$`1Mbp`$scaled.GTEx.v8.TPM$Cohorts)
 
 # Feature data with the features previously added 
-load("./Data/Backbone_tables_with_all_features_GS_except_GTEx.RData")
+load(backbone_path_with_features)
 
 levels <- names(backbone_tables_w_all_features_GS)
 
@@ -71,7 +84,7 @@ for(level in levels){
     }
 }
 
-save(backbone_tables_w_all_features_GS_complete, file = "./Data/Backbone_tables_with_all_features_GS.RData")
+save(backbone_tables_w_all_features_GS_complete, file = backbone_outpath)
 
 rm(list = ls())
 gc()
@@ -79,15 +92,15 @@ gc()
 # PART B
 # GTEx data (Calculated based on HIPPIE interactions -  no cutoff)
 
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE.RData") # Results
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific_HIPPIE.RData") # Results.TS
+load(protein_levels_per_bins_path) # Results
+load(protein_levels_per_bins_ts_path) # Results.TS
 
 # Dataset to be used
 dataset <- "scaled.GTEx.v8.TPM"
 gtex.cohorts <- unique(Results$`1Mbp`$scaled.GTEx.v8.TPM$Cohorts)
 
 # Feature data with the features previously added 
-load("./Data/Backbone_tables_with_all_features_GS.RData")
+load(backbone_outpath)
 
 levels <- names(backbone_tables_w_all_features_GS_complete)
 
@@ -133,7 +146,7 @@ gc()
 
 levels <- names(backbone_tables_w_all_features_GS_complete)
 
-load("./Data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE_cutoff_073.RData") # Results
+load(protein_levels_cutoff_073_path) # Results
 
 # Dataset to be used
 dataset <- "scaled.GTEx.v8.TPM"
@@ -166,4 +179,4 @@ for(level in levels){
   }
 }
 
-save(backbone_tables_w_all_features_GS_complete, file = "./Data/Backbone_tables_with_all_features_GS.RData")
+save(backbone_tables_w_all_features_GS_complete, file = backbone_outpath)
