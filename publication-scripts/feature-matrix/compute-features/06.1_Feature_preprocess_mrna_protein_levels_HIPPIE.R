@@ -22,12 +22,12 @@ lapply(packages, library, character.only = TRUE)
 wd <- 'path/to/GitHub/copy-number-annotation/'
 setwd(wd)
 
-gtex_cohort_map_path <- "./feature_matrix_data/GTEx_different_versions_TCGA_cohort_map.RData"
-backbone_tables_path <- "./feature_matrix_data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData"
-gtex_hippie <- "./feature_matrix_data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE.RData"
-tissue_specific_genes_path <- "./feature_matrix_data/Tissue_specific_genes_based_on_GTEx_v8.RData"
-tissue_specific_proteins_path <- "./feature_matrix_data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
-output_path <- "./feature_matrix_data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific_HIPPIE.RData"
+gtex_cohort_map_path <- "feature_matrix_data/GTEx_different_versions_TCGA_cohort_map.RData"
+backbone_tables_path <- "feature_matrix_data/Backbone_tables_with_non_tissue_specific_features_CORUM_HIPPIE.RData"
+gtex_hippie <- "feature_matrix_data/GTEx_rna_protein_level_differentdatasets_per_bins_HIPPIE.RData"
+tissue_specific_genes_path <- "feature_matrix_data/Tissue_specific_genes_based_on_GTEx_v8.RData"
+tissue_specific_proteins_path <- "feature_matrix_data/Tissue_specific_proteins_based_on_eGTEx_TSscore.RData"
+output_path <- "feature_matrix_data/GTEx_rna_protein_level_differentdatasets_per_bins_Tissue_specific_HIPPIE.RData"
 
 #GTEx data
 load(gtex_cohort_map_path)
