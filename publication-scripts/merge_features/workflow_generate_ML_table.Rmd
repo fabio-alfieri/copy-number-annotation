@@ -1,0 +1,70 @@
+---
+title: "Classification based amplification and deletion scores"
+output: html_document
+date: "2026-02-10"
+---
+
+  
+```{r setup, include=FALSE}
+# Classification based amplification and deletion scores
+
+# Required libraries
+library(stringr)
+library(parallel)
+library(reshape2)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+
+rm(list=ls())
+
+# Set here the working directory
+knitr::opts_knit$set(root.dir = "/Volumes/Crucial X9/gukguk/old_WS/gokce")
+
+gc()
+```
+
+***3. Preparing ML Tables - Interactome INSIDER (Alternative to HIPPIE)***
+```{r script3.Interactome, include=FALSE}
+# 3. Preparing ML Tables - Interactome INSIDER
+
+# Adding all the features (Output from Merging Features to the Dependent var -amp and del freq- table)
+rm(list = ls())
+
+# Feature Tables - Select levels of interest and Feature combination of interest
+# 0.1Mbp
+load("./Data/Feature_tables_for_ML_models_11cohorts_IntINSIDER.RData")
+features <- Feature.tables.for.ML$`0.1Mbp`
+rm("Feature.tables.for.ML")
+gc()
+
+# CNA frequencies
+output.files <- list()
+output.files[["Length_Location"]] <- list.files(path = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/CNA_frequencies/Length_Location",
+                                                full.names = T, recursive = F)
+output.files[["Length"]] <- list.files(path = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/CNA_frequencies/Length",
+                                       full.names = T, recursive = F)
+
+# Some fixed cutoffs
+segmean <- 0.2
+armfraction <- 0.9
+level <- "0.1Mbp"
+
+for(name in names(output.files)){
+  files <- output.files[[name]]
+  for(file in files){
+    bincov <- paste(strsplit(basename(file),"_")[[1]][[3]],gsub(".RData","",strsplit(basename(file),"_")[[1]][[4]]),sep = "_")
+    load(file)
+    variable <- names(All.class.data)
+    classes <- names(All.class.data[[variable]][[level]])
+    source('./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/5_ML_Tables.R', local = T, verbose = F)
+    save(ML.Tables,
+         file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/MLTables_updated/InteractomeINSIDER/",
+                       name,"_",variable,"_",level,"_",bincov,".RData"))
+    
+  }
+}
+
+
+```
+
