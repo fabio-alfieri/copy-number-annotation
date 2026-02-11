@@ -4,11 +4,11 @@ gc(full=T)
 wd <- 'path/to/GitHub/copy-number-annotation/'
 setwd(wd)
 
-ml_merged_tel_path <- "./feature_matrix_data/ml_merged_tel.rds"
-ml_merged_tel_cg_outpath <- "./feature_matrix_data/ml_merged_tel_cg.rds"
-ampl_freq_path <- './plots/00_ampl_freq.pdf'
-del_freq_path <- './plots/00_del_freq.pdf'
-all_freq_path <- '/plots/00_all_freq.pdf'
+ml_merged_tel_path <- "feature_matrix_data/ml_merged_tel.rds"
+ml_merged_tel_cg_outpath <- "feature_matrix_data/ml_merged_tel_cg.rds"
+ampl_freq_path <- 'plots/00_ampl_freq.pdf'
+del_freq_path <- 'plots/00_del_freq.pdf'
+all_freq_path <- 'plots/00_all_freq.pdf'
 
 ml_merged <- readRDS(ml_merged_path)
 
