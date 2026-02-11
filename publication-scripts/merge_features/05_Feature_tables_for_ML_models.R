@@ -5,14 +5,17 @@
 rm(list = ls())
 gc()
 
-# Set working directory
-setwd("/mnt/fabiogokce/gokce")
-
 # For 11 cancer types that we have all the features available
 
 # Features datasets
-load("./Data/Backbone_tables_with_all_features_GS.RData")
-load("./Data/Backbone_tables_with_features_FA.RData")
+
+backbone_path <- "./Data/Backbone_tables_with_all_features_GS.RData"
+backbone_path_FA <- "./Data/Backbone_tables_with_features_FA.RData"
+outpath_HIPPIE <- "./Data/Feature_tables_for_ML_models_11cohorts_HIPPIE.RData"
+outpath_IntINSIDER <- "./Data/Feature_tables_for_ML_models_11cohorts_IntINSIDER.RData"
+
+load(backbone_path)
+load(backbone_path_FA)
 
 common.levels <- intersect(names(backbone_tables_w_all_features_GS_updated),names(Features.FA))
 common.cohorts <- c("BRCA","COADREAD","ESCA","GBMLGG","KIRC","KIRP","LUSC","LUAD","OV","PAAD","STAD") # All features available for those
@@ -81,7 +84,7 @@ for(level in common.levels){
   Feature.tables.for.ML[[level]] <- level.m
 }
 
-save(Feature.tables.for.ML, file = "./Data/Feature_tables_for_ML_models_11cohorts_HIPPIE.RData")
+save(Feature.tables.for.ML, file = outpath_HIPPIE)
 
 # A. Prepare feature lists - Interactome INSIDER
 
@@ -146,5 +149,5 @@ for(level in common.levels){
   Feature.tables.for.ML[[level]] <- level.m
 }
 
-save(Feature.tables.for.ML, file = "./Data/Feature_tables_for_ML_models_11cohorts_IntINSIDER.RData")
+save(Feature.tables.for.ML, file = outpath_IntINSIDER)
 
