@@ -25,7 +25,7 @@ setwd(wd)
 
 ensembl_biomart_path <- "feature_matrix_data/hg19_14022024.txt"
 ccds_path <- "feature_matrix_data/CCDS.current_hg19.txt"
-subunits_path <- ".feature_matrix_data/HumanPCgenes_Subunits_allchr.RData"
+subunits_path <- "feature_matrix_data/HumanPCgenes_Subunits_allchr.RData"
 PPIs_intINSIDER <- "feature_matrix_data/H_sapiens_interfacesHQ_genename.RData"
 hippie_tissue_general_path <- "feature_matrix_data/HIPPIE_PPIs_tissue_general.RData"
 ensembl_corum_path <- "feature_matrix_data/Ensembl_CORUM_features_tissue_general.RData" 
@@ -101,46 +101,6 @@ for(i in 1:nrow(gene.table)){
 
 rm(list = setdiff(ls(),"gene.table"))
 gc()
-
-# PPIs from HIPPIE
-# # url for the data
-# #url <- "https://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/hippie_current.txt" # v2.3 - 831932 rows
-# url <- "https://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/HIPPIE-current.mitab.txt" #v2.3 - 783182 rows
-# download.file(url, destfile = "./Downloads/HIPPIE_PPIs.txt")
-# ppis <- read.delim("./Downloads/HIPPIE_PPIs.txt", header = T)
-# 
-# all.genes <- union(ppis$Gene.Name.Interactor.A, ppis$Gene.Name.Interactor.B)
-# 
-# gene.table.hippie <- c()
-# for(gene in all.genes){
-#   bi <- ppis[ppis$Gene.Name.Interactor.A == gene | ppis$Gene.Name.Interactor.B == gene,]
-#   # Remove homodimers
-#   bi <- bi[bi$Gene.Name.Interactor.A != bi$Gene.Name.Interactor.B,]
-#   bi <- bi[complete.cases(bi),]
-#   # Confidence interval cutoff
-#   bi_063 <- bi[bi$Confidence.Value >= 0.63,]
-#   bi_073 <- bi[bi$Confidence.Value >= 0.73,]
-#   # PPIs
-#   bi <- unique(setdiff(union(bi$Gene.Name.Interactor.A,bi$Gene.Name.Interactor.B),gene))
-#   PPIs <- paste(bi,collapse = "::") # without confidence cutoff
-#   n_PPIs <- length(bi)
-#   # PPIs with confidence interval cutoff
-#   # Cutoff 0.63
-#   PPIs_063 <- unique(setdiff(union(bi_063$Gene.Name.Interactor.A,bi_063$Gene.Name.Interactor.B),gene))
-#   n_PPIs_063 <- length(PPIs_063)
-#   PPIs_063 <- paste(PPIs_063,collapse = "::")
-#   # Cutoff 0.73
-#   PPIs_073 <- unique(setdiff(union(bi_073$Gene.Name.Interactor.A,bi_073$Gene.Name.Interactor.B),gene))
-#   n_PPIs_073 <- length(PPIs_073)
-#   PPIs_073 <- paste(PPIs_073,collapse = "::")
-#   
-#   gene.table.hippie <- rbind(gene.table.hippie, 
-#                              c(gene,PPIs,n_PPIs,PPIs_063,n_PPIs_063,PPIs_073,n_PPIs_073))
-# }
-# gene.table.hippie <- as.data.frame(gene.table.hippie)
-# colnames(gene.table.hippie) <- c("Gene","PPIs","n_PPIs","PPIs_063","n_PPIs_063","PPIs_073","n_PPIs_073")
-# 
-# save(gene.table.hippie, file = "./Data/HIPPIE_PPIs_tissue_general.RData") # Updated on October 2, 2024
 
 load(hippie_tissue_general_path)
 colnames(gene.table.hippie)[2:7] <- paste(colnames(gene.table.hippie)[2:7],"HIPPIE",sep = "_")
