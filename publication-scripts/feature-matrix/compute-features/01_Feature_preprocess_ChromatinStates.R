@@ -568,7 +568,7 @@ rm(list = ls())
 library(rlist)
 
 assign("Length",get(load("feature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount.RData")))
-assign("Abundance",get(load("eature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")))
+assign("Abundance",get(load("feature_matrix_data/ChromatinStates_all_levels_tissues_avgcounts&scaled_avgcount_methodII.RData")))
 rm("ChrStates.tissues")
 
 data.list <- list("Abundance" = Abundance,
@@ -594,4 +594,4 @@ for(level in levels){
     Chromatin.States[[level]][[tissue]] <- tissue.l}}
 
 # Counts, scaled, normalized for length and abundance methods (with an binary abundance matrix)
-save(Chromatin.States, file = "eature_matrix_data/Chromatin_states_all_levels_tissues_all_methods.RData")
+save(Chromatin.States, file = "feature_matrix_data/Chromatin_states_all_levels_tissues_all_methods.RData")
