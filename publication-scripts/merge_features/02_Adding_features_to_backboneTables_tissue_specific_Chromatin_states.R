@@ -7,12 +7,20 @@ gc()
 # Tissue specific features (from GS)
 # 1. Chromatin States
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce") #If you're working on workstation
+packages <- c("data.table", "dplyr")
 
-#Required libraries
-library(data.table)
-library(dplyr)
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
+
+chromatin_states_path <- "./Data/Chromatin_states_all_levels_tissues_all_methods.RData"
+backbone_with_non_tissue_specific_path <- "./Data/Backbone_tables_with_non_tissue_specific_features.RData"
+backbone_with_features_outpath <- "./Data/Backbone_tables_with_all_features_GS_except_GTEx.RData"
 
 #NOTE
 #GTEx data was prepared for all the available TCGA match. To get the data for the cohorts that we are interested, use the cohorts below. 
@@ -24,8 +32,8 @@ cohorts <- c("BRCA","LUAD","LUSC","CESC","THCA","HNSC","PAAD","COADREAD","GBMLGG
              "LIHC","ESCA","STAD","UCS","OV") #Cohorts of interest - 23 cohorts
 
 #Features: 1. Chromatin states (Available data for 14 tissues)
-load("./Data/Chromatin_states_all_levels_tissues_all_methods.RData") #Abundance and length method, together with normalized by chromosome coverage! 
-load("./Data/Backbone_tables_with_non_tissue_specific_features.RData") #Backbone tables with non-tissue specific features
+load(chromatin_states_path) #Abundance and length method, together with normalized by chromosome coverage! 
+load(backbone_with_non_tissue_specific_path) #Backbone tables with non-tissue specific features
 
 levels <- names(Chromatin.States)
 backbone_tables_w_all_features_GS <- list()
@@ -48,5 +56,5 @@ for(level in levels){
 rm(list = setdiff(ls(),c("cohorts","backbone_tables_w_all_features_GS")))
 
 save(backbone_tables_w_all_features_GS,
-     file = "./Data/Backbone_tables_with_all_features_GS_except_GTEx.RData")
+     file = backbone_with_features_outpath)
 
