@@ -9,23 +9,23 @@ gc()
 # Tissue specific features (from GS)
 # 3. Cancer drivers
 
-# Set working directory 
-setwd("/mnt/fabiogokce/gokce")
-
-# Required libraries
+cancer_drivers_path <- "./Data/Distance_to_closest_cancer-drivers_intogen.RData"
+cancer_drivers_weighted_path <- "./Data/Distance_to_cancer-drivers_intogen_weighted.RData"
+cancer_drivers_density_path <- "./Data/Density_cancer-drivers_intogen.RData"
+backbone_path <- "./Data/Backbone_tables_with_all_features_GS.RData"
 
 # Cancer drivers
 # Distance
-load("./Data/Distance_to_closest_cancer-drivers_intogen.RData")
-load("./Data/Distance_to_cancer-drivers_intogen_weighted.RData")
+load(cancer_drivers_path)
+load(cancer_drivers_weighted_path)
 
 # Density and weighted density
-load("./Data/Density_cancer-drivers_intogen.RData")
+load(cancer_drivers_density_path)
 
 intogen.cohorts <- names(Density.drivers$`0.1Mbp`)
 
 # Feature data with the features previously added
-load("./Data/Backbone_tables_with_all_features_GS.RData")
+load(backbone_path)
 levels <- names(backbone_tables_w_all_features_GS_complete)
 
 backbone_tables_w_all_features_GS_updated <- list()
@@ -66,4 +66,4 @@ for(level in levels){
   }
 }
 
-save(backbone_tables_w_all_features_GS_updated, file = "./Data/Backbone_tables_with_all_features_GS.RData")
+save(backbone_tables_w_all_features_GS_updated, file = backbone_path)
