@@ -37,14 +37,3 @@ for(cohort in names(Output.List.new)){
 }
 save(Cluster.data,Info,
      file = final_clustering_outpath)
-
-
-# To visualize cluster in IGV (Needs to be modified)
-# for(cluster1 in unique(data.new$CLUSTER1)){
-#   for(cluster2 in unique(data$CLUSTER2)){
-#     m <- data.new[data.new$CLUSTER1 == cluster1 & data.new$CLUSTER2 == cluster2,c(2,3,4,5,7)]
-#     colnames(m) <- c("ID","chrom","loc.start","loc.end","seg.mean")
-#     write.table(m, 
-#                 file = paste0("./IGV/Cluster_","_",cohort,"_",paste(cluster1,cluster2,sep = "_"),".seg"), 
-#                 quote = F, row.names = F,col.names = T,sep = "\t")}
-# }
