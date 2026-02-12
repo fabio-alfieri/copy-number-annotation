@@ -8,13 +8,20 @@ date: "2026-02-10"
 ```{r setup, include=FALSE}
 # Classification based amplification and deletion scores
 
-# Required libraries
-library(stringr)
-library(parallel)
-library(reshape2)
-library(dplyr)
-library(ggplot2)
-library(ggpubr)
+packages <- c(
+  "stringr", "parallel", 
+  "reshape2", "dplyr",
+  "ggplot2", "ggpubr"
+)
+
+installed <- rownames(installed.packages())
+for (pkg in packages) {
+  if (!pkg %in% installed) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+lapply(packages, library, character.only = TRUE)
 
 rm(list=ls())
 
@@ -57,7 +64,7 @@ for(name in names(output.files)){
     load(file)
     variable <- names(All.class.data)
     classes <- names(All.class.data[[variable]][[level]])
-    source('./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/5_ML_Tables.R', local = T, verbose = F)
+    source('publication-scripts/5_ML_Tables.R', local = T, verbose = F)
     save(ML.Tables,
          file = paste0("./Codes/Codes-CNAs/MethodII/Parameter_tuning_segments/Data/MLTables_updated/InteractomeINSIDER/",
                        name,"_",variable,"_",level,"_",bincov,".RData"))
