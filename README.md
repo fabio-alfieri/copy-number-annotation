@@ -22,6 +22,8 @@ Amplifications and deletions of genomic regions are pervasive features of cancer
 
 ### Clone GitHub Repository and Download the Data
 
+All data is provided on the [Zenodo](https://zenodo.org/records/17737479)
+
 (Estimated time of download: 2 minutes.)
 
 Clone the GitHub repository on your local machine.
