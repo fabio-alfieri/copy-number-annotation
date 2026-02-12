@@ -29,9 +29,7 @@ Clone the GitHub repository on your local machine.
 git clone https://github.com/fabio-alfieri/copy-number-annotation.git
 ```
 
-**(change Zenodo link with final after publishing repo)**
-
-Download [here](https://zenodo.org/api/records/17737479/draft/files/data.zip/content) (Zenodo) the data.zip folder (required), move the data.zip in the cloned GitHub folder and unzip it.
+Download [here](https://zenodo.org/records/17737479/files/data.zip?download=1) (Zenodo) the data.zip folder (required), move the data.zip in the cloned GitHub folder and unzip it.
 
 (Estimated time of download: 30 minutes.)
 
@@ -70,7 +68,7 @@ cd path/to/GitHub/copy-number-annotation/publication-scripts/machine-learning/
 Rscript compute_sum_abs_SHAPs.R
 ```
 Annotation matrices and plots are stored at `data/annotation/merged_res_annot_*` and `data/plots/`, respectively.
-Annotation matrices are also available on Zenodo [here](https://zenodo.org/api/records/17737479/draft/files/annotation-matrix.zip/content) or:
+Annotation matrices are also available on Zenodo [here](https://zenodo.org/records/17737479/files/annotation-matrix.zip?download=1) or:
 ```bash
 cd path/to/GitHub/copy-number-annotation/
 wget -O annotation-matrix.zip https://zenodo.org/api/records/17737479/draft/files/annotation-matrix.zip/content
@@ -79,7 +77,7 @@ unzip annotation-matrix.zip
 
 ### Supplementary 
 #### Reproduce the Feature Matrix
-Pre-built feature matrix are available in .tsv on Zenodo [here](https://zenodo.org/api/records/17737479/draft/files/feature-matrix.zip/content), or as follows:
+Pre-built feature matrix are available in .tsv on Zenodo [here](https://zenodo.org/records/17737479/files/feature-matrix.zip?download=1), or as follows:
 ```bash
 cd path/to/GitHub/copy-number-annotation/
 wget -O feature-matrix.zip https://zenodo.org/api/records/17737479/draft/files/feature-matrix.zip/content
