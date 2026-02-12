@@ -23,7 +23,7 @@ ohnologs_path_ensembl <- "feature_matrix_data/ensembl_release56.txt"
 ohnolog_database_path <- "feature_matrix_data/Ohnologs"
 ohnolog_list_path <- "feature_matrix_data/OhnologList.RData"
 
-paralogs_path <- "feature_matrix_dataTable_S8.csv"
+paralogs_path <- "feature_matrix_data/Table_S8.csv"
 paralog_outpath <- "feature_matrix_data/ParalogList.RData"
 
 ohnologs <- list()
