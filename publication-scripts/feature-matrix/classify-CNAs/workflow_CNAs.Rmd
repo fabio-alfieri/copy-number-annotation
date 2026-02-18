@@ -55,7 +55,7 @@ arm.fraction <- c(#0.5,0.8,
                   0.9)
 
 for(armf in arm.fraction){
-  source('publication-scripts/1.1_segment_classification.R', local = T, verbose = F)
+  source('publication-scripts/01.1_lenght-based.R', local = T, verbose = F)
 }
 
 # 1.2. Location-based (Continue with 11 cancer types)
@@ -90,7 +90,7 @@ rm(list = setdiff(ls(),c("output.files","cohorts","centromere","telomere","Data"
 for(file in output.files){
   load(file) # Output.List
   armf <- gsub(".RData","",strsplit(basename(file),"_")[[1]][2])
-  source('publication-scripts/1.2_segment_classification.R', local = T, verbose = F)
+  source('publication-scripts/01.2_location-based.R', local = T, verbose = F)
 }
 
 # 1.3. Clusters (Based on cluster I and cluster II, deciding on final clusters & Sample size for each cluster)
@@ -101,7 +101,7 @@ output.files <- list.files(path = "./Codes/Codes-CNAs/MethodII/Parameter_tuning_
 for(file in output.files){
   load(file) # Output.List.new
   armf <- gsub(".RData","",strsplit(basename(file),"_")[[1]][2])
-  source('publication-scripts/1.3_segment_classification.R', local = T, verbose = F)
+  source('publication-scripts/01.3_segment_classification.R', local = T, verbose = F)
 }
 
 ```
