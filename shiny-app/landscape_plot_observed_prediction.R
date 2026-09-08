@@ -6,6 +6,16 @@ landscape_plot_observed_prediction <- function(filtered_landscape,
                                                annot_to_plot_ticks = "all",
                                                annot_to_plot_kde = "all",
                                                make.interactive = TRUE) {
+  # make.interactive controls what is returned:
+  #   TRUE     -> a single girafe (interactive) object   [on-screen / HTML export]
+  #   FALSE    -> a single ggplot (static, with legend)  [PDF export]
+  #   "both"   -> list(interactive = <girafe>, static = <ggplot>)
+  #               Use this so the (expensive) data prep and layer-building
+  #               below runs ONCE per user selection, and both the screen
+  #               view and every download format are built from the same
+  #               result instead of re-filtering/re-plotting from scratch
+  #               for each output.
+  
   valid_input <- c("ampl", "del")
   if (!all(model_mask %in% valid_input)) stop("Invalid model selected. Use 'ampl' and/or 'del'.")
   
@@ -17,7 +27,24 @@ landscape_plot_observed_prediction <- function(filtered_landscape,
   if (length(genome_mask) == 22) genome_mask <- "WHOLE GENOME"
   if (length(genome_mask) > 1) genome_mask <- paste(genome_mask, collapse = ", ")
   
-  unique_classes <- c("Negative Selection", "Depletion of Observation - Negative Selection", "Positive Selection", "Excess of Observation - Positive Selection", "Occurrence", "No Detectable Force")
+  if (annot_to_plot == "annot_final"){
+  
+    # ANNOT_FINAL_CLASSES (0_LoadData.R) FIRST, so a given class always
+    # keeps the same colour across selections. union() rather than the
+    # fixed list alone: should an unforeseen class ever reach the data, it
+    # still gets a palette entry instead of silently dropping out of the
+    # plot with a missing fill.
+    unique_classes <- union(
+      ANNOT_FINAL_CLASSES,
+      unique(as.character(filtered_landscape[[annot_to_plot]]))
+    )
+  
+  } else {
+  
+    unique_classes <- unique(filtered_landscape[,annot_to_plot])
+
+  }
+  
   n_of_classes <- length(unique_classes)
   
   if (identical(annot_to_plot_ticks, "all")) {
@@ -38,9 +65,6 @@ landscape_plot_observed_prediction <- function(filtered_landscape,
     annot_to_plot_kde <- intersect(annot_to_plot_kde, unique_classes)
   }
   
-  title <- ifelse(make.interactive, "", "Segment Annotation (based on SHAP values)")
-  subtitle <- ifelse(make.interactive, "", paste0("[", genome_mask, "] [", type_mask, "] [", track_mask, "]"))
-  
   filtered_landscape <- filtered_landscape %>% dplyr::mutate(pos = dplyr::row_number())
   chr_bounds <- get_chr_bounds(filtered_landscape)
   base_plot <- plot_base_layer(chr_bounds, filtered_landscape)
@@ -51,7 +75,7 @@ landscape_plot_observed_prediction <- function(filtered_landscape,
   
   base_plot <- base_plot +
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 0.2) +
-    labs(title = title, subtitle = subtitle, x = "Genomic Position", y = paste0("CNA frequency (", cluster_mask, ")")) +
+    labs(x = "Genomic Position", y = paste0("CNA frequency (", cluster_label(cluster_mask), ")")) +
     theme_classic() + 
     theme(legend.position = "none")
   
@@ -76,7 +100,7 @@ landscape_plot_observed_prediction <- function(filtered_landscape,
     lapply(selected_names, function(name) {
       idx <- match(name, unique_classes)
       y <- (idx %% 2) + 1
-      list(mode = ifelse(n_of_classes > 50, all_modes[y], "obs"), name = name)
+      list(mode = ifelse(n_of_classes > 10, all_modes[y], "obs"), name = name)
     })
   }
   
@@ -137,19 +161,87 @@ landscape_plot_observed_prediction <- function(filtered_landscape,
     }
   }
   
-  if (make.interactive) {
-    base_plot <- girafe(ggobj = base_plot, fonts = list(sans = "Roboto"), width_svg = 10, height_svg = 6,
-                        options = list(opts_tooltip(css = "background:none;color:#ffffff;border:none;box-shadow:none;padding:2px 6px;font-family:Roboto,sans-serif;font-size:12px;",
-                                                    use_fill = FALSE, use_stroke = FALSE, opacity = 1,
-                                                    delay_mouseover = 0, delay_mouseout = 0, offx = 10, offy = -10)))
-  } else {
-    base_plot <- base_plot + theme(legend.position = "bottom",
-                                   legend.direction = "horizontal",
-                                   legend.title = element_blank(),
-                                   legend.box.just = "center",
-                                   legend.margin = margin(t = 5, b = 5),
-                                   legend.text = element_text(size = 8))
+  # ---- finalize as an interactive girafe widget (screen / HTML export) ----
+  finalize_interactive <- function(p) {
+    
+    p <- p + labs(title = "", subtitle = "")
+    
+    g <- girafe(
+      ggobj    = p,
+      fonts    = list(sans = "Roboto"),
+      width_svg  = 10,
+      height_svg = 6
+    )
+    
+    g <- girafe_options(
+      g,
+      opts_tooltip(css = tooltip_css, delay_mouseover = 0, delay_mouseout = 0, offx = 10, offy = -10),
+      opts_hover(css = hover_css),
+      opts_toolbar(saveaspng = FALSE)
+    )
+    
+    g
   }
   
-  return(base_plot)
+  # ---- finalize as a static ggplot with a full legend (PDF / print) ----
+  # Sized/styled so that a larger export canvas (see ggsave() call in
+  # app.R) is used mostly for the PLOT panel: the legend keys/text are kept
+  # compact so they don't grow proportionally with the export size.
+  finalize_static <- function(p) {
+    
+    title <- "Segment Annotation (based on SHAP values)"
+    subtitle <- paste0("[", genome_mask, "] [", type_mask, "] [", track_mask, "]")
+    
+    p <- p +
+      labs(title = title, subtitle = subtitle) +
+      guides(
+        fill = guide_legend(
+          title = "Selection Classes",
+          title.position = "top",
+          nrow = 2,
+          byrow = TRUE,
+          override.aes = list(shape = 15, size = 2.2, linetype = 0)
+        ),
+        colour = "none",
+        linetype = "none",
+        shape = "none"
+      ) +
+      geom_blank(aes(linetype = if (plot_observed) "Observed" else NULL)) +
+      geom_blank(aes(linetype = if (plot_predicted) "Predicted" else NULL)) +
+      scale_linetype_manual(
+        name = "Data Type",
+        values = c("Observed" = "solid", "Predicted" = "dashed"),
+        guide = guide_legend(
+          title.position = "top",
+          override.aes = list(color = "black", fill = NA)
+        )
+      ) +
+      theme(
+        plot.title    = element_text(size = 15, face = "bold"),
+        plot.subtitle = element_text(size = 10.5),
+        axis.title    = element_text(size = 11.5),
+        axis.text     = element_text(size = 8.5),
+        legend.position   = "bottom",
+        legend.direction  = "horizontal",
+        legend.box        = "vertical",
+        legend.box.just   = "left",
+        legend.margin     = margin(t = 2, b = 2),
+        legend.spacing.y  = unit(0.05, "cm"),
+        legend.spacing.x  = unit(0.15, "cm"),
+        legend.key.size   = unit(0.35, "cm"),
+        legend.title      = element_text(size = 7.5, face = "bold"),
+        legend.text       = element_text(size = 6.5),
+        plot.margin       = margin(t = 6, r = 12, b = 2, l = 6)
+      )
+    
+    p
+  }
+  
+  if (identical(make.interactive, "both")) {
+    return(list(interactive = finalize_interactive(base_plot), static = finalize_static(base_plot)))
+  } else if (isTRUE(make.interactive)) {
+    return(finalize_interactive(base_plot))
+  } else {
+    return(finalize_static(base_plot))
+  }
 }

@@ -1,31 +1,76 @@
-parse_input_coord <- function(input){
+parse_input_coord <- function(input, chrom_sizes){
   
-  chrom_sizes <- seqlengths(BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19)[1:22]
-  valid_input <- "^chr(?:[1-9]|1[0-9]|2[0-2]):\\d+-\\d+$"
+  # chrom_sizes: named numeric vector, one entry per chromosome, giving the
+  # maximum coordinate seen in the LOADED backbone/annotation files (not an
+  # external genome assembly) - e.g. chrom_sizes["chr1"]. This is what lets
+  # us validate/clamp a user-entered region against the data that is
+  # actually available, without any extra genome-annotation package.
   
-  is_valid <- grepl(pattern = valid_input, x = input, ignore.case = F)
+  raw_input <- input
   
-  if (is_valid) {
-    
-    elems <- strsplit(x = input, split = "[:-]")[[1]]
-    chr <- elems[1]; start <- as.numeric(elems[2]); end <- as.numeric(elems[3])
-    corresponding_chr_size <- chrom_sizes[chr]
-
-    if (end > corresponding_chr_size) {
-      
-      stop("END coordinate > than chromosome size. \nENTER a valid END coordinate")
-      
-    }
-    
-  } else {
-    
-    stop("INVALID coordinate PATTERN. \nENTER a valid PATTERN. \nExample: chr:start-end")
-    
+  # Be forgiving of common typing mistakes: stray whitespace, thousands
+  # separators ("1,000,000"), and "Chr"/"CHR" instead of "chr".
+  input <- tolower(trimws(gsub("[,\\s]+", "", input, perl = TRUE)))
+  
+  valid_pattern <- "^chr(?:[1-9]|1[0-9]|2[0-2]):[0-9]+-[0-9]+$"
+  
+  if (!grepl(valid_pattern, input, ignore.case = FALSE)) {
+    stop(
+      "Invalid coordinate format: \"", raw_input, "\".\n",
+      "Use the format chr:start-end, e.g. chr1:1-5000000 ",
+      "(chr1-chr22 only, with integer start and end, start < end)."
+    )
   }
   
-  input_granges <- GenomicRanges::GRanges(seqnames = chr, 
-                                          ranges = IRanges(start = start, 
-                                                           end = end))
+  elems <- strsplit(input, "[:-]")[[1]]
+  chr   <- elems[1]
+  start <- suppressWarnings(as.numeric(elems[2]))
+  end   <- suppressWarnings(as.numeric(elems[3]))
+  
+  if (is.na(start) || is.na(end)) {
+    stop("Invalid coordinates: START and END must be integers. E.g. chr1:1-5000000")
+  }
+  
+  if (start >= end) {
+    stop("START (", start, ") must be smaller than END (", end, ").")
+  }
+  
+  if (!(chr %in% names(chrom_sizes)) || is.na(chrom_sizes[[chr]])) {
+    stop(
+      "Chromosome \"", chr, "\" not found in the loaded data.\n",
+      "Available chromosomes: ", paste(sort(names(chrom_sizes)), collapse = ", ")
+    )
+  }
+  
+  chrom_size <- chrom_sizes[[chr]]
+  clamped <- FALSE
+  
+  if (start < 1) {
+    start <- 1
+    clamped <- TRUE
+  }
+  
+  if (end > chrom_size) {
+    end <- chrom_size
+    clamped <- TRUE
+  }
+  
+  if (start >= end) {
+    stop(
+      "The requested interval is entirely outside the boundaries of ", chr,
+      " in the loaded data (maximum size: ", chrom_size, ")."
+    )
+  }
+  
+  input_granges <- GenomicRanges::GRanges(
+    seqnames = chr,
+    ranges   = IRanges::IRanges(start = start, end = end)
+  )
+  
+  # Flag on the object (rather than a side-effect / UI call here) so the
+  # caller (filter_df -> app.R) can decide how to surface the "we trimmed
+  # your region to the chromosome's actual boundaries" message to the user.
+  attr(input_granges, "clamped") <- clamped
   
   return(input_granges)
 }
@@ -36,13 +81,13 @@ parse_input_chr <- function(input){
   is_valid <- all(grepl(pattern = valid_input, x = input, ignore.case = F))
   
   if (is_valid) {
-
+    
     return(input)
     
   } else {
-   
-     stop("INVALID chromosome specification. \nENTER a valid chromosome specification. \nExample: chr[1-22]")
-  
+    
+    stop("INVALID chromosome specification. \nENTER a valid chromosome specification. \nExample: chr[1-22]")
+    
   }
   
 }
@@ -51,7 +96,7 @@ parse_input_type <- function(input){
   accepted_types <- c("STAD", "GBMLGG", "COADREAD",
                       "KIRP", "KIRC", "OV", "ESCA",
                       "LUAD", "LUSC", "PAAD", "BRCA")
-
+  
   if (length(input) > 1) {
     stop(paste("Only 1 cancer type can be selected at a time. \n\nSelect among: \n", 
                paste(accepted_types, collapse = ", ")))
@@ -77,17 +122,19 @@ parse_input_model <- function(input){
                     not_selected = not_selected)
     
     return(outlist)
-  
-    } else {
+    
+  } else {
     
     stop("Invalid model selected. \n Models are either \"ampl\" or \"del\"")
-  
-    }
+    
+  }
 }
 
 
 parse_input_cluster <- function(input){
-  valid_input <- c("Mid-length", "Small-scale", "Arm-level", "Chromosome-level", "no_cluster")
+  # Keep in sync with model_types in 0_LoadData.R. "No-cluster" is the
+  # internal id of the category shown to the user as "All CNAs".
+  valid_input <- c("Mid-length", "Small-scale", "Arm-level", "Chromosome-level", "No-cluster")
   is_valid <- input %in% valid_input
   
   if (is_valid) {
@@ -101,7 +148,7 @@ parse_input_cluster <- function(input){
     
   } else {
     
-    stop("Invalid cluster selected. \n Models are either \"Mid-length\", \"Small-scale\", \"Arm-level\", \"Chromosome-level\" or \"no_cluster\"")
+    stop("Invalid cluster selected. \n Models are either \"Mid-length\", \"Small-scale\", \"Arm-level\", \"Chromosome-level\" or \"No-cluster\"")
     
   }  
 }
@@ -119,7 +166,7 @@ parse_annot_to_plot <- function(clustering_depth, input){
   } 
   
   is_valid <- all(as.integer(input) %in% valid_input)
-    
+  
   if (is_valid) { 
     return(sort(as.integer(input)))
   } else {
@@ -137,74 +184,121 @@ filter_df <- function(input_obj,
   
   # model filtering policy:
   # either "ampl" or "del" must be specified
-
+  
   cluster_mask <- parse_input_cluster(cluster_input)
   
   model_mask <- parse_input_model(model_input)
   
-  if (class(input_obj) == "list") {
+  if (length(model_mask$selected) > 1) {
+    stop("SHAP list or landscape df MUST be explicitly filtered")       
+  }
+  
+  if (is.function(input_obj)) {
     
-    if (length(model_mask$selected) > 1) {
-      stop("SHAP list or landscape df MUST be explicitly filtered")       
-    }
+    # lazy-loading path (see 0_LoadData.R::meta_list_get): the requested
+    # table is read/parsed on first use and cached in memory afterwards,
+    # so only the model_type x model combinations the user actually
+    # selects are ever loaded.
+    df_input <- input_obj(cluster_mask$selected, model_mask$selected)
+    
+  } else if (is.list(input_obj)) {
     
     df_input <- input_obj[[cluster_mask$selected]][[model_mask$selected]]
-
-  } else {
-    
-    stop("input_obj MUST either be a \"list\"") 
-  
-  }
-
-  # Region filtering policy:
-  # if both chromosome and coordinate level are NULL --> plot whole genome
-  # if both are defined --> plot the most detailed one (coordinates)
-  
-  if ((!is.null(chr_input)) && (!is.null(coord_input))) {
-    
-    genome_mask <- parse_input_coord(coord_input)
-    
-    hits <- GenomicRanges::findOverlaps(query = genome_mask, 
-                                        subject = backbone_granges)
-    
-    overlapping_bins <- values(backbone_granges[subjectHits(hits)])
-    
-    coord_filtered_df <- df_input[df_input$binID %in% overlapping_bins$binID,]
-    
-  } else if ((is.null(chr_input)) && (is.null(coord_input))) {
-
-    genome_mask <- unique(df_input$chr)
-    coord_filtered_df <- df_input[df_input$chr %in% genome_mask,]
-    
-  } else if ((!is.null(chr_input)) && (is.null(coord_input))){
-    
-    genome_mask <- parse_input_chr(chr_input)
-    coord_filtered_df <- df_input[df_input$chr %in% genome_mask,]
     
   } else {
     
-    genome_mask <- parse_input_coord(coord_input)
-    hits <- GenomicRanges::findOverlaps(query = genome_mask, 
-                                        subject = backbone_granges)
-    
-    overlapping_bins <- values(backbone_granges[subjectHits(hits)])
-    coord_filtered_df <- df_input[df_input$binID %in% overlapping_bins$binID,]
+    stop("input_obj MUST either be a lazy-loading function or a nested list") 
     
   }
   
   # Type filtering policy:
   # Only one cancer type to specify
   # Must be in the 11 cancer types
+  #
+  # NOTE: filtering by type FIRST (before the region filter below) shrinks
+  # the table before the coordinate-overlap / chromosome membership check
+  # runs, which matters once tables hold every cancer type at full size
+  # rather than a subsample.
   
   type_mask <- parse_input_type(type_input)
   
-  type_filtered_df <- coord_filtered_df[coord_filtered_df$type == type_mask,]
+  type_filtered_df <- df_input[df_input$type %in% type_mask, ]
   
-  outlist <- list(final_df = type_filtered_df,
+  # Region filtering policy:
+  # if both chromosome and coordinate level are NULL --> plot whole genome
+  # if both are defined --> plot the most detailed one (coordinates)
+  #
+  # Chromosome sizes used to validate/clamp a manually-typed region are
+  # derived from the LOADED backbone bins themselves (max bin end per
+  # chromosome) rather than from an external genome-assembly package, per
+  # the "usa i confini nei file di input" requirement.
+  
+  region_clamped <- FALSE
+  
+  # Overlap the requested region against the FILTERED TABLE'S OWN start/end
+  # coordinates directly (not against backbone_granges' binID scheme).
+  # binID matching against the original 100kb backbone breaks the moment
+  # the table's bins don't use that exact scheme any more - e.g. after
+  # smoothing/downsampling into coarser windows with their own binID
+  # ("chr1_0", "chr1_1", ...), which never matches the backbone's
+  # ("chr1_36", ...) and silently returned zero rows. Overlapping on actual
+  # genomic coordinates works regardless of bin size/naming.
+  overlap_by_coord <- function(region_granges, df) {
+    row_granges <- GenomicRanges::GRanges(
+      seqnames = df$chr,
+      ranges   = IRanges::IRanges(start = df$start, end = df$end)
+    )
+    hits <- GenomicRanges::findOverlaps(query = region_granges, subject = row_granges)
+    df[unique(S4Vectors::subjectHits(hits)), ]
+  }
+  
+  if ((!is.null(chr_input)) && (!is.null(coord_input))) {
+    
+    chrom_sizes <- tapply(GenomicRanges::end(backbone_granges),
+                          as.character(GenomicRanges::seqnames(backbone_granges)),
+                          max)
+    
+    genome_mask <- parse_input_coord(coord_input, chrom_sizes)
+    region_clamped <- isTRUE(attr(genome_mask, "clamped"))
+    
+    coord_filtered_df <- overlap_by_coord(genome_mask, type_filtered_df)
+    
+  } else if ((is.null(chr_input)) && (is.null(coord_input))) {
+    
+    genome_mask <- unique(type_filtered_df$chr)
+    coord_filtered_df <- type_filtered_df
+    
+  } else if ((!is.null(chr_input)) && (is.null(coord_input))){
+    
+    genome_mask <- parse_input_chr(chr_input)
+    coord_filtered_df <- type_filtered_df[type_filtered_df$chr %in% genome_mask, ]
+    
+  } else {
+    
+    chrom_sizes <- tapply(GenomicRanges::end(backbone_granges),
+                          as.character(GenomicRanges::seqnames(backbone_granges)),
+                          max)
+    
+    genome_mask <- parse_input_coord(coord_input, chrom_sizes)
+    region_clamped <- isTRUE(attr(genome_mask, "clamped"))
+    
+    coord_filtered_df <- overlap_by_coord(genome_mask, type_filtered_df)
+    
+  }
+  
+  if (nrow(coord_filtered_df) == 0) {
+    stop(
+      "No bins found for the requested region/selection. ",
+      "Try a wider interval or check the chromosome selection."
+    )
+  }
+  
+  outlist <- list(final_df = as.data.frame(coord_filtered_df),
                   model_mask = model_mask$selected,
                   type_mask = type_mask,
-                  genome_mask = as.character(genome_mask))
-
+                  genome_mask = as.character(genome_mask),
+                  region_clamped = region_clamped)
+  
   return(outlist)
   
 }
@@ -289,7 +383,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
                                                   plot_observed = TRUE, plot_predicted = TRUE,
                                                   annot_to_plot_ticks = "all",
                                                   annot_to_plot_kde = "all") {
-              
+  
   get_chr_bounds <- function(filtered_landscape){
     
     chr_bounds <- filtered_landscape %>%
@@ -676,10 +770,10 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
   if (plot_predicted) {
     message("Plotting Prediction track...")
     base_plot <- plot_pred_layer(base_plot = base_plot, 
-                                chr_to_plot = chr_to_plot, 
-                                filtered_landscape = filtered_landscape, 
-                                backbone.100kb = backbone.100kb, 
-                                model = model_mask)
+                                 chr_to_plot = chr_to_plot, 
+                                 filtered_landscape = filtered_landscape, 
+                                 backbone.100kb = backbone.100kb, 
+                                 model = model_mask)
   }
   
   base_plot <- base_plot +
@@ -825,7 +919,7 @@ landscape_plot_interactive_prediction <- function(filtered_landscape,
   )
   message("The plot is ready! Enjoy!")
   return(p)
-            }
+}
 
 prepare_shap_to_plot <- function(filtered_shap_ampl, filtered_shap_del){
   
@@ -938,4 +1032,3 @@ prepare_landscape_to_plot <- function(model_input, shap_plotting_list,
   
   return(outlist)
 }
-

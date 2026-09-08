@@ -1,4 +1,3 @@
-# -------------------- UI --------------------
 library(shiny)
 library(ggiraph)
 library(glue)
@@ -86,8 +85,13 @@ ui <- fluidPage(
                        
                        selectInput(
                          "cluster_input", 
-                         "Select cluster type:", 
-                         choices = c("Mid-length", "Small-scale", "Arm-level", "Chromosome-level"),
+                         "Select CNA cluster:", 
+                         # The value sent to the server is the INTERNAL id
+                         # used in the file names ("No-cluster"); only the
+                         # displayed label is "All CNAs". Keep in sync with
+                         # CLUSTER_LABELS in 0_LoadData.R.
+                         choices = c("Mid-length", "Small-scale", "Arm-level", "Chromosome-level",
+                                     "All CNAs" = "No-cluster"),
                          selected = "Mid-length"
                        ),
                        
@@ -96,31 +100,86 @@ ui <- fluidPage(
                                    selected = paste0("chr", 1:22),
                                    multiple = TRUE,
                                    selectize = TRUE),
+                       
                        div(
                          class = "shiny-input-container",
-                         tags$label("Genomic coordinates (chr:start-end):"),
+                         tags$label("Select annotation to plot:"),
+                         
+                         tags$select(
+                           id = "annot_to_plot",
+                           class = "form-control",
+                           tags$option(value = "annot_final", "6 class annotation"),
+                           tags$option(value = "top1", "Top 1 Feature")
+                         )
+                       ),
+                       
+                       div(
+                         class = "shiny-input-container",
+                         tags$label("Select genomic coordinates (chr:start-end):"),
                          
                          tags$input(
                            id = "genomic_coords",
                            type = "text",
                            class = "form-control",
-                           value = "",                  # value is empty
-                           placeholder = "Coming Soon!",# visible text
-                           readonly = TRUE,             # cannot type
-                           style = "cursor:text;"       # **no not-allowed symbol**
+                           value = "",
+                           placeholder = "e.g. chr1:1-5000000"
+                         ),
+                         tags$small(
+                           style = "color:#6b7280; display:block; margin-top:4px;",
+                           "Optional: if filled in, it takes priority over the chromosomes selected above. Leave empty to use the chromosome selection."
                          )
                        ),
                        checkboxInput("plot_observed", "Show observed track", TRUE),
                        checkboxInput("plot_predicted", "Show predicted track", TRUE),
-                       checkboxInput("enable_ticks", "Enable annotation ticks", FALSE),
+                       checkboxInput("enable_ticks", "Show annotation ticks", FALSE),
                        conditionalPanel(
                          condition = "input.enable_ticks",
-                         textInput("annot_ticks_input", "Ticks clusters ('all' or comma-separated exact names):", "")
+                         selectizeInput(
+                           inputId = "annot_ticks_input",   # ← unchanged
+                           label = "Annotation classes to plot:",
+                           choices = c(
+                             "Negative Selection", 
+                             "Excess of Prediction - Likely Negative Selection", 
+                             "Positive Selection", 
+                             "Excess of Observation - Likely Positive Selection", 
+                             "Occurrence", 
+                             "No Detectable Force"
+                           ),
+                           selected = c(
+                             "Negative Selection", 
+                             "Excess of Prediction - Likely Negative Selection", 
+                             "Positive Selection", 
+                             "Excess of Observation - Likely Positive Selection", 
+                             "Occurrence", 
+                             "No Detectable Force"
+                           ),
+                           multiple = TRUE
+                         )
                        ),
-                       checkboxInput("enable_kde", "Enable KDE layers", TRUE),
+                       checkboxInput("enable_kde", "Show annotation density", TRUE),
                        conditionalPanel(
                          condition = "input.enable_kde",
-                         textInput("annot_kde_input", "KDE clusters ('all' or comma-separated exact names):", "all")
+                         selectizeInput(
+                           inputId = "annot_kde_input",
+                           label = "Annotation classes to plot:",
+                           choices = c(
+                             "Negative Selection", 
+                             "Excess of Prediction - Likely Negative Selection", 
+                             "Positive Selection", 
+                             "Excess of Observation - Likely Positive Selection", 
+                             "Occurrence", 
+                             "No Detectable Force"
+                           ),
+                           selected = c(
+                             "Negative Selection", 
+                             "Excess of Prediction - Likely Negative Selection", 
+                             "Positive Selection", 
+                             "Excess of Observation - Likely Positive Selection", 
+                             "Occurrence", 
+                             "No Detectable Force"
+                           ),
+                           multiple = TRUE
+                         )
                        ),
                        
                        # ---- Each button on its own row ----
@@ -135,8 +194,8 @@ ui <- fluidPage(
                        ),
                        div(
                          style = "margin-top:10px;",
-                         title = "Coming Soon!",
-                           downloadButton("download_annotation", "Download Annotation", class = "btn btn-secondary")
+                         title = "Download the annotation (BED) for the current selection only",
+                         downloadButton("download_annotation", "Download Annotation", class = "btn btn-secondary")
                        )
           )
       ),
